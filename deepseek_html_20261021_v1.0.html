@@ -1,0 +1,1810 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="theme-color" content="#000000" />
+<title>M2E Academy — Learning Assessment</title>
+<style>
+/* ============================================================
+   M2E ACADEMY — DESIGN TOKENS
+   ============================================================ */
+:root{
+  --yellow:#FFC600;
+  --yellow-soft:#ffd233;
+  --bg:#000000;
+  --surface:#0b0b0b;
+  --surface-2:#111111;
+  --line:rgba(255,255,255,.10);
+  --line-strong:rgba(255,255,255,.18);
+  --text:#ffffff;
+  --muted:#9a9a9a;
+  --muted-2:#7d7d7d;
+  --danger:#ff6b6b;
+  --radius:18px;
+  --radius-sm:12px;
+  --max:1120px;
+  --ease:cubic-bezier(.2,.7,.3,1);
+}
+
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none !important}
+
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Noto Sans",sans-serif;
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+  line-height:1.55;
+  min-height:100vh;
+  overflow-x:hidden;
+}
+body::before{
+  content:"";
+  position:fixed; inset:0; z-index:0; pointer-events:none;
+  background:
+    radial-gradient(900px 520px at 50% -12%, rgba(255,198,0,.16), transparent 62%),
+    radial-gradient(700px 460px at 105% 105%, rgba(255,198,0,.07), transparent 60%),
+    radial-gradient(600px 400px at -10% 80%, rgba(255,198,0,.05), transparent 60%);
+}
+#app{position:relative; z-index:1}
+
+img{max-width:100%;display:block}
+button{font-family:inherit}
+a{color:var(--yellow)}
+
+:focus-visible{
+  outline:3px solid var(--yellow);
+  outline-offset:3px;
+  border-radius:6px;
+}
+
+/* ============================================================
+   LAYOUT
+   ============================================================ */
+.container{width:100%; max-width:var(--max); margin:0 auto; padding:0 20px}
+.section{padding:56px 0 0}
+.section-title{
+  text-align:center; font-size:clamp(1.35rem,4.4vw,2rem);
+  font-weight:800; letter-spacing:-.01em; margin:0 0 10px;
+}
+.section-sub{text-align:center; color:var(--muted-2); margin:0 0 30px; font-size:.95rem}
+
+/* ============================================================
+   HEADER
+   ============================================================ */
+.site-header{
+  position:sticky; top:0; z-index:60;
+  background:rgba(0,0,0,.78);
+  backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px);
+  border-bottom:1px solid var(--line);
+}
+.header-inner{
+  display:flex; align-items:center; justify-content:space-between;
+  gap:14px; padding:13px 20px;
+}
+.brand{display:flex; align-items:center; gap:12px; min-width:0}
+.brand-mark{
+  display:grid; place-items:center; flex:0 0 auto;
+  width:44px; height:44px; border-radius:12px;
+  background:var(--yellow); color:#000;
+  font-weight:900; font-size:.82rem; letter-spacing:.02em;
+  box-shadow:0 8px 24px -10px rgba(255,198,0,.9);
+}
+.brand-text{display:flex; flex-direction:column; line-height:1.15; min-width:0}
+.brand-text strong{font-size:1rem; letter-spacing:.06em; font-weight:800; white-space:nowrap}
+.brand-text small{font-size:.68rem; letter-spacing:.16em; text-transform:uppercase; color:var(--muted-2)}
+.header-tag{
+  display:none; font-size:.7rem; letter-spacing:.14em; text-transform:uppercase;
+  color:var(--yellow); border:1px solid rgba(255,198,0,.35);
+  background:rgba(255,198,0,.08); padding:7px 14px; border-radius:999px; font-weight:700;
+}
+@media(min-width:720px){ .header-tag{display:inline-block} }
+
+/* ============================================================
+   HERO
+   ============================================================ */
+.hero{padding:52px 0 0; text-align:center}
+.eyebrow{
+  display:inline-block; padding:7px 15px; border-radius:999px;
+  border:1px solid rgba(255,198,0,.35); background:rgba(255,198,0,.08);
+  color:var(--yellow); font-size:.68rem; font-weight:800;
+  letter-spacing:.16em; text-transform:uppercase;
+}
+.hero h1{
+  font-size:clamp(1.95rem,7.4vw,3.9rem);
+  line-height:1.06; letter-spacing:-.025em; font-weight:900;
+  margin:22px auto 18px; max-width:14ch;
+}
+.hero h1 .accent{color:var(--yellow)}
+.lede{
+  color:#a9a9a9; max-width:660px; margin:0 auto;
+  font-size:clamp(.95rem,2.6vw,1.08rem);
+}
+
+/* INFO CARDS */
+.info-grid{
+  display:grid; grid-template-columns:repeat(3,1fr);
+  gap:14px; margin:40px auto 0; max-width:820px;
+}
+@media(max-width:640px){ .info-grid{grid-template-columns:1fr; gap:12px} }
+.info-card{
+  background:linear-gradient(180deg,#101010,#080808);
+  border:1px solid var(--line); border-radius:var(--radius);
+  padding:24px 16px; text-align:center;
+  transition:transform .25s var(--ease), border-color .25s;
+}
+.info-card:hover{transform:translateY(-3px); border-color:rgba(255,198,0,.4)}
+.info-card .ico{font-size:1.5rem; line-height:1; margin-bottom:10px}
+.info-card .val{font-size:1.35rem; font-weight:900; color:var(--yellow); letter-spacing:-.01em}
+.info-card .lbl{font-size:.76rem; letter-spacing:.12em; text-transform:uppercase; color:var(--muted-2); margin-top:4px}
+
+/* ============================================================
+   ACHIEVEMENT LEVELS
+   ============================================================ */
+.levels{
+  display:grid; gap:16px;
+  grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
+}
+.level-card{
+  position:relative; display:flex; flex-direction:column; gap:9px;
+  background:linear-gradient(180deg,#101010,#080808);
+  border:1px solid var(--line); border-radius:var(--radius);
+  padding:24px 22px;
+  transition:transform .28s var(--ease), border-color .28s, box-shadow .28s;
+}
+.level-card:hover{
+  transform:translateY(-5px);
+  border-color:rgba(255,198,0,.45);
+  box-shadow:0 22px 46px -26px rgba(255,198,0,.75);
+}
+.level-card .medal{font-size:1.9rem; line-height:1}
+.level-card .lvl{
+  font-size:.66rem; letter-spacing:.18em; text-transform:uppercase;
+  color:var(--yellow); font-weight:800;
+}
+.level-card h3{margin:0; font-size:1.12rem; font-weight:800; letter-spacing:-.01em}
+.level-card .tagline{color:#d8d8d8; font-size:.9rem; font-style:italic; margin:0}
+.level-card .desc{color:var(--muted-2); font-size:.83rem; margin:0}
+.chip-pass{
+  margin-top:auto; align-self:flex-start;
+  background:rgba(255,198,0,.12); border:1px solid rgba(255,198,0,.42);
+  color:var(--yellow); padding:5px 13px; border-radius:999px;
+  font-size:.73rem; font-weight:800; letter-spacing:.03em;
+}
+.level-card.grand{
+  border-color:rgba(255,198,0,.55);
+  box-shadow:0 0 0 1px rgba(255,198,0,.18) inset, 0 26px 60px -34px rgba(255,198,0,.9);
+}
+.level-card.grand::after{
+  content:"TOP TIER";
+  position:absolute; top:16px; right:16px;
+  font-size:.58rem; letter-spacing:.16em; font-weight:900;
+  background:var(--yellow); color:#000; padding:4px 9px; border-radius:999px;
+}
+
+/* ============================================================
+   CTA + BUTTONS
+   ============================================================ */
+.cta{text-align:center; padding:58px 0 12px}
+.btn{
+  display:inline-flex; align-items:center; justify-content:center; gap:10px;
+  border:none; cursor:pointer; font-weight:800; border-radius:999px;
+  transition:transform .18s var(--ease), background .18s, box-shadow .18s, color .18s, border-color .18s;
+  text-decoration:none; -webkit-tap-highlight-color:transparent;
+}
+.btn:disabled{opacity:.4; cursor:not-allowed; transform:none !important}
+.btn-primary{
+  background:var(--yellow); color:#000;
+  padding:18px 48px; font-size:1.05rem; letter-spacing:.02em;
+  box-shadow:0 16px 40px -16px rgba(255,198,0,.95);
+}
+.btn-primary:hover:not(:disabled){background:var(--yellow-soft); transform:translateY(-2px)}
+.btn-primary:active:not(:disabled){transform:translateY(0)}
+.btn-ghost{
+  background:transparent; color:#fff; border:1px solid var(--line-strong);
+  padding:15px 30px; font-size:.94rem;
+}
+.btn-ghost:hover:not(:disabled){border-color:var(--yellow); color:var(--yellow)}
+.btn-block{width:100%}
+.btn-sm{padding:11px 20px; font-size:.85rem}
+.cta-note{margin-top:16px; color:var(--muted-2); font-size:.8rem; letter-spacing:.02em}
+
+/* ============================================================
+   FORMS
+   ============================================================ */
+.form-card{
+  width:100%; max-width:640px; margin:0 auto;
+  background:linear-gradient(180deg,#101010,#060606);
+  border:1px solid var(--line); border-radius:22px;
+  padding:30px 26px;
+}
+@media(max-width:520px){ .form-card{padding:24px 18px; border-radius:18px} }
+.form-card h2{
+  margin:0 0 6px; font-size:clamp(1.25rem,4.4vw,1.6rem); font-weight:900; letter-spacing:-.01em;
+}
+.form-card .form-sub{color:var(--muted-2); font-size:.88rem; margin:0 0 24px}
+.field{display:flex; flex-direction:column; gap:7px; margin-bottom:16px}
+.field label{font-size:.76rem; font-weight:800; letter-spacing:.09em; text-transform:uppercase; color:#c9c9c9}
+.field input, .field select{
+  width:100%; background:#080808; color:#fff;
+  border:1px solid var(--line-strong); border-radius:var(--radius-sm);
+  padding:14px 15px; font-size:1rem; font-family:inherit;
+  transition:border-color .2s, box-shadow .2s, background .2s;
+  appearance:none; -webkit-appearance:none;
+}
+.field select{
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23FFC600' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
+  background-repeat:no-repeat; background-position:right 16px center; padding-right:44px;
+}
+.field select option{background:#0b0b0b; color:#fff}
+.field input::placeholder{color:#575757}
+.field input:focus, .field select:focus{
+  outline:none; border-color:var(--yellow);
+  box-shadow:0 0 0 3px rgba(255,198,0,.18); background:#0d0d0d;
+}
+.field input.invalid{border-color:var(--danger); box-shadow:0 0 0 3px rgba(255,107,107,.14)}
+.err{color:var(--danger); font-size:.76rem; min-height:0}
+.err:empty{display:none}
+
+/* segmented control */
+.segmented{
+  display:grid; grid-template-columns:1fr 1fr; gap:8px;
+  background:#080808; border:1px solid var(--line-strong);
+  border-radius:999px; padding:6px; margin-bottom:22px;
+}
+.segmented label{
+  position:relative; display:block; text-align:center; cursor:pointer;
+  padding:12px 10px; border-radius:999px;
+  font-size:.85rem; font-weight:800; color:var(--muted);
+  transition:background .2s, color .2s;
+}
+.segmented input{position:absolute; opacity:0; width:0; height:0}
+.segmented input:checked + span{color:#000}
+.segmented label:has(input:checked){background:var(--yellow)}
+.segmented input:focus-visible + span{outline:2px solid var(--yellow); outline-offset:4px; border-radius:999px}
+.segmented span{position:relative; z-index:1}
+
+/* ============================================================
+   QUIZ
+   ============================================================ */
+.quiz-shell{max-width:760px; margin:0 auto; padding:34px 0 20px}
+.quiz-meta{
+  display:flex; align-items:center; justify-content:space-between; gap:12px;
+  margin-bottom:12px; font-size:.82rem; font-weight:700;
+  color:var(--muted); letter-spacing:.05em;
+}
+.timer{
+  display:inline-flex; align-items:center; gap:7px;
+  background:rgba(255,198,0,.1); border:1px solid rgba(255,198,0,.38);
+  color:var(--yellow); padding:7px 15px; border-radius:999px;
+  font-variant-numeric:tabular-nums; font-weight:900; font-size:.9rem;
+}
+.timer.warn{
+  background:rgba(255,107,107,.12); border-color:rgba(255,107,107,.5);
+  color:#ff8a8a; animation:pulse 1.2s infinite;
+}
+@keyframes pulse{50%{opacity:.55}}
+.progress{height:8px; background:#191919; border-radius:999px; overflow:hidden; margin-bottom:26px}
+.progress > i{
+  display:block; height:100%; width:0; border-radius:999px;
+  background:linear-gradient(90deg,var(--yellow),#ffe066);
+  transition:width .32s var(--ease);
+}
+.q-card{
+  background:linear-gradient(180deg,#101010,#070707);
+  border:1px solid var(--line); border-radius:var(--radius);
+  padding:28px 24px;
+}
+@media(max-width:520px){ .q-card{padding:22px 16px} }
+.q-card h2{
+  font-size:clamp(1.05rem,3.8vw,1.35rem); font-weight:800; line-height:1.42;
+  margin:0 0 22px; letter-spacing:-.005em;
+}
+.options{display:flex; flex-direction:column; gap:11px}
+.option{
+  display:flex; align-items:flex-start; gap:14px; width:100%;
+  padding:16px; text-align:left; cursor:pointer;
+  border:1px solid var(--line-strong); border-radius:14px;
+  background:#0a0a0a; color:#eaeaea; font-size:.97rem; font-family:inherit;
+  transition:border-color .18s, background .18s, transform .18s, color .18s;
+}
+.option:hover{border-color:rgba(255,198,0,.5); background:#111}
+.option.selected{
+  border-color:var(--yellow); background:rgba(255,198,0,.1); color:#fff;
+  box-shadow:0 0 0 1px rgba(255,198,0,.4) inset;
+}
+.option .key{
+  flex:0 0 auto; display:grid; place-items:center;
+  width:28px; height:28px; border-radius:8px;
+  border:1px solid var(--line-strong); font-size:.78rem; font-weight:900;
+  transition:background .18s, color .18s, border-color .18s;
+}
+.option.selected .key{background:var(--yellow); color:#000; border-color:var(--yellow)}
+.option.correct{border-color:#3ddc84; background:rgba(61,220,132,.1)}
+.option.correct .key{background:#3ddc84; color:#000; border-color:#3ddc84}
+.option.wrong{border-color:var(--danger); background:rgba(255,107,107,.1)}
+.option.wrong .key{background:var(--danger); color:#000; border-color:var(--danger)}
+.quiz-nav{display:flex; gap:12px; margin-top:24px; flex-wrap:wrap}
+.quiz-nav .btn{flex:1 1 140px}
+@media(max-width:520px){ .quiz-nav .btn{flex:1 1 100%} }
+
+/* ============================================================
+   RESULT
+   ============================================================ */
+.result-wrap{max-width:720px; margin:0 auto; padding:40px 0 20px; text-align:center}
+.result-card{
+  background:linear-gradient(180deg,#101010,#060606);
+  border:1px solid var(--line); border-radius:24px;
+  padding:38px 26px;
+}
+@media(max-width:520px){ .result-card{padding:28px 18px; border-radius:18px} }
+.result-card h1{font-size:clamp(1.4rem,5vw,2rem); margin:16px 0 24px; font-weight:900; letter-spacing:-.02em}
+.score-ring{
+  width:172px; height:172px; border-radius:50%; margin:0 auto 18px;
+  display:grid; place-items:center; position:relative;
+  background:conic-gradient(var(--yellow) var(--p,0%), #1b1b1b 0);
+  transition:background .6s var(--ease);
+}
+.score-ring::after{content:""; position:absolute; inset:13px; border-radius:50%; background:#070707}
+.score-ring span{position:relative; z-index:1; font-size:2.5rem; font-weight:900; letter-spacing:-.03em}
+.result-score{color:var(--muted); font-size:.95rem; margin:0 0 26px}
+.level-badge{
+  display:flex; align-items:center; gap:16px; text-align:left;
+  background:rgba(255,198,0,.08); border:1px solid rgba(255,198,0,.38);
+  border-radius:16px; padding:18px 20px; margin-bottom:22px;
+}
+.level-badge .medal{font-size:2rem; line-height:1}
+.level-badge strong{display:block; font-size:1.02rem; color:var(--yellow)}
+.level-badge small{display:block; color:#c4c4c4; font-size:.83rem; margin-top:2px}
+.level-badge.none{background:rgba(255,255,255,.04); border-color:var(--line-strong)}
+.level-badge.none strong{color:#fff}
+.result-actions{display:flex; gap:12px; justify-content:center; flex-wrap:wrap; margin-top:8px}
+.review{margin-top:26px; text-align:left; display:flex; flex-direction:column; gap:14px}
+.review-item{
+  border:1px solid var(--line); border-radius:14px; padding:16px; background:#0a0a0a;
+}
+.review-item .rq{font-weight:800; font-size:.92rem; margin-bottom:10px}
+.review-item .ra{font-size:.85rem; color:var(--muted); margin:4px 0}
+.review-item .ra b{color:#fff; font-weight:700}
+.review-item .ra.ok b{color:#3ddc84}
+.review-item .ra.no b{color:var(--danger)}
+.hint{color:var(--muted-2); font-size:.8rem}
+
+/* ============================================================
+   ADMIN
+   ============================================================ */
+.admin-shell{max-width:1000px; margin:0 auto; padding:32px 0 20px}
+.admin-tabs{display:flex; gap:8px; margin-bottom:22px; flex-wrap:wrap}
+.admin-tabs button{
+  background:#0a0a0a; color:var(--muted); border:1px solid var(--line-strong);
+  padding:11px 20px; border-radius:999px; font-size:.85rem; font-weight:800; cursor:pointer;
+  transition:.2s;
+}
+.admin-tabs button.active{background:var(--yellow); color:#000; border-color:var(--yellow)}
+.admin-tabs button:hover:not(.active){border-color:var(--yellow); color:var(--yellow)}
+.admin-q{
+  background:linear-gradient(180deg,#0e0e0e,#070707);
+  border:1px solid var(--line); border-radius:16px;
+  padding:18px; margin-bottom:14px;
+}
+.admin-q-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:12px}
+.badge{
+  font-size:.66rem; letter-spacing:.14em; text-transform:uppercase; font-weight:900;
+  color:var(--yellow); background:rgba(255,198,0,.1);
+  border:1px solid rgba(255,198,0,.35); padding:4px 11px; border-radius:999px;
+}
+.admin-q textarea{
+  width:100%; background:#080808; color:#fff; border:1px solid var(--line-strong);
+  border-radius:10px; padding:12px; font-family:inherit; font-size:.92rem; resize:vertical;
+  margin-bottom:12px;
+}
+.admin-q textarea:focus{outline:none; border-color:var(--yellow)}
+.opt-list{display:flex; flex-direction:column; gap:8px}
+.opt-row{display:flex; align-items:center; gap:10px}
+.opt-row input[type=radio]{accent-color:var(--yellow); width:18px; height:18px; flex:0 0 auto; cursor:pointer}
+.opt-row .key{
+  display:grid; place-items:center; width:24px; height:24px; flex:0 0 auto;
+  border-radius:7px; border:1px solid var(--line-strong);
+  font-size:.72rem; font-weight:900; color:var(--muted);
+}
+.opt-row input[type=text]{
+  flex:1; min-width:0; background:#080808; color:#fff; border:1px solid var(--line-strong);
+  border-radius:10px; padding:10px 12px; font-family:inherit; font-size:.88rem;
+}
+.opt-row input[type=text]:focus{outline:none; border-color:var(--yellow)}
+.admin-q-foot{display:flex; align-items:center; gap:10px; margin-top:12px; flex-wrap:wrap}
+.btn-mini{
+  background:#141414; color:#ddd; border:1px solid var(--line-strong);
+  border-radius:9px; padding:8px 14px; font-size:.76rem; font-weight:800; cursor:pointer;
+  transition:.18s;
+}
+.btn-mini:hover{border-color:var(--yellow); color:var(--yellow)}
+.btn-mini.danger:hover{border-color:var(--danger); color:var(--danger)}
+.table-wrap{overflow-x:auto; border:1px solid var(--line); border-radius:14px}
+table{width:100%; border-collapse:collapse; font-size:.82rem; min-width:840px}
+th,td{padding:12px 14px; text-align:left; border-bottom:1px solid var(--line); white-space:nowrap}
+th{background:#0d0d0d; color:var(--yellow); font-size:.68rem; letter-spacing:.12em; text-transform:uppercase}
+td{color:#d0d0d0}
+tbody tr:hover{background:#0b0b0b}
+.pill{
+  display:inline-block; padding:3px 10px; border-radius:999px; font-size:.7rem; font-weight:800;
+  background:rgba(255,198,0,.12); color:var(--yellow); border:1px solid rgba(255,198,0,.35);
+}
+.pill.pre{background:rgba(255,255,255,.07); color:#bbb; border-color:var(--line-strong)}
+.admin-actions{display:flex; gap:10px; flex-wrap:wrap; margin-top:18px}
+
+/* modal */
+.modal{position:fixed; inset:0; z-index:200; display:grid; place-items:center; padding:20px; background:rgba(0,0,0,.82); backdrop-filter:blur(6px)}
+.modal-card{
+  position:relative; width:100%; max-width:640px; max-height:86vh; overflow:auto;
+  background:linear-gradient(180deg,#101010,#070707); border:1px solid var(--line-strong);
+  border-radius:20px; padding:28px 24px;
+}
+.modal-close{
+  position:absolute; top:12px; right:14px; background:none; border:none;
+  color:#888; font-size:1.7rem; line-height:1; cursor:pointer;
+}
+.modal-close:hover{color:var(--yellow)}
+
+/* ============================================================
+   GATE
+   ============================================================ */
+.gate{
+  position:fixed; inset:0; z-index:300;
+  display:grid; place-items:center; padding:24px; overflow:auto;
+  background:#000;
+}
+.gate::before{
+  content:""; position:absolute; inset:0; pointer-events:none;
+  background:radial-gradient(760px 460px at 50% 0%, rgba(255,198,0,.18), transparent 62%);
+}
+.gate-card{
+  position:relative; width:100%; max-width:420px; text-align:center;
+  background:linear-gradient(180deg,#101010,#070707);
+  border:1px solid var(--line-strong); border-radius:24px;
+  padding:36px 26px;
+  box-shadow:0 40px 90px -50px rgba(255,198,0,.85);
+}
+.gate-logo{
+  width:60px; height:60px; margin:0 auto 18px; border-radius:16px;
+  background:var(--yellow); color:#000; display:grid; place-items:center;
+  font-weight:900; font-size:1rem; letter-spacing:.04em;
+  box-shadow:0 16px 36px -16px rgba(255,198,0,.95);
+}
+.gate-card h2{margin:0 0 8px; font-size:1.3rem; font-weight:900; letter-spacing:.02em}
+.gate-sub{color:var(--muted-2); font-size:.85rem; margin:0 0 24px; line-height:1.6}
+.gate-foot{margin:20px 0 0; font-size:.7rem; letter-spacing:.14em; text-transform:uppercase; color:#4d4d4d}
+
+/* ============================================================
+   FOOTER
+   ============================================================ */
+.site-footer{
+  margin-top:70px; border-top:1px solid var(--line);
+  padding:30px 0 44px; text-align:center;
+}
+.site-footer p{
+  color:var(--muted-2); font-size:.76rem; line-height:1.8;
+  max-width:840px; margin:0 auto 10px;
+}
+.site-footer .foot-brand{color:#5c5c5c; font-size:.7rem; letter-spacing:.16em; text-transform:uppercase}
+.admin-link{
+  background:none; border:none; color:#3d3d3d; font-size:.7rem;
+  letter-spacing:.14em; text-transform:uppercase; cursor:pointer; padding:8px;
+  transition:color .2s;
+}
+.admin-link:hover{color:var(--yellow)}
+</style>
+</head>
+<body>
+
+<!-- ============================================================
+     SCREEN 0 — PASSWORD GATE
+     ============================================================ -->
+<div class="gate" id="scrGate" role="dialog" aria-modal="true" aria-labelledby="gateTitle">
+  <div class="gate-card">
+    <div class="gate-logo" aria-hidden="true">M2E</div>
+    <h2 id="gateTitle">M2E Academy</h2>
+    <p class="gate-sub">Restricted internal access. Please enter the access password provided by your administrator.</p>
+    <form id="gateForm" novalidate>
+      <div class="field">
+        <label for="gatePwd">Access Password</label>
+        <input id="gatePwd" type="password" autocomplete="off" autocapitalize="off"
+               spellcheck="false" placeholder="Enter password" aria-describedby="gateErr" />
+        <span class="err" id="gateErr" role="alert"></span>
+      </div>
+      <button class="btn btn-primary btn-block" type="submit">Unlock</button>
+    </form>
+    <p class="gate-foot">Authorised Maybank personnel only</p>
+  </div>
+</div>
+
+<!-- ============================================================
+     APP
+     ============================================================ -->
+<div id="app" hidden>
+
+  <header class="site-header">
+    <div class="container header-inner">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true">M2E</span>
+        <span class="brand-text">
+          <strong>M2E ACADEMY</strong>
+          <small>Learning Assessment</small>
+        </span>
+      </div>
+      <span class="header-tag">Transaction Banking</span>
+    </div>
+  </header>
+
+  <main>
+
+    <!-- ========================================================
+         SCREEN 1 — LANDING
+         ======================================================== -->
+    <section id="scrLanding">
+
+      <div class="container hero">
+        <span class="eyebrow">Transaction Banking · Cash Management</span>
+        <h1>Are You Ready To Become A <span class="accent">M2E Grandmaster?</span></h1>
+        <p class="lede">
+          Assess your knowledge of Cash Management, Payments, Collections, Cross Border Solutions
+          and Transaction Banking products.
+        </p>
+
+        <div class="info-grid">
+          <div class="info-card">
+            <div class="ico" aria-hidden="true">⏱️</div>
+            <div class="val">5 Minutes</div>
+            <div class="lbl">Time Limit</div>
+          </div>
+          <div class="info-card">
+            <div class="ico" aria-hidden="true">📝</div>
+            <div class="val">20 Questions</div>
+            <div class="lbl">Multiple Choice</div>
+          </div>
+          <div class="info-card">
+            <div class="ico" aria-hidden="true">🏅</div>
+            <div class="val">5 Levels</div>
+            <div class="lbl">Achievement Tiers</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ACHIEVEMENT LEVELS -->
+      <div class="section container">
+        <h2 class="section-title">Achievement Levels</h2>
+        <p class="section-sub">Five tiers — from your first step to the elite circle.</p>
+
+        <div class="levels">
+
+          <article class="level-card">
+            <div class="medal" aria-hidden="true">🥉</div>
+            <span class="lvl">Level 1</span>
+            <h3>M2E Newbie</h3>
+            <p class="tagline">“Your journey into digital cash management begins.”</p>
+            <p class="desc">Suitable for first-time learners.</p>
+            <span class="chip-pass">Pass score: 50%+</span>
+          </article>
+
+          <article class="level-card">
+            <div class="medal" aria-hidden="true">🥈</div>
+            <span class="lvl">Level 2</span>
+            <h3>M2E Navigator</h3>
+            <p class="tagline">“Confidently navigating payments and collections.”</p>
+            <p class="desc">Demonstrates working knowledge of M2E features.</p>
+            <span class="chip-pass">Pass score: 65%+</span>
+          </article>
+
+          <article class="level-card">
+            <div class="medal" aria-hidden="true">🥇</div>
+            <span class="lvl">Level 3</span>
+            <h3>M2E Specialist</h3>
+            <p class="tagline">“Mastering the core capabilities of M2E.”</p>
+            <p class="desc">Recognises strong product understanding.</p>
+            <span class="chip-pass">Pass score: 75%+</span>
+          </article>
+
+          <article class="level-card">
+            <div class="medal" aria-hidden="true">💎</div>
+            <span class="lvl">Level 4</span>
+            <h3>M2E Champion</h3>
+            <p class="tagline">“Driving excellence in customer servicing and digital adoption.”</p>
+            <p class="desc">Suitable for branch officers and sales teams with advanced knowledge.</p>
+            <span class="chip-pass">Pass score: 85%+</span>
+          </article>
+
+          <article class="level-card grand">
+            <div class="medal" aria-hidden="true">👑</div>
+            <span class="lvl">Level 5</span>
+            <h3>M2E Grandmaster</h3>
+            <p class="tagline">“Among the elite few who have mastered M2E Internet Banking.”</p>
+            <p class="desc">Highest and most prestigious badge.</p>
+            <span class="chip-pass">Pass score: 95%+</span>
+          </article>
+
+        </div>
+      </div>
+
+      <!-- CTA -->
+      <div class="cta container">
+        <button class="btn btn-primary" id="btnBegin" type="button">Begin Assessment</button>
+        <p class="cta-note">Pre-training and post-training assessment · Transaction Banking Cash Management</p>
+      </div>
+
+    </section>
+
+    <!-- ========================================================
+         SCREEN 2 — REGISTRATION (scrRegistration)
+         ======================================================== -->
+    <section id="scrRegistration" hidden>
+      <div class="container" style="padding-top:34px">
+        <div class="form-card">
+          <h2>Participant Registration</h2>
+          <p class="form-sub">All fields are required. Your details will be recorded with your assessment result.</p>
+
+          <div class="segmented" role="radiogroup" aria-label="Assessment type">
+            <label>
+              <input type="radio" name="mode" value="pre" checked />
+              <span>Pre-Training</span>
+            </label>
+            <label>
+              <input type="radio" name="mode" value="post" />
+              <span>Post-Training</span>
+            </label>
+          </div>
+
+          <form id="regForm" novalidate>
+            <div class="field">
+              <label for="fullName">Full Name</label>
+              <input id="fullName" type="text" autocomplete="name" placeholder="e.g. Nur Aisyah binti Ahmad" />
+              <span class="err" id="errFullName"></span>
+            </div>
+
+            <div class="field">
+              <label for="region">Region</label>
+              <select id="region">
+                <option value="">— Select your region —</option>
+                <option value="Region 1 – Northern">Region 1 – Northern (Perlis, Kedah, Penang, Perak)</option>
+                <option value="Region 2 – Central">Region 2 – Central (Selangor, Kuala Lumpur, Putrajaya)</option>
+                <option value="Region 3 – Southern">Region 3 – Southern (Negeri Sembilan, Melaka, Johor)</option>
+                <option value="Region 4 – East Coast">Region 4 – East Coast (Kelantan, Terengganu, Pahang)</option>
+                <option value="Region 5 – Sabah">Region 5 – Sabah</option>
+                <option value="Region 6 – Sarawak">Region 6 – Sarawak</option>
+                <option value="Region 7 – Labuan">Region 7 – Labuan</option>
+                <option value="Region 8 – International">Region 8 – International / Regional Offices</option>
+              </select>
+              <span class="err" id="errRegion"></span>
+            </div>
+
+            <div class="field">
+              <label for="branch">Branch Name</label>
+              <input id="branch" type="text" autocomplete="organization" placeholder="e.g. Menara Maybank Branch" />
+              <span class="err" id="errBranch"></span>
+            </div>
+
+            <div class="field">
+              <label for="email">Maybank Email Address</label>
+              <input id="email" type="email" autocomplete="email" inputmode="email"
+                     placeholder="name@maybank.com" spellcheck="false" />
+              <span class="err" id="errEmail"></span>
+            </div>
+
+            <div class="field">
+              <label for="pf">PF Number</label>
+              <input id="pf" type="text" inputmode="numeric" pattern="[0-9]*"
+                     placeholder="Numbers only" maxlength="12" />
+              <span class="err" id="errPf"></span>
+            </div>
+
+            <div class="quiz-nav" style="margin-top:22px">
+              <button class="btn btn-ghost" type="button" id="btnBackHome">Back</button>
+              <button class="btn btn-primary" type="submit" style="flex:2 1 200px">Start Assessment</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================
+         SCREEN 3 — ASSESSMENT
+         ======================================================== -->
+    <section id="scrAssessment" hidden>
+      <div class="container quiz-shell">
+        <div class="quiz-meta">
+          <span id="qCounter">Question 1 of 20</span>
+          <span class="timer" id="timer">05:00</span>
+        </div>
+        <div class="progress" role="progressbar" aria-label="Assessment progress"
+             aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+          <i id="progressBar"></i>
+        </div>
+
+        <div class="q-card">
+          <h2 id="qText">Loading…</h2>
+          <div class="options" id="options" role="group" aria-label="Answer options"></div>
+        </div>
+
+        <div class="quiz-nav">
+          <button class="btn btn-ghost" type="button" id="btnPrev">← Previous</button>
+          <button class="btn btn-primary" type="button" id="btnNext">Next →</button>
+          <button class="btn btn-primary" type="button" id="btnSubmit" hidden>Submit Assessment</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================
+         SCREEN 4 — RESULT
+         ======================================================== -->
+    <section id="scrResult" hidden></section>
+
+    <!-- ========================================================
+         SCREEN 5 — ADMIN
+         ======================================================== -->
+    <section id="scrAdmin" hidden>
+      <div class="container admin-shell">
+
+        <!-- Admin login -->
+        <div id="adminLogin" class="form-card">
+          <h2>Administrator Access</h2>
+          <p class="form-sub">Manage questions, correct answers and submitted results.</p>
+          <form id="adminLoginForm" novalidate>
+            <div class="field">
+              <label for="adminPwd">Administrator Password</label>
+              <input id="adminPwd" type="password" autocomplete="off" placeholder="Enter admin password" />
+              <span class="err" id="adminErr" role="alert"></span>
+            </div>
+            <div class="quiz-nav" style="margin-top:6px">
+              <button class="btn btn-ghost" type="button" id="btnAdminBack">Back to Home</button>
+              <button class="btn btn-primary" type="submit" style="flex:2 1 180px">Sign In</button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Admin console -->
+        <div id="adminConsole" hidden>
+          <div class="admin-tabs" role="tablist">
+            <button type="button" class="active" data-tab="questions">Questions</button>
+            <button type="button" data-tab="submissions">Submissions</button>
+            <button type="button" data-tab="settings">Settings</button>
+            <button type="button" id="btnAdminExit" style="margin-left:auto">Exit Admin</button>
+          </div>
+
+          <!-- Questions tab -->
+          <div id="tabQuestions">
+            <p class="hint" style="margin-bottom:16px">
+              Select the radio button beside the correct answer. Changes apply immediately to all new assessments.
+            </p>
+            <div id="adminQuestions"></div>
+            <div class="admin-actions">
+              <button class="btn btn-ghost btn-sm" type="button" id="btnAddQuestion">+ Add Question</button>
+              <button class="btn btn-primary btn-sm" type="button" id="btnSaveQuestions">Save All Changes</button>
+              <button class="btn btn-ghost btn-sm" type="button" id="btnRestoreQuestions">Restore Default Bank</button>
+            </div>
+          </div>
+
+          <!-- Submissions tab -->
+          <div id="tabSubmissions" hidden>
+            <div id="adminSubs"></div>
+            <div class="admin-actions">
+              <button class="btn btn-ghost btn-sm" type="button" id="btnExportCsv">Export CSV</button>
+              <button class="btn btn-ghost btn-sm" type="button" id="btnClearSubs">Clear All Records</button>
+            </div>
+          </div>
+
+          <!-- Settings tab -->
+          <div id="tabSettings" hidden>
+            <div class="form-card" style="margin:0; max-width:560px">
+              <h2 style="font-size:1.1rem">Application Settings</h2>
+              <form id="settingsForm">
+                <div class="field">
+                  <label for="setGate">Landing Page Access Password</label>
+                  <input id="setGate" type="text" autocomplete="off" />
+                </div>
+                <div class="field">
+                  <label for="setAdmin">Administrator Password</label>
+                  <input id="setAdmin" type="text" autocomplete="off" />
+                </div>
+                <div class="field">
+                  <label for="setDuration">Assessment Duration (minutes)</label>
+                  <input id="setDuration" type="number" min="1" max="60" inputmode="numeric" />
+                </div>
+                <div class="field">
+                  <label for="setCount">Questions Served Per Assessment</label>
+                  <input id="setCount" type="number" min="1" max="100" inputmode="numeric" />
+                </div>
+                <button class="btn btn-primary btn-sm" type="submit">Save Settings</button>
+              </form>
+              <p class="hint" style="margin-top:18px">
+                Note: Passwords and duration are saved in this browser's local storage. Questions and submissions are saved to the Supabase cloud database.
+              </p>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="site-footer">
+    <div class="container">
+      <p>
+        Internal Learning Assessment • Full name, Region (8 selection), Branch Name (bank staff name input),
+        Maybank Email Address (with checking of @maybank.com) and PF Number Required (numeric validation)
+      </p>
+      <p class="foot-brand">M2E Academy · Transaction Banking Cash Management</p>
+      <button class="admin-link" type="button" id="btnAdminOpen">Administrator</button>
+    </div>
+  </footer>
+
+</div>
+
+<!-- MODAL -->
+<div class="modal" id="modal" hidden>
+  <div class="modal-card">
+    <button class="modal-close" id="modalClose" type="button" aria-label="Close">&times;</button>
+    <div id="modalBody"></div>
+  </div>
+</div>
+
+<!-- SUPABASE LIBRARY -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<script>
+/* ============================================================
+   0. SUPABASE INITIALIZATION
+   ============================================================ */
+// REPLACE THESE WITH YOUR ACTUAL SUPABASE URL AND PUBLISHABLE KEY
+const SUPABASE_URL = 'https://yxcfopcdddmwpgkjcv.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_aZZt2F2GML9bf2Bp-ZJqjg_VMAcMdhr';
+
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+/* ============================================================
+   1. UTILITIES
+   ============================================================ */
+const $  = (sel, root = document) => root.querySelector(sel);
+const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
+
+const escapeHtml = (s) => String(s ?? '').replace(/[&<>"']/g, c => (
+  { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]
+));
+
+const uid = () => 'q' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+
+const shuffle = (arr) => {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+};
+
+function download(filename, content, mime = 'text/csv;charset=utf-8;') {
+  const blob = new Blob([content], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+/* ============================================================
+   2. LOCAL STORAGE (for settings only)
+   ============================================================ */
+const KEYS = {
+  settings: 'm2e.settings.v1'
+};
+
+const DEFAULT_SETTINGS = {
+  gatePassword: 'M2E2024',
+  adminPassword: 'M2Eadmin2024',
+  durationMinutes: 5,
+  questionsPerAssessment: 20
+};
+
+function loadSettings() {
+  try {
+    const raw = localStorage.getItem(KEYS.settings);
+    return raw ? Object.assign({}, DEFAULT_SETTINGS, JSON.parse(raw)) : DEFAULT_SETTINGS;
+  } catch(e) {
+    return DEFAULT_SETTINGS;
+  }
+}
+
+function saveSettings(s) {
+  try { localStorage.setItem(KEYS.settings, JSON.stringify(s)); } catch(e) {}
+}
+
+/* ============================================================
+   3. DEFAULT QUESTIONS (Used if Database is empty)
+   ============================================================ */
+const DEFAULT_QUESTIONS = [
+  { id: 'q01', text: 'Maybank2E (M2E) is best described as:', options: ['A personal savings account product', 'A regional cash management and internet banking platform for businesses', 'A credit card rewards programme', 'A remittance-only mobile app'], correct: 1 },
+  { id: 'q02', text: 'Which of the following best describes Transaction Banking?', options: ['Retail mortgage sales', 'Banking services supporting clients’ day-to-day cash flow, trade and payments', 'Wealth management and unit trusts', 'General insurance underwriting'], correct: 1 },
+  { id: 'q03', text: 'In M2E, the “Account Enquiry” function primarily allows a corporate customer to:', options: ['Change their registered business address', 'View balances and transaction history across their accounts', 'Apply for a new corporate credit card', 'Reset their ATM PIN'], correct: 1 },
+  { id: 'q04', text: 'Which payment channel is typically used for high-value, same-day interbank transfers in Malaysia?', options: ['Cheque', 'RENTAS (RTGS)', 'Direct Debit', 'Standing Instruction'], correct: 1 },
+  { id: 'q05', text: 'What does DuitNow primarily enable?', options: ['Real-time fund transfers using a proxy such as a mobile number or business registration number', 'Cheque clearing between banks', 'Foreign currency fixed deposit placement', 'Trade financing facilities'], correct: 0 },
+  { id: 'q06', text: 'In cash management, “Collections” refers to:', options: ['Collecting customer complaints', 'The process of collecting receivables and reconciling incoming payments', 'Debt recovery litigation', 'Collecting branch cash for ATM replenishment'], correct: 1 },
+  { id: 'q07', text: 'Cross-border solutions typically include:', options: ['Domestic payroll only', 'Telegraphic transfers, foreign exchange and multi-currency accounts', 'ATM cash withdrawal', 'Hire purchase financing'], correct: 1 },
+  { id: 'q08', text: 'What is a “Virtual Account” commonly used for?', options: ['Virtual reality banking demonstrations', 'Automated reconciliation of receivables by assigning unique account numbers to payers', 'Temporary overdraft facilities', 'Share trading settlement'], correct: 1 },
+  { id: 'q09', text: 'SWIFT MT103 is used for:', options: ['Single customer credit transfer (cross-border payment)', 'Securities settlement', 'Cheque clearing', 'Balance reporting'], correct: 0 },
+  { id: 'q10', text: 'What does “liquidity management” aim to achieve?', options: ['Maximising idle balances in individual accounts', 'Optimising cash positions across accounts via sweeping and pooling', 'Increasing loan interest rates', 'Reducing branch headcount'], correct: 1 },
+  { id: 'q11', text: 'In M2E, a “Maker-Checker” workflow ensures:', options: ['Faster single-user payments', 'Segregation of duties and dual authorisation for transactions', 'Automatic foreign exchange conversion', 'Cheque printing capability'], correct: 1 },
+  { id: 'q12', text: 'Which document is typically required when a corporate customer requests new M2E services?', options: ['Board resolution and authorised signatory mandate', 'Personal tax return', 'Vehicle registration document', 'Medical certificate'], correct: 0 },
+  { id: 'q13', text: 'A “Standing Instruction” is used to:', options: ['Execute a recurring payment of a fixed amount at defined intervals', 'Make a one-off urgent payment', 'Cancel an issued cheque', 'Open a fixed deposit account'], correct: 0 },
+  { id: 'q14', text: 'What is the main benefit of host-to-host / API integration with M2E?', options: ['Manual data entry into the portal', 'Automated, straight-through processing of payments and reconciliation', 'Reduced internet bandwidth usage', 'Cheque truncation'], correct: 1 },
+  { id: 'q15', text: 'In Malaysia, cheques are cleared through:', options: ['SWIFT', 'eSPICK (national cheque image clearing system)', 'RENTAS', 'DuitNow'], correct: 1 },
+  { id: 'q16', text: 'In cross-border transactions, what does “FX” stand for?', options: ['Fixed Exchange', 'Foreign Exchange', 'Final Execution', 'Financial Export'], correct: 1 },
+  { id: 'q17', text: 'A corporate customer wants to pay salaries to 500 employees in a single file. Which M2E function should be used?', options: ['Bulk / Batch Payment Upload', 'Account Enquiry', 'Cheque Book Request', 'Fixed Deposit Placement'], correct: 0 },
+  { id: 'q18', text: 'Cash pooling (notional or physical) is primarily used to:', options: ['Pool customer deposits for marketing campaigns', 'Consolidate balances across accounts or entities to optimise interest and funding', 'Pool staff annual leave', 'Combine ATM cash cassettes'], correct: 1 },
+  { id: 'q19', text: 'Which of the following is a core cash management function?', options: ['Payroll lending', 'Payments, collections and liquidity management', 'Mortgage underwriting', 'Equity trading'], correct: 1 },
+  { id: 'q20', text: 'When a corporate client reports an unauthorised payment, the branch officer’s first action should be to:', options: ['Ignore the report until the next business day', 'Escalate immediately, secure the account and follow the incident / fraud reporting process', 'Advise the client to open a new account', 'Refund immediately without checks'], correct: 1 }
+];
+
+const LEVELS = [
+  { n: 5, name: 'M2E Grandmaster', medal: '👑', min: 95, tagline: 'Among the elite few who have mastered M2E Internet Banking.' },
+  { n: 4, name: 'M2E Champion',    medal: '💎', min: 85, tagline: 'Driving excellence in customer servicing and digital adoption.' },
+  { n: 3, name: 'M2E Specialist',  medal: '🥇', min: 75, tagline: 'Mastering the core capabilities of M2E.' },
+  { n: 2, name: 'M2E Navigator',   medal: '🥈', min: 65, tagline: 'Confidently navigating payments and collections.' },
+  { n: 1, name: 'M2E Newbie',      medal: '🥉', min: 50, tagline: 'Your journey into digital cash management begins.' }
+];
+
+const getLevel = (score) => LEVELS.find(l => score >= l.min) || null;
+
+/* ============================================================
+   4. SUPABASE DATA FETCHING
+   ============================================================ */
+async function fetchQuestionsFromDB() {
+  const { data, error } = await supabaseClient.from('questions').select('*');
+  
+  if (error) {
+    console.error('Error fetching questions:', error);
+    alert('Could not load questions from the database. Check the console for details.');
+    return [];
+  }
+  
+  // If DB is empty, seed it with defaults
+  if (data.length === 0) {
+    console.log('Seeding default questions to database...');
+    const seeds = DEFAULT_QUESTIONS.map(q => ({
+      id: q.id,
+      text: q.text,
+      options: q.options,
+      correct_index: q.correct
+    }));
+    const { error: seedError } = await supabaseClient.from('questions').insert(seeds);
+    if (seedError) console.error('Failed to seed:', seedError);
+    return DEFAULT_QUESTIONS;
+  }
+
+  // Map DB structure back to frontend structure
+  return data.map(q => ({
+    id: q.id,
+    text: q.text,
+    options: q.options,
+    correct: q.correct_index
+  }));
+}
+
+/* ============================================================
+   5. SCREEN NAVIGATION
+   ============================================================ */
+const SCREENS = ['scrLanding', 'scrRegistration', 'scrAssessment', 'scrResult', 'scrAdmin'];
+
+function showScreen(id) {
+  SCREENS.forEach(s => {
+    const el = document.getElementById(s);
+    if (el) el.hidden = (s !== id);
+  });
+  window.scrollTo(0, 0);
+}
+
+/* ============================================================
+   6. PASSWORD GATE
+   ============================================================ */
+const GATE_SESSION_KEY = 'm2e.unlocked';
+
+function unlockApp() {
+  sessionStorage.setItem(GATE_SESSION_KEY, '1');
+  $('#scrGate').hidden = true;
+  $('#app').hidden = false;
+  showScreen('scrLanding');
+}
+
+function initGate() {
+  if (sessionStorage.getItem(GATE_SESSION_KEY) === '1') {
+    unlockApp();
+    return;
+  }
+  $('#scrGate').hidden = false;
+  $('#app').hidden = true;
+  setTimeout(() => $('#gatePwd').focus(), 250);
+
+  $('#gateForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const settings = loadSettings();
+    const input = $('#gatePwd').value.trim();
+    const errEl = $('#gateErr');
+
+    if (!input) {
+      errEl.textContent = 'Please enter the access password.';
+      return;
+    }
+    if (input.toLowerCase() === String(settings.gatePassword).toLowerCase()) {
+      errEl.textContent = '';
+      $('#gatePwd').value = '';
+      unlockApp();
+    } else {
+      errEl.textContent = 'Incorrect password. Please check with your administrator.';
+      $('#gatePwd').select();
+    }
+  });
+}
+
+/* ============================================================
+   7. APPLICATION STATE
+   ============================================================ */
+const state = {
+  participant: null,
+  mode: 'pre',
+  questions: [],
+  answers: [],
+  current: 0,
+  timeLeft: 300,
+  timerId: null,
+  startedAt: null,
+  lastSubmission: null
+};
+
+/* ============================================================
+   8. LANDING & REGISTRATION
+   ============================================================ */
+$('#btnBegin').addEventListener('click', () => {
+  showScreen('scrRegistration');
+  setTimeout(() => $('#fullName').focus(), 150);
+});
+
+$('#btnBackHome').addEventListener('click', () => showScreen('scrLanding'));
+
+const EMAIL_RE = /^[A-Za-z0-9._%+-]+@maybank\.com$/i;
+const PF_RE = /^\d{4,12}$/;
+
+function setFieldError(inputId, errId, message) {
+  const input = document.getElementById(inputId);
+  const err = document.getElementById(errId);
+  if (message) {
+    input.classList.add('invalid');
+    input.setAttribute('aria-invalid', 'true');
+    err.textContent = message;
+  } else {
+    input.classList.remove('invalid');
+    input.removeAttribute('aria-invalid');
+    err.textContent = '';
+  }
+}
+
+$('#regForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  let ok = true;
+
+  const fullName = $('#fullName').value.trim();
+  const region   = $('#region').value;
+  const branch   = $('#branch').value.trim();
+  const email    = $('#email').value.trim();
+  const pf       = $('#pf').value.trim();
+
+  if (fullName.length < 3) {
+    setFieldError('fullName', 'errFullName', 'Please enter your full name (minimum 3 characters).');
+    ok = false;
+  } else setFieldError('fullName', 'errFullName', '');
+
+  if (!region) {
+    setFieldError('region', 'errRegion', 'Please select your region.');
+    ok = false;
+  } else setFieldError('region', 'errRegion', '');
+
+  if (branch.length < 2) {
+    setFieldError('branch', 'errBranch', 'Please enter your branch name.');
+    ok = false;
+  } else setFieldError('branch', 'errBranch', '');
+
+  if (!EMAIL_RE.test(email)) {
+    setFieldError('email', 'errEmail', 'A valid @maybank.com email address is required.');
+    ok = false;
+  } else setFieldError('email', 'errEmail', '');
+
+  if (!PF_RE.test(pf)) {
+    setFieldError('pf', 'errPf', 'PF Number must be numeric (4–12 digits).');
+    ok = false;
+  } else setFieldError('pf', 'errPf', '');
+
+  if (!ok) {
+    const firstInvalid = $('.invalid');
+    if (firstInvalid) firstInvalid.focus();
+    return;
+  }
+
+  state.mode = ($('input[name="mode"]:checked') || {}).value || 'pre';
+  state.participant = { fullName, region, branch, email, pfNumber: pf };
+
+  const submitBtn = e.target.querySelector('button[type="submit"]');
+  const originalText = submitBtn.textContent;
+  submitBtn.textContent = 'Loading Database...';
+  submitBtn.disabled = true;
+
+  await startAssessment();
+
+  submitBtn.textContent = originalText;
+  submitBtn.disabled = false;
+});
+
+/* ============================================================
+   9. ASSESSMENT ENGINE
+   ============================================================ */
+async function startAssessment() {
+  const settings = loadSettings();
+  const bank = await fetchQuestionsFromDB();
+  
+  if (bank.length === 0) {
+    alert('Cannot start assessment. No questions available in the database.');
+    showScreen('scrLanding');
+    return;
+  }
+
+  const wanted = Math.max(1, Math.min(Number(settings.questionsPerAssessment) || 20, bank.length));
+  
+  state.questions = bank.length > wanted ? shuffle(bank).slice(0, wanted) : bank.slice();
+  state.answers = new Array(state.questions.length).fill(null);
+  state.current = 0;
+  state.timeLeft = Math.max(1, Number(settings.durationMinutes) || 5) * 60;
+  state.startedAt = Date.now();
+  state.lastSubmission = null;
+
+  showScreen('scrAssessment');
+  renderQuestion();
+  startTimer();
+}
+
+function startTimer() {
+  clearInterval(state.timerId);
+  paintTimer();
+  state.timerId = setInterval(() => {
+    state.timeLeft -= 1;
+    paintTimer();
+    if (state.timeLeft <= 0) {
+      clearInterval(state.timerId);
+      submitAssessment(true);
+    }
+  }, 1000);
+}
+
+function paintTimer() {
+  const m = Math.floor(Math.max(state.timeLeft, 0) / 60);
+  const s = Math.max(state.timeLeft, 0) % 60;
+  const el = $('#timer');
+  el.textContent = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+  el.classList.toggle('warn', state.timeLeft <= 60);
+}
+
+function renderQuestion() {
+  const total = state.questions.length;
+  const q = state.questions[state.current];
+
+  $('#qCounter').textContent = `Question ${state.current + 1} of ${total}`;
+  $('#qText').textContent = q.text;
+
+  const pct = Math.round(((state.current + 1) / total) * 100);
+  $('#progressBar').style.width = pct + '%';
+  $('.progress').setAttribute('aria-valuenow', String(pct));
+
+  const box = $('#options');
+  box.innerHTML = '';
+  q.options.forEach((opt, i) => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'option' + (state.answers[state.current] === i ? ' selected' : '');
+    btn.setAttribute('aria-pressed', state.answers[state.current] === i ? 'true' : 'false');
+    btn.innerHTML =
+      `<span class="key" aria-hidden="true">${String.fromCharCode(65 + i)}</span>` +
+      `<span>${escapeHtml(opt)}</span>`;
+    btn.addEventListener('click', () => {
+      state.answers[state.current] = i;
+      renderQuestion();
+    });
+    box.appendChild(btn);
+  });
+
+  $('#btnPrev').disabled = state.current === 0;
+  const isLast = state.current === total - 1;
+  $('#btnNext').hidden = isLast;
+  $('#btnSubmit').hidden = !isLast;
+}
+
+$('#btnPrev').addEventListener('click', () => {
+  if (state.current > 0) { state.current--; renderQuestion(); }
+});
+$('#btnNext').addEventListener('click', () => {
+  if (state.current < state.questions.length - 1) { state.current++; renderQuestion(); }
+});
+$('#btnSubmit').addEventListener('click', () => submitAssessment(false));
+
+async function submitAssessment(auto) {
+  const unanswered = state.answers.filter(a => a === null).length;
+
+  if (!auto && unanswered > 0) {
+    const proceed = confirm(`${unanswered} question${unanswered > 1 ? 's are' : ' is'} unanswered. Submit anyway?`);
+    if (!proceed) return;
+  }
+
+  clearInterval(state.timerId);
+
+  let correctCount = 0;
+  const detail = state.questions.map((q, i) => {
+    const selected = state.answers[i];
+    const isCorrect = selected === q.correct;
+    if (isCorrect) correctCount++;
+    return {
+      questionId: q.id,
+      question: q.text,
+      options: q.options.slice(),
+      selectedIndex: selected,
+      selectedText: selected === null ? null : q.options[selected],
+      correctIndex: q.correct,
+      correctText: q.options[q.correct],
+      isCorrect
+    };
+  });
+
+  const total = state.questions.length;
+  const score = total ? Math.round((correctCount / total) * 100) : 0;
+  const level = getLevel(score);
+
+  const submission = {
+    full_name: state.participant.fullName,
+    region: state.participant.region,
+    branch: state.participant.branch,
+    email: state.participant.email,
+    pf_number: state.participant.pfNumber,
+    mode: state.mode,
+    score,
+    correct_count: correctCount,
+    total_questions: total,
+    answers: detail,
+    submitted_at: new Date().toISOString()
+  };
+
+  // Show loading state
+  $('#qText').textContent = "Saving results to database...";
+  $('#options').innerHTML = "";
+
+  // Save to Supabase
+  const { error } = await supabaseClient.from('submissions').insert([submission]);
+  
+  if (error) {
+    console.error('Error saving submission:', error);
+    alert('There was an error saving your result to the database. Please contact the administrator.');
+  }
+
+  // Attach generated ID locally for the result screen
+  state.lastSubmission = { ...submission, id: 'local', levelNumber: level ? level.n : null, levelName: level ? level.name : null, correct: correctCount, total, durationSec: Math.max(0, Math.round((Date.now() - state.startedAt) / 1000)) };
+  
+  renderResult(state.lastSubmission);
+}
+
+/* ============================================================
+   10. RESULT SCREEN
+   ============================================================ */
+function renderResult(sub) {
+  const level = getLevel(sub.score);
+  const isPost = sub.mode === 'post';
+
+  const levelBlock = level
+    ? `<div class="level-badge">
+         <span class="medal" aria-hidden="true">${level.medal}</span>
+         <div>
+           <strong>Level ${level.n} – ${level.name}</strong>
+           <small>${escapeHtml(level.tagline)}</small>
+         </div>
+       </div>`
+    : `<div class="level-badge none">
+         <span class="medal" aria-hidden="true">📘</span>
+         <div>
+           <strong>Keep Learning</strong>
+           <small>You need 50% or above to reach Level 1 – M2E Newbie. Review the materials and try again.</small>
+         </div>
+       </div>`;
+
+  const reviewNote = isPost
+    ? `<button class="btn btn-ghost btn-sm" id="btnReview" type="button">Show Correct Answers</button>`
+    : `<p class="hint">Correct answers are not revealed during the pre-training assessment.</p>`;
+
+  $('#scrResult').innerHTML = `
+    <div class="container result-wrap">
+      <div class="result-card">
+        <span class="eyebrow">${isPost ? 'Post-Training' : 'Pre-Training'} Assessment</span>
+        <h1>Assessment Complete</h1>
+
+        <div class="score-ring" style="--p:${sub.score}%"><span>${sub.score}%</span></div>
+        <p class="result-score">${sub.correct} of ${sub.total} answers correct · ${escapeHtml(sub.full_name)}</p>
+
+        ${levelBlock}
+        ${reviewNote}
+
+        <div class="result-actions">
+          <button class="btn btn-primary btn-sm" id="btnRetake" type="button">Take Another Assessment</button>
+          <button class="btn btn-ghost btn-sm" id="btnResultHome" type="button">Back to Home</button>
+        </div>
+
+        <div class="review" id="reviewArea" hidden></div>
+      </div>
+    </div>`;
+
+  showScreen('scrResult');
+
+  $('#btnRetake').addEventListener('click', () => {
+    showScreen('scrRegistration');
+    setTimeout(() => $('#fullName').focus(), 150);
+  });
+  $('#btnResultHome').addEventListener('click', () => showScreen('scrLanding'));
+
+  const reviewBtn = $('#btnReview');
+  if (reviewBtn) {
+    reviewBtn.addEventListener('click', () => {
+      const area = $('#reviewArea');
+      if (!area.hidden) {
+        area.hidden = true;
+        reviewBtn.textContent = 'Show Correct Answers';
+        return;
+      }
+      area.innerHTML = sub.answers.map((a, i) => {
+        const status = a.isCorrect
+          ? `<p class="ra ok">Your answer: <b>${escapeHtml(a.selectedText ?? '—')}</b> ✓</p>`
+          : `<p class="ra no">Your answer: <b>${escapeHtml(a.selectedText ?? 'Not answered')}</b> ✗</p>
+             <p class="ra ok">Correct answer: <b>${escapeHtml(a.correctText)}</b></p>`;
+        return `<div class="review-item">
+                  <div class="rq">${i + 1}. ${escapeHtml(a.question)}</div>
+                  ${status}
+                </div>`;
+      }).join('');
+      area.hidden = false;
+      reviewBtn.textContent = 'Hide Correct Answers';
+    });
+  }
+}
+
+/* ============================================================
+   11. ADMIN — LOGIN & TABS
+   ============================================================ */
+let adminDraft = null;
+
+$('#btnAdminOpen').addEventListener('click', () => {
+  showScreen('scrAdmin');
+  $('#adminLogin').hidden = false;
+  $('#adminConsole').hidden = true;
+  $('#adminPwd').value = '';
+  $('#adminErr').textContent = '';
+  setTimeout(() => $('#adminPwd').focus(), 150);
+});
+
+$('#btnAdminBack').addEventListener('click', () => showScreen('scrLanding'));
+$('#btnAdminExit').addEventListener('click', () => showScreen('scrLanding'));
+
+$('#adminLoginForm').addEventListener('submit', (e) => {
+  e.preventDefault();
+  const settings = loadSettings();
+  const pwd = $('#adminPwd').value.trim();
+
+  if (pwd.toLowerCase() === String(settings.adminPassword).toLowerCase()) {
+    $('#adminErr').textContent = '';
+    $('#adminLogin').hidden = true;
+    $('#adminConsole').hidden = false;
+    openAdminTab('questions');
+  } else {
+    $('#adminErr').textContent = 'Incorrect administrator password.';
+  }
+});
+
+$$('.admin-tabs [data-tab]').forEach(btn => {
+  btn.addEventListener('click', () => openAdminTab(btn.dataset.tab));
+});
+
+function openAdminTab(tab) {
+  $$('.admin-tabs [data-tab]').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+  $('#tabQuestions').hidden   = tab !== 'questions';
+  $('#tabSubmissions').hidden = tab !== 'submissions';
+  $('#tabSettings').hidden    = tab !== 'settings';
+
+  if (tab === 'questions')   loadAdminQuestions();
+  if (tab === 'submissions') renderSubmissions();
+  if (tab === 'settings')    fillSettingsForm();
+}
+
+/* ============================================================
+   12. ADMIN — QUESTION EDITOR
+   ============================================================ */
+async function loadAdminQuestions() {
+  $('#adminQuestions').innerHTML = '<p class="hint">Loading questions from database...</p>';
+  const qs = await fetchQuestionsFromDB();
+  adminDraft = qs.map(q => ({
+    id: q.id || uid(),
+    text: q.text,
+    options: q.options.slice(),
+    correct: q.correct
+  }));
+  paintAdminQuestions();
+}
+
+function paintAdminQuestions() {
+  const wrap = $('#adminQuestions');
+  wrap.innerHTML = adminDraft.map((q, i) => `
+    <div class="admin-q" data-i="${i}">
+      <div class="admin-q-head">
+        <span class="badge">Question ${i + 1}</span>
+        <button type="button" class="btn-mini danger" data-del="${i}">Delete</button>
+      </div>
+      <textarea class="q-text" rows="2" placeholder="Question text">${escapeHtml(q.text)}</textarea>
+      <div class="opt-list">
+        ${q.options.map((o, oi) => `
+          <label class="opt-row">
+            <input type="radio" name="correct-${i}" value="${oi}" ${q.correct === oi ? 'checked' : ''} />
+            <span class="key">${String.fromCharCode(65 + oi)}</span>
+            <input type="text" class="opt-input" value="${escapeHtml(o)}" placeholder="Option text" />
+          </label>`).join('')}
+      </div>
+      <div class="admin-q-foot">
+        <button type="button" class="btn-mini" data-addopt="${i}">+ Option</button>
+        <button type="button" class="btn-mini" data-delopt="${i}">− Option</button>
+        <span class="hint">Select the radio button beside the correct answer.</span>
+      </div>
+    </div>`).join('');
+}
+
+function syncDraftFromDOM() {
+  $$('#adminQuestions .admin-q').forEach(card => {
+    const i = Number(card.dataset.i);
+    if (!adminDraft[i]) return;
+    adminDraft[i].text = card.querySelector('.q-text').value;
+    adminDraft[i].options = $$('.opt-input', card).map(inp => inp.value);
+    const checked = card.querySelector('input[type="radio"]:checked');
+    if (checked) adminDraft[i].correct = Number(checked.value);
+  });
+}
+
+$('#adminQuestions').addEventListener('click', (e) => {
+  const addBtn = e.target.closest('[data-addopt]');
+  if (addBtn) {
+    syncDraftFromDOM();
+    const i = Number(addBtn.dataset.addopt);
+    if (adminDraft[i].options.length < 8) {
+      adminDraft[i].options.push('');
+      paintAdminQuestions();
+    }
+    return;
+  }
+
+  const delOptBtn = e.target.closest('[data-delopt]');
+  if (delOptBtn) {
+    syncDraftFromDOM();
+    const i = Number(delOptBtn.dataset.delopt);
+    if (adminDraft[i].options.length > 2) {
+      adminDraft[i].options.pop();
+      if (adminDraft[i].correct >= adminDraft[i].options.length) adminDraft[i].correct = 0;
+      paintAdminQuestions();
+    }
+    return;
+  }
+
+  const delBtn = e.target.closest('[data-del]');
+  if (delBtn) {
+    if (confirm('Delete this question? This cannot be undone after saving.')) {
+      syncDraftFromDOM();
+      adminDraft.splice(Number(delBtn.dataset.del), 1);
+      paintAdminQuestions();
+    }
+  }
+});
+
+$('#btnAddQuestion').addEventListener('click', () => {
+  syncDraftFromDOM();
+  adminDraft.push({ id: uid(), text: '', options: ['', '', '', ''], correct: 0 });
+  paintAdminQuestions();
+  const last = $('#adminQuestions').lastElementChild;
+  if (last) last.scrollIntoView({ behavior: 'smooth', block: 'center' });
+});
+
+$('#btnSaveQuestions').addEventListener('click', async (e) => {
+  syncDraftFromDOM();
+
+  const cleaned = [];
+  let skipped = 0;
+
+  adminDraft.forEach(q => {
+    const text = (q.text || '').trim();
+    const options = [];
+    let correct = 0;
+
+    q.options.forEach((o, i) => {
+      const v = (o || '').trim();
+      if (v) {
+        if (i === q.correct) correct = options.length;
+        options.push(v);
+      }
+    });
+
+    if (text && options.length >= 2) {
+      cleaned.push({
+        id: q.id || uid(),
+        text,
+        options,
+        correct_index: Math.min(correct, options.length - 1)
+      });
+    } else {
+      skipped++;
+    }
+  });
+
+  if (!cleaned.length) {
+    alert('No valid questions to save. Each question needs text and at least 2 options.');
+    return;
+  }
+
+  const btn = e.target;
+  btn.textContent = 'Saving...';
+  btn.disabled = true;
+
+  // 1. Delete all existing questions
+  await supabaseClient.from('questions').delete().neq('id', '0');
+  
+  // 2. Insert the new ones
+  const { error } = await supabaseClient.from('questions').insert(cleaned);
+  
+  btn.textContent = 'Save All Changes';
+  btn.disabled = false;
+
+  if (error) {
+    console.error('Save failed:', error);
+    alert('Error saving to database: ' + error.message);
+  } else {
+    alert(`Saved ${cleaned.length} question(s) to the database.` + (skipped ? `\n${skipped} incomplete question(s) were skipped.` : ''));
+    loadAdminQuestions();
+  }
+});
+
+$('#btnRestoreQuestions').addEventListener('click', async () => {
+  if (!confirm('Restore the default 20-question bank? All custom questions will be replaced.')) return;
+  
+  const btn = $('#btnRestoreQuestions');
+  btn.textContent = 'Restoring...';
+  btn.disabled = true;
+
+  await supabaseClient.from('questions').delete().neq('id', '0');
+  
+  const seeds = DEFAULT_QUESTIONS.map(q => ({
+    id: q.id,
+    text: q.text,
+    options: q.options,
+    correct_index: q.correct
+  }));
+  
+  await supabaseClient.from('questions').insert(seeds);
+
+  btn.textContent = 'Restore Default Bank';
+  btn.disabled = false;
+  
+  alert('Default question bank restored.');
+  loadAdminQuestions();
+});
+
+/* ============================================================
+   13. ADMIN — SUBMISSIONS
+   ============================================================ */
+async function renderSubmissions() {
+  const wrap = $('#adminSubs');
+  wrap.innerHTML = '<p class="hint">Loading submissions from database...</p>';
+
+  const { data, error } = await supabaseClient
+    .from('submissions')
+    .select('*')
+    .order('submitted_at', { ascending: false });
+
+  if (error || !data) {
+    wrap.innerHTML = '<p class="hint" style="color:var(--danger)">Error loading submissions. Check console.</p>';
+    return;
+  }
+
+  if (data.length === 0) {
+    wrap.innerHTML = '<p class="hint">No assessment submissions recorded yet.</p>';
+    return;
+  }
+
+  const rows = data.map((s) => `
+    <tr>
+      <td>${escapeHtml(new Date(s.submitted_at).toLocaleString())}</td>
+      <td>${escapeHtml(s.full_name)}</td>
+      <td>${escapeHtml(s.email)}</td>
+      <td>${escapeHtml(s.pf_number)}</td>
+      <td>${escapeHtml(s.region)}</td>
+      <td>${escapeHtml(s.branch)}</td>
+      <td><span class="pill ${s.mode === 'pre' ? 'pre' : ''}">${s.mode === 'pre' ? 'Pre' : 'Post'}</span></td>
+      <td><strong>${s.score}%</strong> (${s.correct_count}/${s.total_questions})</td>
+      <td>${s.score >= 50 ? escapeHtml(getLevel(s.score).name) : '—'}</td>
+      <td><button class="btn-mini" type="button" data-view="${escapeHtml(s.id)}">View</button></td>
+    </tr>`).join('');
+
+  wrap.innerHTML = `
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Submitted</th><th>Name</th><th>Email</th><th>PF No.</th>
+            <th>Region</th><th>Branch</th><th>Type</th><th>Score</th><th>Level</th><th></th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
+}
+
+$('#adminSubs').addEventListener('click', async (e) => {
+  const btn = e.target.closest('[data-view]');
+  if (!btn) return;
+  
+  const id = btn.dataset.view;
+  btn.textContent = '...';
+
+  const { data, error } = await supabaseClient
+    .from('submissions')
+    .select('*')
+    .eq('id', id)
+    .single();
+
+  btn.textContent = 'View';
+
+  if (!error && data) {
+    // map DB fields to frontend expected names
+    data.correct = data.correct_count;
+    data.total = data.total_questions;
+    data.levelNumber = data.score >= 50 ? getLevel(data.score).n : null;
+    data.levelName = data.score >= 50 ? getLevel(data.score).name : null;
+    openSubmissionModal(data);
+  }
+});
+
+function openSubmissionModal(sub) {
+  $('#modalBody').innerHTML = `
+    <h2 style="margin:0 0 4px;font-size:1.15rem">${escapeHtml(sub.full_name)}</h2>
+    <p class="hint" style="margin:0 0 18px">
+      ${escapeHtml(sub.email)} · PF ${escapeHtml(sub.pf_number)}<br />
+      ${escapeHtml(sub.region)} · ${escapeHtml(sub.branch)}<br />
+      ${sub.mode === 'pre' ? 'Pre-Training' : 'Post-Training'} Assessment ·
+      ${escapeHtml(new Date(sub.submitted_at).toLocaleString())}
+    </p>
+    <div class="level-badge" style="margin-bottom:18px">
+      <span class="medal">${sub.score}%</span>
+      <div>
+        <strong>${sub.levelName ? 'Level ' + sub.levelNumber + ' – ' + escapeHtml(sub.levelName) : 'No level achieved'}</strong>
+        <small>${sub.correct} of ${sub.total} correct</small>
+      </div>
+    </div>
+    <div class="review">
+      ${sub.answers.map((a, i) => `
+        <div class="review-item">
+          <div class="rq">${i + 1}. ${escapeHtml(a.question)}</div>
+          <p class="ra ${a.isCorrect ? 'ok' : 'no'}">
+            Selected: <b>${escapeHtml(a.selectedText ?? 'Not answered')}</b> ${a.isCorrect ? '✓' : '✗'}
+          </p>
+          ${a.isCorrect ? '' : `<p class="ra ok">Correct: <b>${escapeHtml(a.correctText)}</b></p>`}
+        </div>`).join('')}
+    </div>`;
+  $('#modal').hidden = false;
+}
+
+$('#modalClose').addEventListener('click', () => { $('#modal').hidden = true; });
+$('#modal').addEventListener('click', (e) => { if (e.target.id === 'modal') $('#modal').hidden = true; });
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && !$('#modal').hidden) $('#modal').hidden = true;
+});
+
+$('#btnExportCsv').addEventListener('click', async () => {
+  const btn = $('#btnExportCsv');
+  btn.textContent = 'Exporting...';
+  
+  const { data, error } = await supabaseClient
+    .from('submissions')
+    .select('*')
+    .order('submitted_at', { ascending: false });
+
+  btn.textContent = 'Export CSV';
+
+  if (error || !data || data.length === 0) { 
+    alert('No records to export or error fetching data.'); 
+    return; 
+  }
+
+  const head = [
+    'Submitted At', 'Full Name', 'Maybank Email', 'PF Number', 'Region', 'Branch',
+    'Assessment Type', 'Score (%)', 'Correct', 'Total', 'Level'
+  ];
+  const rows = data.map(s => [
+    new Date(s.submitted_at).toLocaleString(),
+    s.full_name, s.email, s.pf_number, s.region, s.branch,
+    s.mode === 'pre' ? 'Pre-Training' : 'Post-Training',
+    s.score, s.correct_count, s.total_questions,
+    s.score >= 50 ? getLevel(s.score).name : '-'
+  ]);
+
+  const csv = [head, ...rows]
+    .map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(','))
+    .join('\r\n');
+
+  download(`m2e-submissions-${new Date().toISOString().slice(0, 10)}.csv`, csv);
+});
+
+$('#btnClearSubs').addEventListener('click', async () => {
+  if (!confirm('Permanently delete ALL submitted assessment records from the database?')) return;
+  
+  const btn = $('#btnClearSubs');
+  btn.textContent = 'Clearing...';
+  
+  await supabaseClient.from('submissions').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+  
+  btn.textContent = 'Clear All Records';
+  renderSubmissions();
+});
+
+/* ============================================================
+   14. ADMIN — SETTINGS
+   ============================================================ */
+function fillSettingsForm() {
+  const s = loadSettings();
+  $('#setGate').value = s.gatePassword;
+  $('#setAdmin').value = s.adminPassword;
+  $('#setDuration').value = s.durationMinutes;
+  $('#setCount').value = s.questionsPerAssessment;
+}
+
+$('#settingsForm').addEventListener('submit', (e) => {
+  e.preventDefault();
+  const s = loadSettings();
+
+  const gate = $('#setGate').value.trim();
+  const admin = $('#setAdmin').value.trim();
+  const duration = Number($('#setDuration').value);
+  const count = Number($('#setCount').value);
+
+  if (!gate || !admin) { alert('Passwords cannot be empty.'); return; }
+  if (!Number.isFinite(duration) || duration < 1 || duration > 60) {
+    alert('Duration must be between 1 and 60 minutes.'); return;
+  }
+  if (!Number.isFinite(count) || count < 1) {
+    alert('Questions per assessment must be at least 1.'); return;
+  }
+
+  saveSettings({
+    gatePassword: gate,
+    adminPassword: admin,
+    durationMinutes: duration,
+    questionsPerAssessment: count
+  });
+
+  alert('Settings saved to local browser.');
+});
+
+/* ============================================================
+   15. INIT
+   ============================================================ */
+(function init() {
+  initGate();
+})();
+</script>
+</body>
+</html>

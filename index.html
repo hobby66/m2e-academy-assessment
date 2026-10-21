@@ -749,11 +749,15 @@ tbody tr:hover{background:#0b0b0b}
         <!-- Admin login -->
         <div id="adminLogin" class="form-card">
           <h2>Administrator Access</h2>
-          <p class="form-sub">Manage questions, correct answers and submitted results.</p>
+          <p class="form-sub">Authorized Maybank personnel only.</p>
           <form id="adminLoginForm" novalidate>
             <div class="field">
-              <label for="adminPwd">Administrator Password</label>
-              <input id="adminPwd" type="password" autocomplete="off" placeholder="Enter admin password" />
+              <label for="adminEmail">Admin Email</label>
+              <input id="adminEmail" type="email" autocomplete="username" placeholder="name@maybank.com" />
+            </div>
+            <div class="field">
+              <label for="adminPwd">Password</label>
+              <input id="adminPwd" type="password" autocomplete="current-password" placeholder="Enter secure password" />
               <span class="err" id="adminErr" role="alert"></span>
             </div>
             <div class="quiz-nav" style="margin-top:6px">
@@ -769,7 +773,7 @@ tbody tr:hover{background:#0b0b0b}
             <button type="button" class="active" data-tab="questions">Questions</button>
             <button type="button" data-tab="submissions">Submissions</button>
             <button type="button" data-tab="settings">Settings</button>
-            <button type="button" id="btnAdminExit" style="margin-left:auto">Exit Admin</button>
+            <button type="button" id="btnAdminLogout" style="margin-left:auto; color:var(--danger)">Logout</button>
           </div>
 
           <!-- Questions tab -->
@@ -799,7 +803,7 @@ tbody tr:hover{background:#0b0b0b}
             <div class="form-card" style="margin:0; max-width:560px">
               <h2 style="font-size:1.1rem">Application Settings</h2>
               <p class="hint" style="margin-bottom:16px; color:#ffd233;">
-                Note: Passwords are now securely managed in the Supabase Database. You must change them using the Supabase SQL Editor.
+                Note: Passwords are securely managed via Supabase Auth.
               </p>
               <form id="settingsForm">
                 <div class="field">
@@ -1388,62 +1392,74 @@ function renderResult(sub) {
 }
 
 /* ============================================================
-   11. ADMIN — LOGIN (Secure via Supabase RPC)
+   11. ADMIN — SECURE LOGIN (Supabase Auth)
    ============================================================ */
 let adminDraft = null;
 
-$('#btnAdminOpen').addEventListener('click', () => {
+$('#btnAdminOpen').addEventListener('click', async () => {
   showScreen('scrAdmin');
-  $('#adminLogin').hidden = false;
-  $('#adminConsole').hidden = true;
-  $('#adminPwd').value = '';
-  $('#adminErr').textContent = '';
-  setTimeout(() => $('#adminPwd').focus(), 150);
+  
+  // Check if Supabase has an active session
+  const { data: { session } } = await supabaseClient.auth.getSession();
+  
+  if (session) {
+    // User is already logged in securely
+    $('#adminLogin').hidden = true;
+    $('#adminConsole').hidden = false;
+    openAdminTab('questions');
+  } else {
+    // Not logged in, show the email/password form
+    $('#adminLogin').hidden = false;
+    $('#adminConsole').hidden = true;
+    $('#adminEmail').value = '';
+    $('#adminPwd').value = '';
+    $('#adminErr').textContent = '';
+    setTimeout(() => $('#adminEmail').focus(), 150);
+  }
 });
 
 $('#btnAdminBack').addEventListener('click', () => showScreen('scrLanding'));
-$('#btnAdminExit').addEventListener('click', () => showScreen('scrLanding'));
+
+$('#btnAdminLogout').addEventListener('click', async () => {
+  await supabaseClient.auth.signOut();
+  showScreen('scrLanding');
+});
 
 $('#adminLoginForm').addEventListener('submit', async (e) => {
   e.preventDefault();
+  const email = $('#adminEmail').value.trim();
   const pwd = $('#adminPwd').value.trim();
   const errEl = $('#adminErr');
   const submitBtn = e.target.querySelector('button[type="submit"]');
 
-  if (!pwd) {
-    errEl.textContent = 'Please enter the administrator password.';
+  if (!email || !pwd) {
+    errEl.textContent = 'Please enter your email and password.';
     return;
   }
 
-  submitBtn.textContent = 'Verifying...';
+  submitBtn.textContent = 'Authenticating...';
   submitBtn.disabled = true;
   errEl.textContent = '';
 
-  // Secure check against Supabase Database
-  const { data: isMatch, error } = await supabaseClient.rpc('verify_app_password', {
-    input_password: pwd,
-    role: 'admin'
+  // Authenticate with Supabase Auth
+  const { data, error } = await supabaseClient.auth.signInWithPassword({
+    email: email,
+    password: pwd
   });
 
   submitBtn.textContent = 'Sign In';
   submitBtn.disabled = false;
 
   if (error) {
-    errEl.textContent = 'Connection error. Please try again.';
-    console.error(error);
+    errEl.textContent = error.message;
     return;
   }
 
-  if (isMatch === true) {
-    errEl.textContent = '';
-    $('#adminPwd').value = '';
-    $('#adminLogin').hidden = true;
-    $('#adminConsole').hidden = false;
-    openAdminTab('questions');
-  } else {
-    errEl.textContent = 'Incorrect administrator password.';
-    $('#adminPwd').select();
-  }
+  // Success
+  $('#adminPwd').value = '';
+  $('#adminLogin').hidden = true;
+  $('#adminConsole').hidden = false;
+  openAdminTab('questions');
 });
 
 $$('.admin-tabs [data-tab]').forEach(btn => {
@@ -1649,6 +1665,7 @@ async function renderSubmissions() {
 
   if (error || !data) {
     wrap.innerHTML = '<p class="hint" style="color:var(--danger)">Error loading submissions. Check console.</p>';
+    console.error('Submissions error:', error);
     return;
   }
 

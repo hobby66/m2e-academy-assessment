@@ -918,7 +918,7 @@ function saveSettings(s) {
 }
 
 /* ============================================================
-   3. DEFAULT QUESTIONS (Used if Database is empty)
+   3. DEFAULT QUESTIONS (Used for Admin Restore)
    ============================================================ */
 const DEFAULT_QUESTIONS = [
   { id: 'q01', text: 'Maybank2E (M2E) is best described as:', options: ['A personal savings account product', 'A regional cash management and internet banking platform for businesses', 'A credit card rewards programme', 'A remittance-only mobile app'], correct: 1 },
@@ -956,36 +956,31 @@ const getLevel = (score) => LEVELS.find(l => score >= l.min) || null;
 /* ============================================================
    4. SUPABASE DATA FETCHING
    ============================================================ */
-async function fetchQuestionsFromDB() {
-  const { data, error } = await supabaseClient.from('questions').select('*');
-  
-  if (error) {
-    console.error('Error fetching questions:', error);
-    alert('Could not load questions from the database. Check the console for details.');
-    return [];
-  }
-  
-  // If DB is empty, seed it with defaults
-  if (data.length === 0) {
-    console.log('Seeding default questions to database...');
-    const seeds = DEFAULT_QUESTIONS.map(q => ({
+async function fetchQuestionsFromDB(isAdmin = false) {
+  if (isAdmin) {
+    // Admins fetch directly from the table to see correct answers for editing
+    const { data, error } = await supabaseClient.from('questions').select('*');
+    if (error) {
+      console.error('Error fetching questions for admin:', error);
+      return [];
+    }
+    return data.map(q => ({
       id: q.id,
       text: q.text,
       options: q.options,
-      correct_index: q.correct
+      correct: q.correct_index
     }));
-    const { error: seedError } = await supabaseClient.from('questions').insert(seeds);
-    if (seedError) console.error('Failed to seed:', seedError);
-    return DEFAULT_QUESTIONS;
+  } else {
+    // Participants fetch via RPC to secure the correct answers
+    const { data, error } = await supabaseClient.rpc('get_questions_for_participant');
+    if (error) {
+      console.error('Error fetching questions for participant:', error);
+      alert('Could not load questions from the database. Check console.');
+      return [];
+    }
+    // The RPC returns a JSON array
+    return data || [];
   }
-
-  // Map DB structure back to frontend structure
-  return data.map(q => ({
-    id: q.id,
-    text: q.text,
-    options: q.options,
-    correct: q.correct_index
-  }));
 }
 
 /* ============================================================
@@ -1037,7 +1032,6 @@ function initGate() {
     btn.disabled = true;
     errEl.textContent = '';
 
-    // Secure check against Supabase Database
     const { data: isMatch, error } = await supabaseClient.rpc('verify_app_password', {
       input_password: input,
       role: 'gate'
@@ -1165,10 +1159,11 @@ $('#regForm').addEventListener('submit', async (e) => {
    ============================================================ */
 async function startAssessment() {
   const settings = loadSettings();
-  const bank = await fetchQuestionsFromDB();
+  // Fetch securely (without correct answers)
+  const bank = await fetchQuestionsFromDB(false);
   
   if (bank.length === 0) {
-    alert('Cannot start assessment. No questions available in the database.');
+    alert('Cannot start assessment. No questions available in the database. Please contact the administrator.');
     showScreen('scrLanding');
     return;
   }
@@ -1260,52 +1255,43 @@ async function submitAssessment(auto) {
 
   clearInterval(state.timerId);
 
-  let correctCount = 0;
-  const detail = state.questions.map((q, i) => {
-    const selected = state.answers[i];
-    const isCorrect = selected === q.correct;
-    if (isCorrect) correctCount++;
-    return {
-      questionId: q.id,
-      question: q.text,
-      options: q.options.slice(),
-      selectedIndex: selected,
-      selectedText: selected === null ? null : q.options[selected],
-      correctIndex: q.correct,
-      correctText: q.options[q.correct],
-      isCorrect
-    };
-  });
+  // Prepare payload for secure RPC
+  const answersPayload = state.questions.map((q, i) => ({
+    questionId: q.id,
+    selectedIndex: state.answers[i]
+  }));
 
-  const total = state.questions.length;
-  const score = total ? Math.round((correctCount / total) * 100) : 0;
-  const level = getLevel(score);
-
-  const submission = {
-    full_name: state.participant.fullName,
-    region: state.participant.region,
-    branch: state.participant.branch,
-    email: state.participant.email,
-    pf_number: state.participant.pfNumber,
-    mode: state.mode,
-    score,
-    correct_count: correctCount,
-    total_questions: total,
-    answers: detail,
-    submitted_at: new Date().toISOString()
-  };
-
-  $('#qText').textContent = "Saving results to database...";
+  $('#qText').textContent = "Saving and scoring securely...";
   $('#options').innerHTML = "";
 
-  const { error } = await supabaseClient.from('submissions').insert([submission]);
+  const { data, error } = await supabaseClient.rpc('submit_assessment', {
+    p_full_name: state.participant.fullName,
+    p_region: state.participant.region,
+    p_branch: state.participant.branch,
+    p_email: state.participant.email,
+    p_pf_number: state.participant.pfNumber,
+    p_mode: state.mode,
+    p_answers: answersPayload
+  });
   
   if (error) {
     console.error('Error saving submission:', error);
     alert('There was an error saving your result to the database. Please contact the administrator.');
+    showScreen('scrLanding');
+    return;
   }
 
-  state.lastSubmission = { ...submission, id: 'local', levelNumber: level ? level.n : null, levelName: level ? level.name : null, correct: correctCount, total, durationSec: Math.max(0, Math.round((Date.now() - state.startedAt) / 1000)) };
+  // Data returned from the RPC contains the secure score and breakdown
+  const level = getLevel(data.score);
+  
+  state.lastSubmission = { 
+    ...data, 
+    full_name: state.participant.fullName,
+    mode: state.mode,
+    levelNumber: level ? level.n : null,
+    levelName: level ? level.name : null,
+    durationSec: Math.max(0, Math.round((Date.now() - state.startedAt) / 1000))
+  };
   
   renderResult(state.lastSubmission);
 }
@@ -1344,7 +1330,7 @@ function renderResult(sub) {
         <h1>Assessment Complete</h1>
 
         <div class="score-ring" style="--p:${sub.score}%"><span>${sub.score}%</span></div>
-        <p class="result-score">${sub.correct} of ${sub.total} answers correct · ${escapeHtml(sub.full_name)}</p>
+        <p class="result-score">${sub.correct_count} of ${sub.total} answers correct · ${escapeHtml(sub.full_name)}</p>
 
         ${levelBlock}
         ${reviewNote}
@@ -1392,23 +1378,20 @@ function renderResult(sub) {
 }
 
 /* ============================================================
-   11. ADMIN — SECURE LOGIN (Supabase Auth)
+   11. ADMIN — SECURE LOGIN
    ============================================================ */
 let adminDraft = null;
 
 $('#btnAdminOpen').addEventListener('click', async () => {
   showScreen('scrAdmin');
   
-  // Check if Supabase has an active session
   const { data: { session } } = await supabaseClient.auth.getSession();
   
   if (session) {
-    // User is already logged in securely
     $('#adminLogin').hidden = true;
     $('#adminConsole').hidden = false;
     openAdminTab('questions');
   } else {
-    // Not logged in, show the email/password form
     $('#adminLogin').hidden = false;
     $('#adminConsole').hidden = true;
     $('#adminEmail').value = '';
@@ -1441,7 +1424,6 @@ $('#adminLoginForm').addEventListener('submit', async (e) => {
   submitBtn.disabled = true;
   errEl.textContent = '';
 
-  // Authenticate with Supabase Auth
   const { data, error } = await supabaseClient.auth.signInWithPassword({
     email: email,
     password: pwd
@@ -1455,7 +1437,6 @@ $('#adminLoginForm').addEventListener('submit', async (e) => {
     return;
   }
 
-  // Success
   $('#adminPwd').value = '';
   $('#adminLogin').hidden = true;
   $('#adminConsole').hidden = false;
@@ -1482,7 +1463,8 @@ function openAdminTab(tab) {
    ============================================================ */
 async function loadAdminQuestions() {
   $('#adminQuestions').innerHTML = '<p class="hint">Loading questions from database...</p>';
-  const qs = await fetchQuestionsFromDB();
+  // Admin fetches securely with correct answers
+  const qs = await fetchQuestionsFromDB(true); 
   adminDraft = qs.map(q => ({
     id: q.id || uid(),
     text: q.text,

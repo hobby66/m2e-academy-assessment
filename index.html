@@ -637,7 +637,7 @@ tbody tr:hover{background:#0b0b0b}
     </section>
 
     <!-- ========================================================
-         SCREEN 2 — REGISTRATION (scrRegistration)
+         SCREEN 2 — REGISTRATION
          ======================================================== -->
     <section id="scrRegistration" hidden>
       <div class="container" style="padding-top:34px">
@@ -798,15 +798,10 @@ tbody tr:hover{background:#0b0b0b}
           <div id="tabSettings" hidden>
             <div class="form-card" style="margin:0; max-width:560px">
               <h2 style="font-size:1.1rem">Application Settings</h2>
+              <p class="hint" style="margin-bottom:16px; color:#ffd233;">
+                Note: Passwords are now securely managed in the Supabase Database. You must change them using the Supabase SQL Editor.
+              </p>
               <form id="settingsForm">
-                <div class="field">
-                  <label for="setGate">Landing Page Access Password</label>
-                  <input id="setGate" type="text" autocomplete="off" />
-                </div>
-                <div class="field">
-                  <label for="setAdmin">Administrator Password</label>
-                  <input id="setAdmin" type="text" autocomplete="off" />
-                </div>
                 <div class="field">
                   <label for="setDuration">Assessment Duration (minutes)</label>
                   <input id="setDuration" type="number" min="1" max="60" inputmode="numeric" />
@@ -817,9 +812,6 @@ tbody tr:hover{background:#0b0b0b}
                 </div>
                 <button class="btn btn-primary btn-sm" type="submit">Save Settings</button>
               </form>
-              <p class="hint" style="margin-top:18px">
-                Note: Passwords and duration are saved in this browser's local storage. Questions and submissions are saved to the Supabase cloud database.
-              </p>
             </div>
           </div>
 
@@ -858,7 +850,6 @@ tbody tr:hover{background:#0b0b0b}
 /* ============================================================
    0. SUPABASE INITIALIZATION
    ============================================================ */
-// REPLACE THESE WITH YOUR ACTUAL SUPABASE URL AND PUBLISHABLE KEY
 const SUPABASE_URL = 'https://yxcfocpcdddmwpagkjcv.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_aZZt2F2GML9bf2Bp-ZJqjg_VMAcMdhr';
 
@@ -898,15 +889,13 @@ function download(filename, content, mime = 'text/csv;charset=utf-8;') {
 }
 
 /* ============================================================
-   2. LOCAL STORAGE (for settings only)
+   2. LOCAL STORAGE (for non-sensitive settings)
    ============================================================ */
 const KEYS = {
   settings: 'm2e.settings.v1'
 };
 
 const DEFAULT_SETTINGS = {
-  gatePassword: 'M2E2024',
-  adminPassword: 'M2Eadmin2024',
   durationMinutes: 5,
   questionsPerAssessment: 20
 };
@@ -1009,7 +998,7 @@ function showScreen(id) {
 }
 
 /* ============================================================
-   6. PASSWORD GATE
+   6. PASSWORD GATE (Secure via Supabase RPC)
    ============================================================ */
 const GATE_SESSION_KEY = 'm2e.unlocked';
 
@@ -1029,17 +1018,37 @@ function initGate() {
   $('#app').hidden = true;
   setTimeout(() => $('#gatePwd').focus(), 250);
 
-  $('#gateForm').addEventListener('submit', (e) => {
+  $('#gateForm').addEventListener('submit', async (e) => {
     e.preventDefault();
-    const settings = loadSettings();
     const input = $('#gatePwd').value.trim();
     const errEl = $('#gateErr');
+    const btn = e.target.querySelector('button[type="submit"]');
 
     if (!input) {
       errEl.textContent = 'Please enter the access password.';
       return;
     }
-    if (input.toLowerCase() === String(settings.gatePassword).toLowerCase()) {
+
+    btn.textContent = 'Verifying...';
+    btn.disabled = true;
+    errEl.textContent = '';
+
+    // Secure check against Supabase Database
+    const { data: isMatch, error } = await supabaseClient.rpc('verify_app_password', {
+      input_password: input,
+      role: 'gate'
+    });
+
+    btn.textContent = 'Unlock';
+    btn.disabled = false;
+
+    if (error) {
+      errEl.textContent = 'Connection error. Please try again.';
+      console.error(error);
+      return;
+    }
+
+    if (isMatch === true) {
       errEl.textContent = '';
       $('#gatePwd').value = '';
       unlockApp();
@@ -1282,11 +1291,9 @@ async function submitAssessment(auto) {
     submitted_at: new Date().toISOString()
   };
 
-  // Show loading state
   $('#qText').textContent = "Saving results to database...";
   $('#options').innerHTML = "";
 
-  // Save to Supabase
   const { error } = await supabaseClient.from('submissions').insert([submission]);
   
   if (error) {
@@ -1294,7 +1301,6 @@ async function submitAssessment(auto) {
     alert('There was an error saving your result to the database. Please contact the administrator.');
   }
 
-  // Attach generated ID locally for the result screen
   state.lastSubmission = { ...submission, id: 'local', levelNumber: level ? level.n : null, levelName: level ? level.name : null, correct: correctCount, total, durationSec: Math.max(0, Math.round((Date.now() - state.startedAt) / 1000)) };
   
   renderResult(state.lastSubmission);
@@ -1382,7 +1388,7 @@ function renderResult(sub) {
 }
 
 /* ============================================================
-   11. ADMIN — LOGIN & TABS
+   11. ADMIN — LOGIN (Secure via Supabase RPC)
    ============================================================ */
 let adminDraft = null;
 
@@ -1398,18 +1404,45 @@ $('#btnAdminOpen').addEventListener('click', () => {
 $('#btnAdminBack').addEventListener('click', () => showScreen('scrLanding'));
 $('#btnAdminExit').addEventListener('click', () => showScreen('scrLanding'));
 
-$('#adminLoginForm').addEventListener('submit', (e) => {
+$('#adminLoginForm').addEventListener('submit', async (e) => {
   e.preventDefault();
-  const settings = loadSettings();
   const pwd = $('#adminPwd').value.trim();
+  const errEl = $('#adminErr');
+  const submitBtn = e.target.querySelector('button[type="submit"]');
 
-  if (pwd.toLowerCase() === String(settings.adminPassword).toLowerCase()) {
-    $('#adminErr').textContent = '';
+  if (!pwd) {
+    errEl.textContent = 'Please enter the administrator password.';
+    return;
+  }
+
+  submitBtn.textContent = 'Verifying...';
+  submitBtn.disabled = true;
+  errEl.textContent = '';
+
+  // Secure check against Supabase Database
+  const { data: isMatch, error } = await supabaseClient.rpc('verify_app_password', {
+    input_password: pwd,
+    role: 'admin'
+  });
+
+  submitBtn.textContent = 'Sign In';
+  submitBtn.disabled = false;
+
+  if (error) {
+    errEl.textContent = 'Connection error. Please try again.';
+    console.error(error);
+    return;
+  }
+
+  if (isMatch === true) {
+    errEl.textContent = '';
+    $('#adminPwd').value = '';
     $('#adminLogin').hidden = true;
     $('#adminConsole').hidden = false;
     openAdminTab('questions');
   } else {
-    $('#adminErr').textContent = 'Incorrect administrator password.';
+    errEl.textContent = 'Incorrect administrator password.';
+    $('#adminPwd').select();
   }
 });
 
@@ -1561,10 +1594,8 @@ $('#btnSaveQuestions').addEventListener('click', async (e) => {
   btn.textContent = 'Saving...';
   btn.disabled = true;
 
-  // 1. Delete all existing questions
   await supabaseClient.from('questions').delete().neq('id', '0');
   
-  // 2. Insert the new ones
   const { error } = await supabaseClient.from('questions').insert(cleaned);
   
   btn.textContent = 'Save All Changes';
@@ -1670,7 +1701,6 @@ $('#adminSubs').addEventListener('click', async (e) => {
   btn.textContent = 'View';
 
   if (!error && data) {
-    // map DB fields to frontend expected names
     data.correct = data.correct_count;
     data.total = data.total_questions;
     data.levelNumber = data.score >= 50 ? getLevel(data.score).n : null;
@@ -1766,8 +1796,6 @@ $('#btnClearSubs').addEventListener('click', async () => {
    ============================================================ */
 function fillSettingsForm() {
   const s = loadSettings();
-  $('#setGate').value = s.gatePassword;
-  $('#setAdmin').value = s.adminPassword;
   $('#setDuration').value = s.durationMinutes;
   $('#setCount').value = s.questionsPerAssessment;
 }
@@ -1776,12 +1804,9 @@ $('#settingsForm').addEventListener('submit', (e) => {
   e.preventDefault();
   const s = loadSettings();
 
-  const gate = $('#setGate').value.trim();
-  const admin = $('#setAdmin').value.trim();
   const duration = Number($('#setDuration').value);
   const count = Number($('#setCount').value);
 
-  if (!gate || !admin) { alert('Passwords cannot be empty.'); return; }
   if (!Number.isFinite(duration) || duration < 1 || duration > 60) {
     alert('Duration must be between 1 and 60 minutes.'); return;
   }
@@ -1790,13 +1815,11 @@ $('#settingsForm').addEventListener('submit', (e) => {
   }
 
   saveSettings({
-    gatePassword: gate,
-    adminPassword: admin,
     durationMinutes: duration,
     questionsPerAssessment: count
   });
 
-  alert('Settings saved to local browser.');
+  alert('Timing settings saved to local browser.');
 });
 
 /* ============================================================

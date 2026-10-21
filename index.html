@@ -280,6 +280,15 @@ tbody tr:hover{background:#0b0b0b}
             <select id="topicSelect"><option value="">Loading topics...</option></select>
           </div>
 
+          <div class="field" style="margin-bottom:16px">
+            <label for="participantCategory">Participant Category</label>
+            <select id="participantCategory">
+              <option value="branch">Branch Staff</option>
+              <option value="tbc">TBC Participant</option>
+              <option value="other">Other Unit (HQ / IM / Sales / Support / MGCC / SME)</option>
+            </select>
+          </div>
+
           <div class="segmented" role="radiogroup">
             <label><input type="radio" name="mode" value="pre" checked /><span>Pre-Training</span></label>
             <label><input type="radio" name="mode" value="post" /><span>Post-Training</span></label>
@@ -287,21 +296,43 @@ tbody tr:hover{background:#0b0b0b}
 
           <form id="regForm" novalidate>
             <div class="field"><label for="fullName">Full Name</label><input id="fullName" type="text" placeholder="e.g. Nur Aisyah binti Ahmad" /><span class="err" id="errFullName"></span></div>
-            <div class="field">
+            
+            <div class="field" id="regionField">
               <label for="region">Region</label>
               <select id="region">
                 <option value="">— Select your region —</option>
-                <option value="Region 1 – Northern">Region 1 – Northern</option>
-                <option value="Region 2 – Central">Region 2 – Central</option>
-                <option value="Region 3 – Southern">Region 3 – Southern</option>
-                <option value="Region 4 – East Coast">Region 4 – East Coast</option>
-                <option value="Region 5 – Sabah">Region 5 – Sabah</option>
-                <option value="Region 6 – Sarawak">Region 6 – Sarawak</option>
-                <option value="Region 7 – Labuan">Region 7 – Labuan</option>
-                <option value="Region 8 – International">Region 8 – International</option>
-              </select><span class="err" id="errRegion"></span>
+                <option value="FT">FT</option>
+                <option value="SNS">SNS</option>
+                <option value="PKP">PKP</option>
+                <option value="PKT">PKT</option>
+                <option value="PRK">PRK</option>
+                <option value="JM">JM</option>
+                <option value="SBH">SBH</option>
+                <option value="SWK">SWK</option>
+              </select>
+              <span class="err" id="errRegion"></span>
             </div>
-            <div class="field"><label for="branch">Branch Name</label><input id="branch" type="text" placeholder="e.g. Menara Maybank Branch" /><span class="err" id="errBranch"></span></div>
+
+            <div class="field" id="branchField">
+              <label for="branch">Branch Name</label>
+              <input id="branch" type="text" placeholder="e.g. Menara Maybank Branch" />
+              <span class="err" id="errBranch"></span>
+            </div>
+
+            <div class="field" id="unitField" hidden>
+              <label for="otherUnit">Unit</label>
+              <select id="otherUnit">
+                <option value="">— Select your unit —</option>
+                <option value="Deposit & Funding">Deposit & Funding</option>
+                <option value="IM">IM</option>
+                <option value="Support">Support</option>
+                <option value="Sales">Sales</option>
+                <option value="MGCC">MGCC</option>
+                <option value="SME">SME</option>
+              </select>
+              <span class="err" id="errUnit"></span>
+            </div>
+
             <div class="field"><label for="email">Maybank Email Address</label><input id="email" type="email" placeholder="name@maybank.com" /><span class="err" id="errEmail"></span></div>
             <div class="field"><label for="pf">PF Number</label><input id="pf" type="text" inputmode="numeric" maxlength="12" placeholder="Numbers only" /><span class="err" id="errPf"></span></div>
             <div class="quiz-nav" style="margin-top:22px">
@@ -354,7 +385,7 @@ tbody tr:hover{background:#0b0b0b}
             <button type="button" id="btnAdminLogout" style="margin-left:auto; color:var(--danger)">Logout</button>
           </div>
 
-          <!-- Updated Topic Manager -->
+          <!-- Topic Manager -->
           <div class="form-card" style="margin:0 0 22px; max-width:100%; padding:16px 20px; display:flex; gap:16px; align-items:flex-start; flex-wrap:wrap;">
             <div class="field" style="margin:0; flex:1; min-width:200px;">
               <label for="adminTopicSelect">Active Topic</label>
@@ -530,21 +561,72 @@ $('#btnBegin').addEventListener('click', async () => {
 });
 $('#btnBackHome').addEventListener('click', () => showScreen('scrLanding'));
 
+// Conditional Logic for Participant Category
+$('#participantCategory').addEventListener('change', (e) => {
+  const cat = e.target.value;
+  const regionField = $('#regionField');
+  const branchField = $('#branchField');
+  const unitField = $('#unitField');
+
+  if (cat === 'branch') {
+    regionField.hidden = false;
+    branchField.hidden = false;
+    unitField.hidden = true;
+  } else if (cat === 'tbc') {
+    regionField.hidden = false;
+    branchField.hidden = true;
+    unitField.hidden = true;
+  } else if (cat === 'other') {
+    regionField.hidden = true;
+    branchField.hidden = true;
+    unitField.hidden = false;
+  }
+});
+
 const EMAIL_RE = /^[A-Za-z0-9._%+-]+@maybank\.com$/i; const PF_RE = /^\d{4,12}$/;
 function setFieldError(inputId, errId, message) { const input = document.getElementById(inputId); const err = document.getElementById(errId); if (message) { input.classList.add('invalid'); err.textContent = message; } else { input.classList.remove('invalid'); err.textContent = ''; } }
 
 $('#regForm').addEventListener('submit', async (e) => {
   e.preventDefault(); let ok = true;
-  const topicId = $('#topicSelect').value; const fullName = $('#fullName').value.trim(); const region = $('#region').value;
-  const branch = $('#branch').value.trim(); const email = $('#email').value.trim(); const pf = $('#pf').value.trim();
+  const category = $('#participantCategory').value;
+  const topicId = $('#topicSelect').value; const fullName = $('#fullName').value.trim(); 
+  const region = $('#region').value;
+  const branch = $('#branch').value.trim(); 
+  const otherUnit = $('#otherUnit').value;
+  const email = $('#email').value.trim(); const pf = $('#pf').value.trim();
+  
   if (!topicId) { alert('Please select a topic.'); ok = false; }
   if (fullName.length < 3) { setFieldError('fullName', 'errFullName', 'Enter full name.'); ok = false; } else setFieldError('fullName', 'errFullName', '');
-  if (!region) { setFieldError('region', 'errRegion', 'Select region.'); ok = false; } else setFieldError('region', 'errRegion', '');
-  if (branch.length < 2) { setFieldError('branch', 'errBranch', 'Enter branch.'); ok = false; } else setFieldError('branch', 'errBranch', '');
+  
+  // Category specific validation
+  if (category === 'branch') {
+    if (!region) { setFieldError('region', 'errRegion', 'Select region.'); ok = false; } else setFieldError('region', 'errRegion', '');
+    if (branch.length < 2) { setFieldError('branch', 'errBranch', 'Enter branch.'); ok = false; } else setFieldError('branch', 'errBranch', '');
+  } else if (category === 'tbc') {
+    if (!region) { setFieldError('region', 'errRegion', 'Select region.'); ok = false; } else setFieldError('region', 'errRegion', '');
+  } else if (category === 'other') {
+    if (!otherUnit) { setFieldError('otherUnit', 'errUnit', 'Select unit.'); ok = false; } else setFieldError('otherUnit', 'errUnit', '');
+  }
+
   if (!EMAIL_RE.test(email)) { setFieldError('email', 'errEmail', 'Valid @maybank.com required.'); ok = false; } else setFieldError('email', 'errEmail', '');
   if (!PF_RE.test(pf)) { setFieldError('pf', 'errPf', 'Numeric PF required.'); ok = false; } else setFieldError('pf', 'errPf', '');
   if (!ok) return;
-  state.topicId = topicId; state.mode = ($('input[name="mode"]:checked') || {}).value || 'pre'; state.participant = { fullName, region, branch, email, pfNumber: pf };
+
+  // Map variables for database submission
+  let finalRegion = region;
+  let finalBranch = branch;
+
+  if (category === 'tbc') {
+    finalBranch = 'TBC';
+  } else if (category === 'other') {
+    finalRegion = 'N/A';
+    finalBranch = otherUnit;
+  }
+
+  state.topicId = topicId; 
+  state.mode = ($('input[name="mode"]:checked') || {}).value || 'pre'; 
+  state.participant = { fullName, region: finalRegion, branch: finalBranch, email, pfNumber: pf };
+  
   const submitBtn = e.target.querySelector('button[type="submit"]'); submitBtn.textContent = 'Loading...'; submitBtn.disabled = true;
   await startAssessment(); submitBtn.textContent = 'Start Assessment'; submitBtn.disabled = false;
 });
@@ -736,7 +818,7 @@ async function renderSubmissions() {
   if (error || !data) { wrap.innerHTML = '<p class="hint" style="color:var(--danger)">Error loading.</p>'; return; }
   if (data.length === 0) { wrap.innerHTML = '<p class="hint">No submissions yet.</p>'; return; }
   const rows = data.map(s => `<tr><td>${escapeHtml(new Date(s.submitted_at).toLocaleString())}</td><td>${escapeHtml(s.full_name)}</td><td>${escapeHtml(s.email)}</td><td>${escapeHtml(s.pf_number)}</td><td>${escapeHtml(s.region)}</td><td>${escapeHtml(s.branch)}</td><td><span class="pill ${s.mode === 'pre' ? 'pre' : ''}">${s.mode === 'pre' ? 'Pre' : 'Post'}</span></td><td><strong>${s.score}%</strong> (${s.correct_count}/${s.total_questions})</td><td>${s.score >= 50 ? escapeHtml(getLevel(s.score).name) : '—'}</td><td><button class="btn-mini" type="button" data-view="${escapeHtml(s.id)}">View</button></td></tr>`).join('');
-  wrap.innerHTML = `<div class="table-wrap"><table><thead><tr><th>Submitted</th><th>Name</th><th>Email</th><th>PF</th><th>Region</th><th>Branch</th><th>Type</th><th>Score</th><th>Level</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>`;
+  wrap.innerHTML = `<div class="table-wrap"><table><thead><tr><th>Submitted</th><th>Name</th><th>Email</th><th>PF</th><th>Region</th><th>Branch/Unit</th><th>Type</th><th>Score</th><th>Level</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>`;
 }
 $('#adminSubs').addEventListener('click', async (e) => {
   const btn = e.target.closest('[data-view]'); if (!btn) return; const id = btn.dataset.view; btn.textContent = '...';
@@ -753,7 +835,7 @@ $('#btnExportCsv').addEventListener('click', async () => {
   if (!currentAdminTopicId) return; const btn = $('#btnExportCsv'); btn.textContent = '...';
   const { data, error } = await supabaseClient.from('submissions').select('*').eq('topic_id', currentAdminTopicId).order('submitted_at', { ascending: false }); btn.textContent = 'Export CSV';
   if (error || !data || data.length === 0) { alert('No records.'); return; }
-  const head = ['Submitted', 'Name', 'Email', 'PF', 'Region', 'Branch', 'Type', 'Score', 'Correct', 'Total', 'Level'];
+  const head = ['Submitted', 'Name', 'Email', 'PF', 'Region', 'Branch/Unit', 'Type', 'Score', 'Correct', 'Total', 'Level'];
   const rows = data.map(s => [new Date(s.submitted_at).toLocaleString(), s.full_name, s.email, s.pf_number, s.region, s.branch, s.mode === 'pre' ? 'Pre' : 'Post', s.score, s.correct_count, s.total_questions, s.score >= 50 ? getLevel(s.score).name : '-']);
   const csv = [head, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\r\n'); download(`m2e-submissions-${new Date().toISOString().slice(0, 10)}.csv`, csv);
 });

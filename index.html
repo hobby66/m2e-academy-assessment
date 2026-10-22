@@ -389,6 +389,7 @@ tbody tr:hover{background:#0b0b0b}
             <button type="button" data-tab="submissions">Submissions</button>
             <button type="button" data-tab="live" class="active">Host Live Session</button>
             <button type="button" data-tab="dropdowns">Dropdowns</button>
+            <button type="button" data-tab="settings">Settings</button>
             <button type="button" id="btnAdminLogout" style="margin-left:auto; color:var(--danger)">Logout</button>
           </div>
 
@@ -404,7 +405,7 @@ tbody tr:hover{background:#0b0b0b}
             <div id="topicAdminList" style="width:100%; margin-top:8px; font-size:.8rem; color:var(--muted);"></div>
           </div>
 
-          <!-- Standard Admin Tabs (Questions, Submissions, Dropdowns) -->
+          <!-- Standard Admin Tabs (Questions, Submissions, Dropdowns, Settings) -->
           <div id="tabQuestions" hidden>
             <p class="hint" style="margin-bottom:16px">Select the radio button beside the correct answer.</p>
             <div id="adminQuestions"></div>
@@ -434,6 +435,16 @@ tbody tr:hover{background:#0b0b0b}
                 <div style="display:flex; gap:8px;"><input type="text" id="newUnitInput" placeholder="e.g. Finance" style="flex:1;" /><button class="btn btn-primary btn-sm" id="btnAddUnit" type="button">Add</button></div>
                 <div class="dropdown-list" id="unitList"></div>
               </div>
+            </div>
+          </div>
+          <div id="tabSettings" hidden>
+            <div class="form-card" style="margin:0; max-width:560px">
+              <h2 style="font-size:1.1rem">Application Settings</h2>
+              <form id="settingsForm">
+                <div class="field"><label for="setDuration">Standard Assessment Duration (minutes)</label><input id="setDuration" type="number" min="1" max="60" /></div>
+                <div class="field"><label for="setCount">Questions Served Per Assessment</label><input id="setCount" type="number" min="1" max="100" /></div>
+                <button class="btn btn-primary btn-sm" type="submit">Save Settings</button>
+              </form>
             </div>
           </div>
 
@@ -691,7 +702,6 @@ $('#joinLiveForm').addEventListener('submit', async (e) => {
 });
 
 let liveSessionSubscription = null;
-let participantAnswers = {}; // Tracks answers to prevent multiple submissions
 
 function listenToLiveSession() {
   if(liveSessionSubscription) supabaseClient.removeChannel(liveSessionSubscription);
@@ -709,18 +719,15 @@ async function handleLivePhaseUpdate(session) {
     $('#liveQCounter').textContent = `Question ${session.current_q_index + 1}`;
     $('#liveTimer').textContent = session.read_time + 's';
     
-    // Fetch current question
     const bank = await fetchQuestionsFromDB(session.topic_id, false);
-    const q = bank[session.current_q_index]; // Need to rely on index
+    const q = bank[session.current_q_index];
     
-    // We must shuffle options securely on participant side. 
-    // To ensure admin sees the correct answer mapping, we just show options.
     $('#liveQText').textContent = q.text;
     const box = $('#liveOptions'); box.innerHTML = '';
     const shuffledOpts = shuffle(q.options);
     
     shuffledOpts.forEach((opt, i) => {
-      const btn = document.createElement('button'); btn.type = 'button'; btn.className = 'option disabled'; // Disabled during reading
+      const btn = document.createElement('button'); btn.type = 'button'; btn.className = 'option disabled';
       btn.innerHTML = `<span class="key">${String.fromCharCode(65 + i)}</span><span>${escapeHtml(opt)}</span>`;
       btn.dataset.text = opt;
       btn.addEventListener('click', () => submitLiveAnswer(btn, opt, q.id, session.current_q_index, session.answer_time));
@@ -730,12 +737,11 @@ async function handleLivePhaseUpdate(session) {
   } 
   else if (session.phase === 'answering') {
     showScreen('scrLiveQuiz');
-    $$('#liveOptions .option').forEach(btn => btn.classList.remove('disabled')); // Enable options
+    $$('#liveOptions .option').forEach(btn => btn.classList.remove('disabled'));
     startLiveTimer(session.answer_time, 'Choose now!');
   }
   else if (session.phase === 'results') {
     showScreen('scrLiveResult');
-    // Result UI is handled immediately upon submission in submitLiveAnswer
   }
   else if (session.phase === 'ended') {
     showScreen('scrLiveLobby');
@@ -756,7 +762,6 @@ function startLiveTimer(seconds, label) {
 }
 
 async function submitLiveAnswer(btnElement, selectedText, questionId, qIndex, answerTime) {
-  // Disable all options immediately to prevent double click
   $$('#liveOptions .option').forEach(b => b.classList.add('disabled'));
   btnElement.classList.add('selected');
 
@@ -770,7 +775,6 @@ async function submitLiveAnswer(btnElement, selectedText, questionId, qIndex, an
     $('#liveResTitle').style.color = data.is_correct ? 'var(--success)' : 'var(--danger)';
     $('#liveResPoints').textContent = data.is_correct ? `+${data.points_earned}` : `+0`;
     
-    // Fetch updated total score
     const { data: pData } = await supabaseClient.from('live_participants').select('total_score').eq('id', state.liveParticipantId).single();
     if(pData) $('#liveResTotal').textContent = pData.total_score;
     
@@ -813,8 +817,8 @@ $('#btnCreateTopic').addEventListener('click', async () => {
 $$('.admin-tabs [data-tab]').forEach(btn => { btn.addEventListener('click', () => openAdminTab(btn.dataset.tab)); });
 function openAdminTab(tab) {
   $$('.admin-tabs [data-tab]').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
-  $('#tabQuestions').hidden = tab !== 'questions'; $('#tabSubmissions').hidden = tab !== 'submissions'; $('#tabLive').hidden = tab !== 'live'; $('#tabDropdowns').hidden = tab !== 'dropdowns';
-  if (tab === 'questions') loadAdminQuestions(); if (tab === 'submissions') renderSubmissions(); if (tab === 'dropdowns') loadDropdownManager();
+  $('#tabQuestions').hidden = tab !== 'questions'; $('#tabSubmissions').hidden = tab !== 'submissions'; $('#tabLive').hidden = tab !== 'live'; $('#tabDropdowns').hidden = tab !== 'dropdowns'; $('#tabSettings').hidden = tab !== 'settings';
+  if (tab === 'questions') loadAdminQuestions(); if (tab === 'submissions') renderSubmissions(); if (tab === 'dropdowns') loadDropdownManager(); if (tab === 'settings') fillSettingsForm();
 }
 
 // --- ADMIN LIVE HOST LOGIC ---
@@ -827,7 +831,6 @@ $('#btnStartLive').addEventListener('click', async () => {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'; let code = ''; for(let i=0; i<6; i++) code += chars.charAt(Math.floor(Math.random() * chars.length));
   const { data: { user } } = await supabaseClient.auth.getUser();
   
-  // Fetch questions first to lock them in for this session (optional but good practice)
   adminCurrentQuestions = await fetchQuestionsFromDB(currentAdminTopicId, true);
 
   const { data, error } = await supabaseClient.from('live_sessions').insert([{
@@ -848,7 +851,6 @@ function startAdminDashboard(session) {
   $('#displayJoinCode').textContent = session.join_code; $('#displayTargetGroup').textContent = session.target_group;
   $('#qrCodeImg').src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(window.location.origin + '?join=' + session.join_code)}`;
   
-  // Subscribe to participants joining
   if(adminSessionSub) supabaseClient.removeChannel(adminSessionSub);
   adminSessionSub = supabaseClient.channel('admin_live_'+session.id)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'live_participants', filter: `session_id=eq.${session.id}` }, () => {
@@ -896,18 +898,16 @@ async function showAdminQuestion(session, idx) {
 }
 
 $('#btnNextPhase').addEventListener('click', async () => {
-  const currentSession = activeLiveSession; // Stale reference warning, fetch fresh
+  const currentSession = activeLiveSession;
   const { data: session } = await supabaseClient.from('live_sessions').select('*').eq('id', currentSession.id).single();
   
   if (session.phase === 'reading') {
-    // Move to Answering
     await supabaseClient.from('live_sessions').update({ phase: 'answering', question_started_at: new Date().toISOString() }).eq('id', session.id);
     activeLiveSession.phase = 'answering'; activeLiveSession.question_started_at = new Date().toISOString();
     $('#btnNextPhase').textContent = 'Show Leaderboard';
     startAdminTimer(session.answer_time);
   } 
   else if (session.phase === 'answering') {
-    // Move to Results (Leaderboard View)
     await supabaseClient.from('live_sessions').update({ phase: 'results' }).eq('id', session.id);
     activeLiveSession.phase = 'results';
     
@@ -921,12 +921,10 @@ $('#btnNextPhase').addEventListener('click', async () => {
   else if (session.phase === 'results') {
     const nextIdx = session.current_q_index + 1;
     if (nextIdx >= adminCurrentQuestions.length) {
-      // End
       await supabaseClient.from('live_sessions').update({ phase: 'ended', status: 'ended' }).eq('id', session.id);
       $('#phasePlaying').hidden = true; $('#phaseEnded').hidden = false;
       clearInterval(adminTimerInt);
     } else {
-      // Next Question
       await supabaseClient.from('live_sessions').update({ phase: 'reading', current_q_index: nextIdx, question_started_at: new Date().toISOString() }).eq('id', session.id);
       activeLiveSession.phase = 'reading'; activeLiveSession.current_q_index = nextIdx;
       showAdminQuestion(activeLiveSession, nextIdx);
@@ -960,8 +958,7 @@ if (joinCodeParam) {
   }, 500);
 }
 
-// Standard Admin Helpers (Questions, Subs, Dropdowns)
-// ... [Keep standard loadAdminQuestions, renderSubmissions, etc. from previous code]
+// Standard Admin Helpers (Questions, Subs, Dropdowns, Settings)
 function loadAdminQuestions() {
   if (!currentAdminTopicId) return;
   $('#adminQuestions').innerHTML = '<p class="hint">Loading...</p>';
@@ -984,6 +981,12 @@ $('#btnSaveQuestions').addEventListener('click', async () => {
   await supabaseClient.from('questions').delete().eq('topic_id', currentAdminTopicId);
   await supabaseClient.from('questions').insert(cleaned.map(q => ({ ...q, topic_id: currentAdminTopicId })));
   btn.textContent = 'Save All Changes'; btn.disabled = false; alert('Saved.'); loadAdminQuestions();
+});
+$('#btnRestoreQuestions').addEventListener('click', async () => {
+  if (!currentAdminTopicId || !confirm('Restore default?')) return; const btn = $('#btnRestoreQuestions'); btn.textContent = 'Restoring...'; btn.disabled = true;
+  await supabaseClient.from('questions').delete().eq('topic_id', currentAdminTopicId);
+  const seeds = DEFAULT_QUESTIONS.map(q => ({ id: uid(), text: q.text, options: q.options, correct_index: q.correct, topic_id: currentAdminTopicId }));
+  await supabaseClient.from('questions').insert(seeds); btn.textContent = 'Restore Default Bank'; btn.disabled = false; alert('Restored.'); loadAdminQuestions();
 });
 
 async function renderSubmissions() {
@@ -1013,6 +1016,9 @@ async function loadDropdownManager() {
 window.deleteDropdownItem = async (id) => { await supabaseClient.from('dropdown_options').delete().eq('id', id); loadDropdownManager(); };
 $('#btnAddRegion').addEventListener('click', async () => { const v = $('#newRegionInput').value.trim(); if(!v) return; $('#newRegionInput').value=''; await supabaseClient.from('dropdown_options').insert([{category:'region', value:v}]); loadDropdownManager(); });
 $('#btnAddUnit').addEventListener('click', async () => { const v = $('#newUnitInput').value.trim(); if(!v) return; $('#newUnitInput').value=''; await supabaseClient.from('dropdown_options').insert([{category:'unit', value:v}]); loadDropdownManager(); });
+
+function fillSettingsForm() { const s = loadSettings(); $('#setDuration').value = s.durationMinutes; $('#setCount').value = s.questionsPerAssessment; }
+$('#settingsForm').addEventListener('submit', (e) => { e.preventDefault(); const duration = Number($('#setDuration').value); const count = Number($('#setCount').value); if (duration < 1 || duration > 60 || count < 1) { alert('Invalid.'); return; } saveSettings({ durationMinutes: duration, questionsPerAssessment: count }); alert('Saved.'); });
 
 (function init() { initGate(); })();
 </script>

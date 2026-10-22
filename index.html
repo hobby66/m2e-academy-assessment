@@ -405,7 +405,7 @@ tbody tr:hover{background:#0b0b0b}
             <div id="topicAdminList" style="width:100%; margin-top:8px; font-size:.8rem; color:var(--muted);"></div>
           </div>
 
-          <!-- Standard Admin Tabs (Questions, Submissions, Dropdowns, Settings) -->
+          <!-- Standard Admin Tabs -->
           <div id="tabQuestions" hidden>
             <p class="hint" style="margin-bottom:16px">Select the radio button beside the correct answer.</p>
             <div id="adminQuestions"></div>
@@ -415,6 +415,7 @@ tbody tr:hover{background:#0b0b0b}
               <button class="btn btn-ghost btn-sm" type="button" id="btnRestoreQuestions">Restore Default Bank</button>
             </div>
           </div>
+          
           <div id="tabSubmissions" hidden>
             <div id="adminSubs"></div>
             <div class="admin-actions">
@@ -422,6 +423,7 @@ tbody tr:hover{background:#0b0b0b}
               <button class="btn btn-ghost btn-sm" type="button" id="btnClearSubs">Clear All Records</button>
             </div>
           </div>
+          
           <div id="tabDropdowns" hidden>
             <div class="form-card" style="margin:0; max-width:100%;">
               <h2 style="font-size:1.1rem">Manage Dropdown Options</h2>
@@ -437,6 +439,7 @@ tbody tr:hover{background:#0b0b0b}
               </div>
             </div>
           </div>
+
           <div id="tabSettings" hidden>
             <div class="form-card" style="margin:0; max-width:560px">
               <h2 style="font-size:1.1rem">Application Settings</h2>
@@ -448,7 +451,7 @@ tbody tr:hover{background:#0b0b0b}
             </div>
           </div>
 
-          <!-- LIVE SESSION TAB (The Game Master) -->
+          <!-- LIVE SESSION TAB -->
           <div id="tabLive">
             <div id="liveSetup">
               <div class="form-card" style="margin:0; max-width:100%;">
@@ -1006,6 +1009,22 @@ function openSubmissionModal(sub) {
   $('#modal').hidden = false;
 }
 $('#modalClose').addEventListener('click', () => { $('#modal').hidden = true; });
+
+$('#btnExportCsv').addEventListener('click', async () => {
+  if (!currentAdminTopicId) return; const btn = $('#btnExportCsv'); btn.textContent = '...';
+  const { data, error } = await supabaseClient.from('submissions').select('*').eq('topic_id', currentAdminTopicId).order('submitted_at', { ascending: false }); btn.textContent = 'Export CSV';
+  if (error || !data || data.length === 0) { alert('No records.'); return; }
+  const head = ['Submitted', 'Name', 'Email', 'PF', 'Region', 'Branch/Unit', 'Type', 'Score', 'Correct', 'Total', 'Level'];
+  const rows = data.map(s => [new Date(s.submitted_at).toLocaleString(), s.full_name, s.email, s.pf_number, s.region, s.branch, s.mode.toUpperCase(), s.score, s.correct_count, s.total_questions, s.score >= 50 ? getLevel(s.score).name : '-']);
+  const csv = [head, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\r\n'); download(`m2e-submissions-${new Date().toISOString().slice(0, 10)}.csv`, csv);
+});
+
+$('#btnClearSubs').addEventListener('click', async () => { 
+  if (!currentAdminTopicId || !confirm('Delete ALL submissions for this topic?')) return; 
+  const btn = $('#btnClearSubs'); btn.textContent = '...'; 
+  await supabaseClient.from('submissions').delete().eq('topic_id', currentAdminTopicId); 
+  btn.textContent = 'Clear All Records'; renderSubmissions(); 
+});
 
 async function loadDropdownManager() {
   const { data: r } = await supabaseClient.from('dropdown_options').select('*').eq('category', 'region');

@@ -623,7 +623,22 @@ const state = {
 const GATE_SESSION_KEY = 'm2e.unlocked';
 function unlockApp() { sessionStorage.setItem(GATE_SESSION_KEY, '1'); $('#scrGate').hidden = true; $('#app').hidden = false; showScreen('scrLanding'); }
 function initGate() {
-  if (sessionStorage.getItem(GATE_SESSION_KEY) === '1') { unlockApp(); return; }
+  const urlParams = new URLSearchParams(window.location.search);
+  const joinCode = urlParams.get('join');
+  
+  // Deep link bypass
+  if (sessionStorage.getItem(GATE_SESSION_KEY) === '1' || joinCode) {
+    unlockApp();
+    if (joinCode) {
+      setTimeout(() => {
+        $('#btnJoinLive').click();
+        $('#liveCode').value = joinCode.toUpperCase();
+        $('#liveName').focus();
+      }, 300);
+    }
+    return;
+  }
+
   $('#scrGate').hidden = false; $('#app').hidden = true;
   setTimeout(() => $('#gatePwd').focus(), 250);
   on('#gateForm', 'submit', async (e) => {
@@ -834,6 +849,7 @@ on('#btnLiveSubmit', 'click', async () => {
 
 // --- ADMIN FLOW ---
 let adminDraft = null; let currentAdminTopicId = null; let currentAdminTopics = []; let activeLiveSession = null; let adminSessionSub = null; let adminCurrentQuestions = [];
+let adminLobbyPoll = null; let adminLeaderboardPoll = null;
 
 on('#btnAdminOpen', 'click', async () => {
   showScreen('scrAdmin');
@@ -874,7 +890,11 @@ function openAdminTab(tab) {
 // --- ADMIN LIVE HOST LOGIC ---
 on('#btnStartLive', 'click', async () => {
   if (!currentAdminTopicId) return alert('Select a topic.');
-  const target = $('#liveTargetGroup').value.trim(); const readT = Number($('#liveReadTime').value); const ansT = Number($('#liveAnswerTime').value); const maxP = Number($('#liveMaxPoints').value);
+  const target = $('#liveTargetGroup').value.trim(); 
+  const readT = Math.max(3, Number($('#liveReadTime').value) || 13);
+  const ansT = Math.max(3, Number($('#liveAnswerTime').value) || 13);
+  const maxP = Math.max(10, Number($('#liveMaxPoints').value) || 100);
+  
   if (!target) return alert('Enter target group.');
 
   const btn = $('#btnStartLive'); btn.textContent = 'Starting...'; btn.disabled = true;
@@ -912,6 +932,10 @@ function startAdminDashboard(session) {
     .subscribe();
 
   updateLobbyView(session.id);
+  
+  // Fallback polling to guarantee updates
+  if(adminLobbyPoll) clearInterval(adminLobbyPoll);
+  adminLobbyPoll = setInterval(() => updateLobbyView(session.id), 3000);
 }
 
 async function updateLobbyView(sessionId) {
@@ -938,7 +962,12 @@ async function updateAdminLeaderboard(sessionId) {
 on('#btnStartQuiz', 'click', async () => {
   await supabaseClient.from('live_sessions').update({ phase: 'reading', current_q_index: 0, question_started_at: new Date().toISOString() }).eq('id', activeLiveSession.id);
   $('#phaseLobby').hidden = true; $('#phasePlaying').hidden = false;
+  if(adminLobbyPoll) clearInterval(adminLobbyPoll); // Stop lobby polling
+  
   showAdminQuestion(activeLiveSession, 0);
+  
+  if(adminLeaderboardPoll) clearInterval(adminLeaderboardPoll);
+  adminLeaderboardPoll = setInterval(() => updateAdminLeaderboard(activeLiveSession.id), 2000);
 });
 
 async function showAdminQuestion(session, idx) {
@@ -973,8 +1002,10 @@ on('#btnNextPhase', 'click', async () => {
       $('#btnNextPhase').textContent = 'Next Question';
     }
     
-    // Force leaderboard refresh right when moving to results phase
-    await updateAdminLeaderboard(session.id);
+    // Force update exactly when leaderboard is shown
+    setTimeout(async () => {
+        await updateAdminLeaderboard(session.id);
+    }, 500);
   }
   else if (session.phase === 'results') {
     const nextIdx = session.current_q_index + 1;
@@ -982,6 +1013,7 @@ on('#btnNextPhase', 'click', async () => {
       await supabaseClient.from('live_sessions').update({ phase: 'ended', status: 'ended' }).eq('id', session.id);
       $('#phasePlaying').hidden = true; $('#phaseEnded').hidden = false;
       clearInterval(adminTimerInt);
+      if(adminLeaderboardPoll) clearInterval(adminLeaderboardPoll);
     } else {
       await supabaseClient.from('live_sessions').update({ phase: 'reading', current_q_index: nextIdx, question_started_at: new Date().toISOString() }).eq('id', session.id);
       activeLiveSession.phase = 'reading'; activeLiveSession.current_q_index = nextIdx;
@@ -1000,21 +1032,10 @@ function startAdminTimer(seconds) {
 
 on('#btnResetLive', 'click', () => {
   if(adminSessionSub) supabaseClient.removeChannel(adminSessionSub);
+  if(adminLobbyPoll) clearInterval(adminLobbyPoll);
+  if(adminLeaderboardPoll) clearInterval(adminLeaderboardPoll);
   $('#liveSetup').hidden = false; $('#liveDashboard').hidden = true;
 });
-
-// Auto-fill join code from URL
-const urlParams = new URLSearchParams(window.location.search);
-const joinCodeParam = urlParams.get('join');
-if (joinCodeParam) {
-  setTimeout(() => {
-    if(sessionStorage.getItem(GATE_SESSION_KEY) === '1') {
-      $('#btnJoinLive').click();
-      $('#liveCode').value = joinCodeParam.toUpperCase();
-      $('#liveName').focus();
-    }
-  }, 500);
-}
 
 // Standard Admin Helpers (Questions, Subs, Dropdowns, Settings)
 function loadAdminQuestions() {

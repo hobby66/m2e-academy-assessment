@@ -13,7 +13,7 @@
   --yellow:#FFC600; --yellow-soft:#ffd233; --bg:#000000; --surface:#0b0b0b;
   --surface-2:#111111; --line:rgba(255,255,255,.10); --line-strong:rgba(255,255,255,.18);
   --text:#ffffff; --muted:#9a9a9a; --muted-2:#7d7d7d; --danger:#ff6b6b; --success:#3ddc84;
-  --gold:#FFD700; --silver:#C0C0C0; --bronze:#CD7F32;
+  --gold:#FFD700; --silver:#C0C0C0; --bronze:#CD7F32; --whatsapp:#25D366;
   --radius:18px; --radius-sm:12px; --max:1120px; --ease:cubic-bezier(.2,.7,.3,1);
 }
 *,*::before,*::after{box-sizing:border-box}
@@ -66,6 +66,8 @@ a{color:var(--yellow)}
 .btn-ghost:hover:not(:disabled){border-color:var(--yellow);color:var(--yellow)}
 .btn-danger{background:var(--danger);color:#fff;padding:18px 48px;font-size:1.05rem;letter-spacing:.02em;box-shadow:0 16px 40px -16px rgba(255,107,107,.95);}
 .btn-danger:hover:not(:disabled){background:#ff5252;transform:translateY(-2px)}
+.btn-whatsapp{background:var(--whatsapp);color:#fff;padding:15px 30px;font-size:1rem;display:inline-flex;align-items:center;gap:10px;}
+.btn-whatsapp:hover{background:#1ebe5d;transform:translateY(-2px);}
 .btn-block{width:100%}
 .btn-sm{padding:11px 20px;font-size:.85rem}
 .cta-note{margin-top:16px;color:var(--muted-2);font-size:.8rem;letter-spacing:.02em;}
@@ -369,12 +371,9 @@ tbody tr:hover{background:#0b0b0b}
     <!-- LIVE RESULT (Participant) -->
     <section id="scrLiveResult" hidden>
       <div class="container result-wrap">
-        <div class="result-card" style="text-align:center;">
-          <h2 id="liveResTitle">Correct!</h2>
-          <div class="score-box" id="liveResPoints">+100</div>
-          <p style="font-size:1.2rem; margin-bottom:20px;">Total Score: <strong id="liveResTotal" style="color:var(--yellow);">0</strong></p>
-          <p class="hint">Look at the main screen for the leaderboard!</p>
-          <div id="liveResNext" style="margin-top:20px; font-size:2rem;">⏳</div>
+        <!-- The dynamic content will be injected here by JS -->
+        <div class="result-card" style="text-align:center;" id="liveResultCard">
+          <!-- Default fallback -->
         </div>
       </div>
     </section>
@@ -443,11 +442,29 @@ tbody tr:hover{background:#0b0b0b}
             </div>
           </div>
           
+          <!-- IMPROVED SUBMISSIONS TAB -->
           <div id="tabSubmissions" hidden>
-            <div id="adminSubs"></div>
-            <div class="admin-actions">
-              <button class="btn btn-ghost btn-sm" type="button" id="btnExportCsv">Export CSV</button>
-              <button class="btn btn-ghost btn-sm" type="button" id="btnClearSubs">Clear All Records</button>
+            <div class="segmented" style="margin-bottom: 20px; max-width: 400px;">
+              <label style="position:relative;display:block;text-align:center;cursor:pointer;padding:12px 10px;border-radius:999px;font-size:.85rem;font-weight:800;color:var(--muted);transition:background .2s,color .2s;">
+                <input type="radio" name="subType" value="standard" checked style="position:absolute;opacity:0;" onchange="toggleSubType('standard')" />
+                <span style="position:relative;z-index:1;">Standard Tests</span>
+              </label>
+              <label style="position:relative;display:block;text-align:center;cursor:pointer;padding:12px 10px;border-radius:999px;font-size:.85rem;font-weight:800;color:var(--muted);transition:background .2s,color .2s;">
+                <input type="radio" name="subType" value="live" style="position:absolute;opacity:0;" onchange="toggleSubType('live')" />
+                <span style="position:relative;z-index:1;">Live Sessions</span>
+              </label>
+            </div>
+
+            <div id="standardSubsContainer">
+              <div id="adminSubs"></div>
+              <div class="admin-actions">
+                <button class="btn btn-ghost btn-sm" type="button" id="btnExportCsv">Export CSV</button>
+                <button class="btn btn-ghost btn-sm" type="button" id="btnClearSubs">Clear All Records</button>
+              </div>
+            </div>
+
+            <div id="liveSubsContainer" hidden>
+              <div id="adminLiveSubs"></div>
             </div>
           </div>
           
@@ -493,7 +510,6 @@ tbody tr:hover{background:#0b0b0b}
                   <div class="field" style="flex:1;"><label for="liveMaxPoints">Max Points</label><input id="liveMaxPoints" type="number" value="100" min="10" max="1000" /></div>
                 </div>
 
-                <!-- QUESTION SELECTION LIST -->
                 <div class="field" style="margin-top:16px;">
                   <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:8px;">
                     <label style="margin:0;">Select Questions for Live Session</label>
@@ -583,6 +599,14 @@ tbody tr:hover{background:#0b0b0b}
       <button class="admin-link" type="button" id="btnAdminOpen">Administrator</button>
     </div>
   </footer>
+</div>
+
+<!-- Modal for viewing Live Session leaderboards -->
+<div class="modal" id="liveSessionModal" hidden>
+  <div class="modal-card">
+    <button class="modal-close" id="liveModalClose" type="button">&times;</button>
+    <div id="liveModalBody"></div>
+  </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -796,7 +820,6 @@ function listenToLiveSession() {
 
 async function handleLivePhaseUpdate(session) {
   if (session.phase === 'reading') {
-    // Don't re-render if we are already on this question
     if (state.liveCurrentQIndex === session.current_q_index && !$('#liveReadingMsg').hidden) return;
 
     showScreen('scrLiveQuiz');
@@ -820,7 +843,6 @@ async function handleLivePhaseUpdate(session) {
     startLiveTimer(session.read_time, 'reading');
   } 
   else if (session.phase === 'answering') {
-    // Don't re-render options if we are already on this question, prevents selection flashing
     if (state.liveCurrentQIndex === session.current_q_index && !$('#liveOptions').hidden) return;
 
     showScreen('scrLiveQuiz');
@@ -847,17 +869,14 @@ async function handleLivePhaseUpdate(session) {
     startLiveTimer(session.answer_time, 'answering');
   }
   else if (session.phase === 'results') {
-    clearInterval(liveTimerInt); // Stop the local timer
+    clearInterval(liveTimerInt);
     
-    // Auto-submit logic for when admin ends the phase
     if (!state.liveAnswerSubmitted) {
         if (state.liveSelectedText) {
             await processAnswerSubmission(true);
         } else {
             state.liveAnswerSubmitted = true;
-            $('#liveResTitle').textContent = 'Time is up! ⏰';
-            $('#liveResTitle').style.color = 'var(--danger)';
-            $('#liveResPoints').textContent = '+0';
+            await updateParticipantResultScreen({ is_correct: false, points_earned: 0 });
         }
     }
     
@@ -869,9 +888,9 @@ async function handleLivePhaseUpdate(session) {
   }
   else if (session.phase === 'ended') {
     clearInterval(liveTimerInt);
-    showScreen('scrLiveLobby');
-    $('#lobbySpinner').textContent = '🏁';
-    $('.score-box').textContent = 'Quiz Ended';
+    showScreen('scrLiveResult'); // Show final result screen (will be updated via updateParticipantResultScreen)
+    // The final result screen should show their final rank and the share button
+    await updateParticipantResultScreen(null, true); // null means no new answer, just fetch current rank
   }
 }
 
@@ -886,20 +905,75 @@ function startLiveTimer(seconds, phase) {
     
     if(t <= 0) {
       clearInterval(liveTimerInt);
-      // ONLY auto-submit if we are in the ANSWERING phase
       if (phase === 'answering' && !state.liveAnswerSubmitted && !state.isSubmitting) {
           if (state.liveSelectedText) {
               processAnswerSubmission(true); 
           } else {
               state.liveAnswerSubmitted = true;
-              $('#liveResTitle').textContent = 'Time is up! ⏰';
-              $('#liveResTitle').style.color = 'var(--danger)';
-              $('#liveResPoints').textContent = '+0';
-              showScreen('scrLiveResult');
+              updateParticipantResultScreen({ is_correct: false, points_earned: 0 });
           }
       }
     }
   }, 1000);
+}
+
+// NEW: Dynamic result screen with Rank, Trophies, and WhatsApp sharing
+async function updateParticipantResultScreen(submissionData = null, isFinal = false) {
+    // 1. Fetch current participant score
+    const { data: pData } = await supabaseClient.from('live_participants').select('total_score').eq('id', state.liveParticipantId).single();
+    const currentScore = pData ? pData.total_score : 0;
+
+    // 2. Fetch rank
+    const { data: allParticipants } = await supabaseClient.from('live_participants').select('id, total_score').eq('session_id', state.liveSessionId).order('total_score', { ascending: false });
+    let rank = allParticipants ? allParticipants.findIndex(p => p.id === state.liveParticipantId) + 1 : 0;
+    if (rank === 0) rank = allParticipants ? allParticipants.length : 1;
+
+    // 3. Prepare UI elements
+    let headerText = isFinal ? "Quiz Complete!" : (submissionData && submissionData.is_correct ? 'Correct! 🎉' : (submissionData ? 'Wrong ❌' : 'Time is up! ⏰'));
+    let headerColor = (submissionData && submissionData.is_correct) ? 'var(--success)' : (submissionData ? 'var(--danger)' : 'var(--muted)');
+    if (isFinal) { headerText = "Final Results"; headerColor = "var(--yellow)"; }
+
+    let pointsEarnedHtml = submissionData ? `<div class="score-box" style="font-size:2.5rem;">${submissionData.is_correct ? `+${submissionData.points_earned}` : '+0'}</div>` : '';
+    
+    let trophyHtml = '';
+    let cardClass = 'result-card';
+    let shareText = `I scored ${currentScore} points in the M2E Academy Live Quiz! 🏆`;
+
+    if (rank === 1) {
+        trophyHtml = `<div style="font-size:5rem; line-height:1; margin-bottom:10px;">🥇</div><h3 style="color:var(--gold); font-size:1.5rem; margin:0;">1st Place!</h3>`;
+        cardClass += ' top-1'; // applies gold border via CSS
+        shareText = `I am Rank #1 in the M2E Academy Live Quiz! 🥇 I scored ${currentScore} points! 🏆`;
+    } else if (rank === 2) {
+        trophyHtml = `<div style="font-size:5rem; line-height:1; margin-bottom:10px;">🥈</div><h3 style="color:var(--silver); font-size:1.5rem; margin:0;">2nd Place!</h3>`;
+        cardClass += ' top-2';
+        shareText = `I am Rank #2 in the M2E Academy Live Quiz! 🥈 I scored ${currentScore} points! 🏆`;
+    } else if (rank === 3) {
+        trophyHtml = `<div style="font-size:5rem; line-height:1; margin-bottom:10px;">🥉</div><h3 style="color:var(--bronze); font-size:1.5rem; margin:0;">3rd Place!</h3>`;
+        cardClass += ' top-3';
+        shareText = `I am Rank #3 in the M2E Academy Live Quiz! 🥉 I scored ${currentScore} points! 🏆`;
+    } else {
+        trophyHtml = `<div style="font-size:3rem; line-height:1; margin-bottom:10px;">👏</div><h3 style="color:#fff; font-size:1.2rem; margin:0;">Rank #${rank}</h3>`;
+        shareText = `I am currently Rank #${rank} in the M2E Academy Live Quiz with ${currentScore} points!`;
+    }
+
+    const shareBtnHtml = isFinal || rank <= 3 ? `
+        <div style="margin-top: 24px;">
+            <a href="https://wa.me/?text=${encodeURIComponent(shareText)}" target="_blank" class="btn btn-whatsapp">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+                Share on WhatsApp
+            </a>
+        </div>
+    ` : '';
+
+    $('#liveResultCard').className = cardClass;
+    $('#liveResultCard').innerHTML = `
+        <h2 style="color:${headerColor}; font-weight:900;">${headerText}</h2>
+        ${pointsEarnedHtml}
+        ${trophyHtml}
+        <p style="font-size:1.2rem; margin-top:15px;">Total Score: <strong style="color:var(--yellow);">${currentScore} pts</strong></p>
+        <p class="hint" style="margin-top:20px;">Look at the main screen for the leaderboard!</p>
+        ${shareBtnHtml}
+    `;
 }
 
 async function processAnswerSubmission(isAuto = false) {
@@ -934,13 +1008,7 @@ async function processAnswerSubmission(isAuto = false) {
         }
 
         if (data) {
-            $('#liveResTitle').textContent = data.is_correct === true ? 'Correct! 🎉' : 'Wrong ❌';
-            $('#liveResTitle').style.color = data.is_correct === true ? 'var(--success)' : 'var(--danger)';
-            $('#liveResPoints').textContent = data.is_correct === true ? `+${data.points_earned}` : `+0`;
-            
-            const { data: pData } = await supabaseClient.from('live_participants').select('total_score').eq('id', state.liveParticipantId).single();
-            if(pData) $('#liveResTotal').textContent = pData.total_score;
-            
+            await updateParticipantResultScreen(data, false);
             showScreen('scrLiveResult');
         }
     } catch (err) {
@@ -954,6 +1022,7 @@ async function processAnswerSubmission(isAuto = false) {
 }
 
 on('#btnLiveSubmit', 'click', () => processAnswerSubmission(false));
+
 
 // --- ADMIN FLOW ---
 let adminDraft = null; let currentAdminTopicId = null; let currentAdminTopics = []; let activeLiveSession = null; let adminSessionSub = null; let adminCurrentQuestions = [];
@@ -1021,7 +1090,6 @@ async function loadQuestionsForSelection() {
 
   updateQuestionCount();
   
-  // Add listeners to checkboxes to update the count
   $$('.live-q-checkbox').forEach(cb => {
       cb.addEventListener('change', updateQuestionCount);
   });
@@ -1033,7 +1101,6 @@ function updateQuestionCount() {
     $('#qSelectCount').textContent = `${checked} of ${total} Selected`;
 }
 
-// NEW: Select All / Deselect All logic
 on('#btnSelectAllQs', 'click', () => {
     $$('.live-q-checkbox').forEach(cb => cb.checked = true);
     updateQuestionCount();
@@ -1053,7 +1120,6 @@ on('#btnStartLive', 'click', async () => {
   
   if (!target) return alert('Enter target group.');
 
-  // Get selected question IDs
   const selectedIds = Array.from($$('.live-q-checkbox:checked')).map(cb => cb.value);
   if (selectedIds.length === 0) return alert('Please select at least one question for the live session.');
 
@@ -1061,7 +1127,6 @@ on('#btnStartLive', 'click', async () => {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'; let code = ''; for(let i=0; i<6; i++) code += chars.charAt(Math.floor(Math.random() * chars.length));
   const { data: { user } } = await supabaseClient.auth.getUser();
   
-  // Filter the questions based on checkboxes
   const allQuestions = await fetchQuestionsFromDB(currentAdminTopicId, true);
   adminCurrentQuestions = allQuestions.filter(q => selectedIds.includes(q.id));
 
@@ -1208,6 +1273,102 @@ on('#btnResetLive', 'click', () => {
   if(adminLeaderboardPoll) clearInterval(adminLeaderboardPoll);
   $('#liveSetup').hidden = false; $('#liveDashboard').hidden = true;
 });
+
+// --- SUBMISSIONS TAB LOGIC ---
+function toggleSubType(type) {
+    $('#standardSubsContainer').hidden = (type !== 'standard');
+    $('#liveSubsContainer').hidden = (type !== 'live');
+    
+    if (type === 'standard') renderSubmissions();
+    else renderLiveSessions();
+}
+
+async function renderLiveSessions() {
+    const wrap = $('#adminLiveSubs'); 
+    wrap.innerHTML = '<p class="hint">Loading live sessions...</p>';
+    
+    const { data: { user } } = await supabaseClient.auth.getUser();
+    const { data: sessions, error } = await supabaseClient
+        .from('live_sessions')
+        .select('*, live_participants(count)')
+        .eq('admin_id', user.id)
+        .order('created_at', { ascending: false });
+
+    if (error || !sessions) { wrap.innerHTML = '<p class="hint" style="color:var(--danger)">Error loading sessions.</p>'; return; }
+    if (sessions.length === 0) { wrap.innerHTML = '<p class="hint">No live sessions hosted yet.</p>'; return; }
+
+    const rows = sessions.map(s => {
+        const date = new Date(s.created_at).toLocaleString();
+        const count = s.live_participants && s.live_participants[0] ? s.live_participants[0].count : 0;
+        return `
+            <tr>
+                <td>${escapeHtml(date)}</td>
+                <td>${escapeHtml(s.target_group)}</td>
+                <td><code>${escapeHtml(s.join_code)}</code></td>
+                <td>${count}</td>
+                <td><span class="pill ${s.status === 'active' ? 'live' : 'pre'}">${s.status.toUpperCase()}</span></td>
+                <td><button class="btn-mini" type="button" onclick="viewLiveSession('${s.id}', '${escapeHtml(s.target_group)}')">View Leaderboard</button></td>
+            </tr>`;
+    }).join('');
+
+    wrap.innerHTML = `
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr><th>Date</th><th>Target Group</th><th>Code</th><th>Participants</th><th>Status</th><th>Action</th></tr>
+                </thead>
+                <tbody>${rows}</tbody>
+            </table>
+        </div>`;
+}
+
+window.viewLiveSession = async (sessionId, groupName) => {
+    $('#liveModalBody').innerHTML = `<h2>Leaderboard: ${groupName}</h2><p class="hint">Loading...</p>`;
+    $('#liveSessionModal').hidden = false;
+
+    const { data: participants } = await supabaseClient
+        .from('live_participants')
+        .select('name, pf_number, total_score')
+        .eq('session_id', sessionId)
+        .order('total_score', { ascending: false });
+
+    if (!participants || participants.length === 0) {
+        $('#liveModalBody').innerHTML = `<h2>Leaderboard: ${groupName}</h2><p class="hint">No participants joined this session.</p>`;
+        return;
+    }
+
+    const rows = participants.map((p, i) => {
+        let trophy = (i+1) + '.';
+        let color = '#fff';
+        if (i === 0) { trophy = '🥇'; color = 'var(--gold)'; }
+        else if (i === 1) { trophy = '🥈'; color = 'var(--silver)'; }
+        else if (i === 2) { trophy = '🥉'; color = 'var(--bronze)'; }
+        
+        return `
+            <div style="display:flex; justify-content:space-between; padding:12px; border-bottom:1px solid var(--line);">
+                <div style="display:flex; gap:15px; align-items:center;">
+                    <span style="font-size:1.2rem; width:30px;">${trophy}</span>
+                    <div>
+                        <div style="font-weight:800; color:${color};">${escapeHtml(p.name)}</div>
+                        <div style="font-size:0.8rem; color:var(--muted);">PF: ${escapeHtml(p.pf_number)}</div>
+                    </div>
+                </div>
+                <div style="font-weight:900; color:var(--yellow); font-size:1.1rem;">${p.total_score} pts</div>
+            </div>
+        `;
+    }).join('');
+
+    $('#liveModalBody').innerHTML = `
+        <h2 style="margin:0 0 20px;">Leaderboard: ${groupName}</h2>
+        <div style="background:#080808; border:1px solid var(--line-strong); border-radius:12px; padding:10px;">
+            ${rows}
+        </div>
+    `;
+};
+
+on('#liveModalClose', 'click', () => { $('#liveSessionModal').hidden = true; });
+on('#liveSessionModal', 'click', (e) => { if (e.target.id === 'liveSessionModal') $('#liveSessionModal').hidden = true; });
+
 
 // Standard Admin Helpers
 function loadAdminQuestions() {

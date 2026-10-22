@@ -616,7 +616,7 @@ const SCREENS = ['scrLanding', 'scrRegistration', 'scrJoinLive', 'scrLiveLobby',
 function showScreen(id) { SCREENS.forEach(s => { const el = document.getElementById(s); if (el) el.hidden = (s !== id); }); window.scrollTo(0, 0); }
 const state = { 
   participant: null, mode: 'pre', topicId: null, questions: [], answers: [], current: 0, timeLeft: 300, timerId: null, startedAt: null, lastSubmission: null, 
-  liveSessionId: null, liveParticipantId: null, liveTimerId: null, liveCurrentQuestion: null, liveCurrentQIndex: null, liveSelectedText: null, liveAnswerSubmitted: false 
+  liveSessionId: null, liveParticipantId: null, liveTimerId: null, liveCurrentQuestion: null, liveCurrentQIndex: null, liveSelectedText: null, liveAnswerSubmitted: false, isSubmitting: false
 };
 
 // --- GATE ---
@@ -765,7 +765,8 @@ async function handleLivePhaseUpdate(session) {
     state.liveCurrentQuestion = q;
     state.liveCurrentQIndex = session.current_q_index;
     state.liveSelectedText = null;
-    state.liveAnswerSubmitted = false; // RESET SUBMIT FLAG
+    state.liveAnswerSubmitted = false; 
+    state.isSubmitting = false;
     
     $('#liveQText').textContent = q.text;
     $('#liveOptions').hidden = true;
@@ -781,19 +782,21 @@ async function handleLivePhaseUpdate(session) {
     $('#liveOptions').hidden = false;
     $('#liveSubmitContainer').hidden = false;
     
+    const btn = $('#btnLiveSubmit'); btn.textContent = 'Submit Answer'; btn.disabled = false;
+    
     const box = $('#liveOptions'); box.innerHTML = '';
     const shuffledOpts = shuffle(state.liveCurrentQuestion.options);
     
     shuffledOpts.forEach((opt, i) => {
-      const btn = document.createElement('button'); btn.type = 'button'; btn.className = 'option';
-      btn.innerHTML = `<span class="key">${String.fromCharCode(65 + i)}</span><span>${escapeHtml(opt)}</span>`;
-      btn.addEventListener('click', () => {
+      const btnOpt = document.createElement('button'); btnOpt.type = 'button'; btnOpt.className = 'option';
+      btnOpt.innerHTML = `<span class="key">${String.fromCharCode(65 + i)}</span><span>${escapeHtml(opt)}</span>`;
+      btnOpt.addEventListener('click', () => {
           if (state.liveAnswerSubmitted) return;
           $$('#liveOptions .option').forEach(b => b.classList.remove('selected'));
-          btn.classList.add('selected');
+          btnOpt.classList.add('selected');
           state.liveSelectedText = opt;
       });
-      box.appendChild(btn);
+      box.appendChild(btnOpt);
     });
     startLiveTimer(session.answer_time, 'Choose now!');
   }
@@ -823,38 +826,49 @@ function startLiveTimer(seconds, label) {
 }
 
 on('#btnLiveSubmit', 'click', async () => {
-    if (state.liveAnswerSubmitted) return; // PREVENT DOUBLE CLICK
+    if (state.liveAnswerSubmitted || state.isSubmitting) return; 
     if (!state.liveSelectedText) return alert('Please select an option first.');
     
-    // LOCK UI IMMEDIATELY
+    state.isSubmitting = true;
     state.liveAnswerSubmitted = true; 
     const btn = $('#btnLiveSubmit'); btn.textContent = 'Submitting...'; btn.disabled = true;
     $$('#liveOptions .option').forEach(b => b.classList.add('disabled'));
     
-    const { data, error } = await supabaseClient.rpc('submit_live_answer', {
-        p_session_id: state.liveSessionId, 
-        p_participant_id: state.liveParticipantId,
-        p_q_index: state.liveCurrentQIndex, 
-        p_q_id: state.liveCurrentQuestion.id, 
-        p_selected_text: state.liveSelectedText
-    });
-    
-    if (error) {
-        alert('Submission failed: ' + error.message);
-        state.liveAnswerSubmitted = false;
-        btn.textContent = 'Submit Answer'; btn.disabled = false;
-        return;
-    }
+    try {
+        const { data, error } = await supabaseClient.rpc('submit_live_answer', {
+            p_session_id: state.liveSessionId, 
+            p_participant_id: state.liveParticipantId,
+            p_q_index: state.liveCurrentQIndex, 
+            p_q_id: state.liveCurrentQuestion.id, 
+            p_selected_text: state.liveSelectedText
+        });
 
-    if (data) {
-        $('#liveResTitle').textContent = data.is_correct === true ? 'Correct! 🎉' : 'Wrong ❌';
-        $('#liveResTitle').style.color = data.is_correct === true ? 'var(--success)' : 'var(--danger)';
-        $('#liveResPoints').textContent = data.is_correct === true ? `+${data.points_earned}` : `+0`;
-        
-        const { data: pData } = await supabaseClient.from('live_participants').select('total_score').eq('id', state.liveParticipantId).single();
-        if(pData) $('#liveResTotal').textContent = pData.total_score;
-        
-        showScreen('scrLiveResult');
+        if (error) {
+            console.error('RPC Error:', error);
+            if (!error.message.includes('already submitted')) {
+                alert('Submission failed: ' + error.message);
+            }
+            showScreen('scrLiveResult');
+            return;
+        }
+
+        if (data) {
+            $('#liveResTitle').textContent = data.is_correct === true ? 'Correct! 🎉' : 'Wrong ❌';
+            $('#liveResTitle').style.color = data.is_correct === true ? 'var(--success)' : 'var(--danger)';
+            $('#liveResPoints').textContent = data.is_correct === true ? `+${data.points_earned}` : `+0`;
+            
+            const { data: pData } = await supabaseClient.from('live_participants').select('total_score').eq('id', state.liveParticipantId).single();
+            if(pData) $('#liveResTotal').textContent = pData.total_score;
+            
+            showScreen('scrLiveResult');
+        }
+    } catch (err) {
+        console.error('Unexpected error:', err);
+        alert('A network error occurred. Please check your connection.');
+        state.liveAnswerSubmitted = false;
+        state.isSubmitting = false;
+        btn.textContent = 'Submit Answer'; btn.disabled = false;
+        $$('#liveOptions .option').forEach(b => b.classList.remove('disabled'));
     }
 });
 

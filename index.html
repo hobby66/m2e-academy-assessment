@@ -13,6 +13,7 @@
   --yellow:#FFC600; --yellow-soft:#ffd233; --bg:#000000; --surface:#0b0b0b;
   --surface-2:#111111; --line:rgba(255,255,255,.10); --line-strong:rgba(255,255,255,.18);
   --text:#ffffff; --muted:#9a9a9a; --muted-2:#7d7d7d; --danger:#ff6b6b;
+  --gold:#FFD700; --silver:#C0C0C0; --bronze:#CD7F32;
   --radius:18px; --radius-sm:12px; --max:1120px; --ease:cubic-bezier(.2,.7,.3,1);
 }
 *,*::before,*::after{box-sizing:border-box}
@@ -26,7 +27,7 @@ button{font-family:inherit}
 a{color:var(--yellow)}
 :focus-visible{outline:3px solid var(--yellow);outline-offset:3px;border-radius:6px;}
 
-/* LAYOUT */
+/* LAYOUT & TYPOGRAPHY */
 .container{width:100%;max-width:var(--max);margin:0 auto;padding:0 20px}
 .section{padding:56px 0 0}
 .section-title{text-align:center;font-size:clamp(1.35rem,4.4vw,2rem);font-weight:800;letter-spacing:-.01em;margin:0 0 10px;}
@@ -79,7 +80,7 @@ a{color:var(--yellow)}
 .btn-ghost:hover:not(:disabled){border-color:var(--yellow);color:var(--yellow)}
 .btn-block{width:100%}
 .btn-sm{padding:11px 20px;font-size:.85rem}
-.cta-note{margin-top:16px;color:var(--muted-2);font-size:.8rem;letter-spacing:.02em}
+.cta-note{margin-top:16px;color:var(--muted-2);font-size:.8rem;letter-spacing:.02em;}
 
 .form-card{width:100%;max-width:640px;margin:0 auto;background:linear-gradient(180deg,#101010,#060606);border:1px solid var(--line);border-radius:22px;padding:30px 26px;}
 @media(max-width:520px){.form-card{padding:24px 18px;border-radius:18px}}
@@ -182,10 +183,22 @@ td{color:#d0d0d0}
 tbody tr:hover{background:#0b0b0b}
 .pill{display:inline-block;padding:3px 10px;border-radius:999px;font-size:.7rem;font-weight:800;background:rgba(255,198,0,.12);color:var(--yellow);border:1px solid rgba(255,198,0,.35);}
 .pill.pre{background:rgba(255,255,255,.07);color:#bbb;border-color:var(--line-strong)}
+.pill.live{background:rgba(61,220,132,.15);color:#3ddc84;border-color:rgba(61,220,132,.4);animation:pulse 2s infinite;}
 .admin-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
 .dropdown-list{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;margin-bottom:24px;}
 .dropdown-item{background:#141414;border:1px solid var(--line-strong);border-radius:8px;padding:8px 12px;display:flex;align-items:center;gap:10px;font-size:.85rem;}
 .dropdown-item button{background:none;border:none;color:var(--danger);cursor:pointer;font-weight:bold;font-size:1.1rem;line-height:1;}
+
+/* LIVE DASHBOARD STYLES */
+.join-code-display{font-size:3rem;font-weight:900;letter-spacing:.1em;color:var(--yellow);margin:10px 0;}
+.leaderboard{display:flex;flex-direction:column;gap:10px;margin-top:20px;}
+.lb-row{display:flex;align-items:center;justify-content:space-between;background:#111;border:1px solid var(--line);padding:14px 20px;border-radius:12px;font-size:1rem;font-weight:700;transition:transform .2s;}
+.lb-row.top-1{border-color:var(--gold);background:linear-gradient(90deg, rgba(255,215,0,.15), transparent);transform:scale(1.02);box-shadow:0 4px 15px rgba(255,215,0,.2);}
+.lb-row.top-2{border-color:var(--silver);background:linear-gradient(90deg, rgba(192,192,192,.15), transparent);}
+.lb-row.top-3{border-color:var(--bronze);background:linear-gradient(90deg, rgba(205,127,50,.15), transparent);}
+.lb-left{display:flex;align-items:center;gap:16px;}
+.lb-rank{font-size:1.2rem;width:30px;text-align:center;}
+.lb-score{color:var(--yellow);font-size:1.1rem;}
 
 /* MODAL & GATE & FOOTER */
 .modal{position:fixed;inset:0;z-index:200;display:grid;place-items:center;padding:20px;background:rgba(0,0,0,.82);backdrop-filter:blur(6px)}
@@ -237,6 +250,7 @@ tbody tr:hover{background:#0b0b0b}
   </header>
 
   <main>
+    <!-- SCREEN 1: LANDING -->
     <section id="scrLanding">
       <div class="container hero">
         <span class="eyebrow">Transaction Banking · Cash Management</span>
@@ -259,12 +273,16 @@ tbody tr:hover{background:#0b0b0b}
           <article class="level-card grand"><div class="medal">👑</div><span class="lvl">Level 5</span><h3>M2E Grandmaster</h3><p class="tagline">“Among the elite few who have mastered M2E Internet Banking.”</p><p class="desc">Highest and most prestigious badge.</p><span class="chip-pass">Pass score: 95%+</span></article>
         </div>
       </div>
-      <div class="cta container">
-        <button class="btn btn-primary" id="btnBegin" type="button">Begin Assessment</button>
+      <div class="cta container" style="display:flex; flex-direction:column; gap:16px; align-items:center;">
+        <button class="btn btn-primary" id="btnBegin" type="button" style="width:100%; max-width:400px;">Begin Standard Assessment</button>
+        <button class="btn btn-ghost" id="btnJoinLive" type="button" style="width:100%; max-width:400px; border-color:var(--yellow); color:var(--yellow);">
+          🎮 Join Live Quiz Session
+        </button>
         <p class="cta-note">Pre-training and post-training assessment · Transaction Banking Cash Management</p>
       </div>
     </section>
 
+    <!-- SCREEN 2: REGISTRATION (Standard) -->
     <section id="scrRegistration" hidden>
       <div class="container" style="padding-top:34px">
         <div class="form-card">
@@ -322,6 +340,39 @@ tbody tr:hover{background:#0b0b0b}
       </div>
     </section>
 
+    <!-- SCREEN 3: JOIN LIVE -->
+    <section id="scrJoinLive" hidden>
+      <div class="container" style="padding-top:34px">
+        <div class="form-card" style="max-width:420px;">
+          <h2 style="text-align:center;">Join Live Quiz</h2>
+          <p class="form-sub" style="text-align:center;">Enter the 6-digit code provided by your trainer.</p>
+          
+          <form id="joinLiveForm" novalidate>
+            <div class="field">
+              <label for="liveCode" style="text-align:center; font-size:1rem; color:var(--yellow);">Join Code</label>
+              <input id="liveCode" type="text" placeholder="e.g. M2E99" maxlength="6" style="text-align:center; font-size:1.5rem; letter-spacing:.2em; text-transform:uppercase;" required />
+              <span class="err" id="errLiveCode"></span>
+            </div>
+            <div class="field">
+              <label for="liveName">Full Name</label>
+              <input id="liveName" type="text" placeholder="Your Name" required />
+              <span class="err" id="errLiveName"></span>
+            </div>
+            <div class="field">
+              <label for="livePf">PF Number</label>
+              <input id="livePf" type="text" inputmode="numeric" maxlength="12" placeholder="Numbers only" required />
+              <span class="err" id="errLivePf"></span>
+            </div>
+            <div class="quiz-nav" style="margin-top:22px">
+              <button class="btn btn-ghost" type="button" id="btnBackHome2">Back</button>
+              <button class="btn btn-primary" type="submit" style="flex:2 1 200px">Join Now</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <!-- SCREEN 4: ASSESSMENT -->
     <section id="scrAssessment" hidden>
       <div class="container quiz-shell">
         <div class="quiz-meta"><span id="qCounter">Question 1 of 20</span><span class="timer" id="timer">05:00</span></div>
@@ -335,8 +386,21 @@ tbody tr:hover{background:#0b0b0b}
       </div>
     </section>
 
+    <!-- SCREEN 5: RESULT (Standard) -->
     <section id="scrResult" hidden></section>
 
+    <!-- SCREEN 6: LIVE LEADERBOARD (Participant) -->
+    <section id="scrLiveLeaderboard" hidden>
+      <div class="container result-wrap">
+        <div class="result-card" style="max-width:600px;">
+          <h2>Live Leaderboard</h2>
+          <p class="hint" style="margin-bottom:20px;">Updating in real-time...</p>
+          <div class="leaderboard" id="participantLeaderboard"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SCREEN 7: ADMIN -->
     <section id="scrAdmin" hidden>
       <div class="container admin-shell">
         <div id="adminLogin" class="form-card">
@@ -354,8 +418,9 @@ tbody tr:hover{background:#0b0b0b}
 
         <div id="adminConsole" hidden>
           <div class="admin-tabs" role="tablist">
-            <button type="button" class="active" data-tab="questions">Questions</button>
+            <button type="button" data-tab="questions">Questions</button>
             <button type="button" data-tab="submissions">Submissions</button>
+            <button type="button" data-tab="live" class="active">Host Live Session</button>
             <button type="button" data-tab="dropdowns">Dropdowns</button>
             <button type="button" data-tab="settings">Settings</button>
             <button type="button" id="btnAdminLogout" style="margin-left:auto; color:var(--danger)">Logout</button>
@@ -373,7 +438,7 @@ tbody tr:hover{background:#0b0b0b}
             <div id="topicAdminList" style="width:100%; margin-top:8px; font-size:.8rem; color:var(--muted);"></div>
           </div>
 
-          <div id="tabQuestions">
+          <div id="tabQuestions" hidden>
             <p class="hint" style="margin-bottom:16px">Select the radio button beside the correct answer. Changes apply immediately.</p>
             <div id="adminQuestions"></div>
             <div class="admin-actions">
@@ -391,7 +456,47 @@ tbody tr:hover{background:#0b0b0b}
             </div>
           </div>
 
-          <!-- NEW DROPDOWNS TAB -->
+          <!-- LIVE SESSION TAB -->
+          <div id="tabLive">
+            <div id="liveSetup">
+              <div class="form-card" style="margin:0; max-width:100%;">
+                <h2 style="font-size:1.1rem">Create Live Session</h2>
+                <p class="hint" style="margin-bottom:16px;">Host a Kahoot-style live quiz for a specific branch or unit. Participants will use the generated code to join.</p>
+                <div class="field">
+                  <label for="liveTargetGroup">Target Group (Branch / Unit Name)</label>
+                  <input id="liveTargetGroup" type="text" placeholder="e.g. Menara Maybank Branch" />
+                </div>
+                <div class="field">
+                  <label for="liveDuration">Duration (minutes)</label>
+                  <input id="liveDuration" type="number" value="10" min="1" max="60" />
+                </div>
+                <button class="btn btn-primary btn-sm" id="btnStartLive" type="button">Generate Join Code & Start</button>
+              </div>
+            </div>
+            
+            <div id="liveDashboard" hidden>
+              <div class="form-card" style="margin:0; max-width:100%; text-align:center; position:relative;">
+                <div style="position:absolute; top:16px; right:16px;"><span class="pill live" style="font-size:0.8rem;">LIVE</span></div>
+                <h2 style="font-size:1.2rem; color:var(--muted-2);">Scan or enter code to join</h2>
+                <div class="join-code-display" id="displayJoinCode">---</div>
+                <p style="font-size:1.1rem; margin-bottom:20px;">Target Group: <strong id="displayTargetGroup" style="color:var(--yellow);"></strong></p>
+                
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                  <h3 style="margin:0; font-size:1.1rem;">Live Leaderboard (Top 10)</h3>
+                  <span class="timer" id="adminLiveTimer">10:00</span>
+                </div>
+                
+                <div class="leaderboard" id="adminLeaderboard">
+                  <p class="hint">Waiting for participants to submit...</p>
+                </div>
+                
+                <div class="admin-actions" style="justify-content:center; margin-top:24px;">
+                  <button class="btn btn-ghost btn-sm" id="btnEndLive" type="button" style="color:var(--danger); border-color:var(--danger);">End Session</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div id="tabDropdowns" hidden>
             <div class="form-card" style="margin:0; max-width:100%;">
               <h2 style="font-size:1.1rem">Manage Dropdown Options</h2>
@@ -421,7 +526,7 @@ tbody tr:hover{background:#0b0b0b}
             <div class="form-card" style="margin:0; max-width:560px">
               <h2 style="font-size:1.1rem">Application Settings</h2>
               <form id="settingsForm">
-                <div class="field"><label for="setDuration">Assessment Duration (minutes)</label><input id="setDuration" type="number" min="1" max="60" /></div>
+                <div class="field"><label for="setDuration">Standard Assessment Duration (minutes)</label><input id="setDuration" type="number" min="1" max="60" /></div>
                 <div class="field"><label for="setCount">Questions Served Per Assessment</label><input id="setCount" type="number" min="1" max="100" /></div>
                 <button class="btn btn-primary btn-sm" type="submit">Save Settings</button>
               </form>
@@ -527,9 +632,9 @@ async function fetchDropdownOptions(category) {
 }
 
 // --- SCREENS & STATE ---
-const SCREENS = ['scrLanding', 'scrRegistration', 'scrAssessment', 'scrResult', 'scrAdmin'];
+const SCREENS = ['scrLanding', 'scrRegistration', 'scrJoinLive', 'scrAssessment', 'scrResult', 'scrLiveLeaderboard', 'scrAdmin'];
 function showScreen(id) { SCREENS.forEach(s => { const el = document.getElementById(s); if (el) el.hidden = (s !== id); }); window.scrollTo(0, 0); }
-const state = { participant: null, mode: 'pre', topicId: null, questions: [], answers: [], current: 0, timeLeft: 300, timerId: null, startedAt: null, lastSubmission: null };
+const state = { participant: null, mode: 'pre', topicId: null, sessionId: null, questions: [], answers: [], current: 0, timeLeft: 300, timerId: null, startedAt: null, lastSubmission: null };
 
 // --- GATE ---
 const GATE_SESSION_KEY = 'm2e.unlocked';
@@ -550,19 +655,17 @@ function initGate() {
   });
 }
 
-// --- PARTICIPANT FLOW ---
+// --- STANDARD PARTICIPANT FLOW ---
 $('#btnBegin').addEventListener('click', async () => {
   showScreen('scrRegistration');
   setTimeout(() => $('#fullName').focus(), 150);
   
-  // Fetch Topics
   const topicSelect = $('#topicSelect');
   topicSelect.innerHTML = '<option value="">Loading topics...</option>';
   const topics = await fetchActiveTopics();
   if (topics.length === 0) { topicSelect.innerHTML = '<option value="">No active assessments available.</option>'; }
   else { topicSelect.innerHTML = '<option value="">— Select Assessment Topic —</option>' + topics.map(t => `<option value="${t.id}">${escapeHtml(t.name)}</option>`).join(''); }
 
-  // Fetch Dropdowns
   const regions = await fetchDropdownOptions('region');
   $('#region').innerHTML = '<option value="">— Select your region —</option>' + regions.map(r => `<option value="${escapeHtml(r.value)}">${escapeHtml(r.value)}</option>`).join('');
 
@@ -571,26 +674,11 @@ $('#btnBegin').addEventListener('click', async () => {
 });
 $('#btnBackHome').addEventListener('click', () => showScreen('scrLanding'));
 
-// Conditional Logic for Participant Category
 $('#participantCategory').addEventListener('change', (e) => {
   const cat = e.target.value;
-  const regionField = $('#regionField');
-  const branchField = $('#branchField');
-  const unitField = $('#unitField');
-
-  if (cat === 'branch') {
-    regionField.hidden = false;
-    branchField.hidden = false;
-    unitField.hidden = true;
-  } else if (cat === 'tbc') {
-    regionField.hidden = false;
-    branchField.hidden = true;
-    unitField.hidden = true;
-  } else if (cat === 'other') {
-    regionField.hidden = true;
-    branchField.hidden = true;
-    unitField.hidden = false;
-  }
+  $('#regionField').hidden = (cat === 'other');
+  $('#branchField').hidden = (cat !== 'branch');
+  $('#unitField').hidden = (cat !== 'other');
 });
 
 const EMAIL_RE = /^[A-Za-z0-9._%+-]+@maybank\.com$/i; const PF_RE = /^\d{4,12}$/;
@@ -600,9 +688,7 @@ $('#regForm').addEventListener('submit', async (e) => {
   e.preventDefault(); let ok = true;
   const category = $('#participantCategory').value;
   const topicId = $('#topicSelect').value; const fullName = $('#fullName').value.trim(); 
-  const region = $('#region').value;
-  const branch = $('#branch').value.trim(); 
-  const otherUnit = $('#otherUnit').value;
+  const region = $('#region').value; const branch = $('#branch').value.trim(); const otherUnit = $('#otherUnit').value;
   const email = $('#email').value.trim(); const pf = $('#pf').value.trim();
   
   if (!topicId) { alert('Please select a topic.'); ok = false; }
@@ -621,24 +707,62 @@ $('#regForm').addEventListener('submit', async (e) => {
   if (!PF_RE.test(pf)) { setFieldError('pf', 'errPf', 'Numeric PF required.'); ok = false; } else setFieldError('pf', 'errPf', '');
   if (!ok) return;
 
-  let finalRegion = region;
-  let finalBranch = branch;
+  let finalRegion = region; let finalBranch = branch;
+  if (category === 'tbc') finalBranch = 'TBC';
+  else if (category === 'other') { finalRegion = 'N/A'; finalBranch = otherUnit; }
 
-  if (category === 'tbc') {
-    finalBranch = 'TBC';
-  } else if (category === 'other') {
-    finalRegion = 'N/A';
-    finalBranch = otherUnit;
-  }
-
-  state.topicId = topicId; 
-  state.mode = ($('input[name="mode"]:checked') || {}).value || 'pre'; 
+  state.topicId = topicId; state.sessionId = null; state.mode = ($('input[name="mode"]:checked') || {}).value || 'pre'; 
   state.participant = { fullName, region: finalRegion, branch: finalBranch, email, pfNumber: pf };
   
   const submitBtn = e.target.querySelector('button[type="submit"]'); submitBtn.textContent = 'Loading...'; submitBtn.disabled = true;
   await startAssessment(); submitBtn.textContent = 'Start Assessment'; submitBtn.disabled = false;
 });
 
+// --- LIVE PARTICIPANT FLOW ---
+$('#btnJoinLive').addEventListener('click', () => { showScreen('scrJoinLive'); setTimeout(() => $('#liveCode').focus(), 150); });
+$('#btnBackHome2').addEventListener('click', () => showScreen('scrLanding'));
+
+$('#joinLiveForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const code = $('#liveCode').value.trim().toUpperCase();
+  const name = $('#liveName').value.trim();
+  const pf = $('#livePf').value.trim();
+  const btn = e.target.querySelector('button[type="submit"]');
+  
+  if (!code || !name || !pf) { alert('Please fill all fields'); return; }
+
+  btn.textContent = 'Verifying Code...'; btn.disabled = true;
+
+  // Find active session
+  const { data: session, error } = await supabaseClient.from('live_sessions').select('*').eq('join_code', code).eq('status', 'active').single();
+  
+  if (error || !session) {
+    alert('Invalid or expired Join Code.');
+    btn.textContent = 'Join Now'; btn.disabled = false;
+    return;
+  }
+
+  state.topicId = session.topic_id;
+  state.sessionId = session.id;
+  state.mode = 'live';
+  state.participant = { fullName: name, email: 'live@maybank.com', branch: session.target_group, region: 'N/A', pfNumber: pf };
+  
+  // Fetch questions securely
+  const bank = await fetchQuestionsFromDB(state.topicId, false);
+  if (bank.length === 0) { alert('No questions available for this session.'); btn.textContent = 'Join Now'; btn.disabled = false; return; }
+
+  const wanted = Math.min(20, bank.length);
+  state.questions = shuffle(bank).slice(0, wanted).map(q => ({ id: q.id, text: q.text, options: shuffle(q.options) }));
+  state.answers = new Array(state.questions.length).fill(null);
+  state.current = 0;
+  state.timeLeft = Math.max(1, session.duration_minutes) * 60;
+  state.startedAt = Date.now();
+
+  showScreen('scrAssessment'); renderQuestion(); startTimer();
+  btn.textContent = 'Join Now'; btn.disabled = false;
+});
+
+// --- ASSESSMENT ENGINE ---
 async function startAssessment() {
   const settings = loadSettings(); const bank = await fetchQuestionsFromDB(state.topicId, false);
   if (bank.length === 0) { alert('No questions available.'); showScreen('scrLanding'); return; }
@@ -676,17 +800,30 @@ async function submitAssessment(auto) {
   clearInterval(state.timerId);
   const answersPayload = state.questions.map((q, i) => ({ questionId: q.id, selectedText: state.answers[i] }));
   $('#qText').textContent = "Saving securely..."; $('#options').innerHTML = "";
-  const { data, error } = await supabaseClient.rpc('submit_assessment', {
-    p_topic_id: state.topicId, p_full_name: state.participant.fullName, p_region: state.participant.region,
-    p_branch: state.participant.branch, p_email: state.participant.email, p_pf_number: state.participant.pfNumber,
-    p_mode: state.mode, p_answers: answersPayload
-  });
-  if (error) { console.error(error); alert('Error saving.'); showScreen('scrLanding'); return; }
-  const level = getLevel(data.score);
-  state.lastSubmission = { ...data, full_name: state.participant.fullName, mode: state.mode, levelNumber: level ? level.n : null, levelName: level ? level.name : null, durationSec: Math.max(0, Math.round((Date.now() - state.startedAt) / 1000)) };
-  renderResult(state.lastSubmission);
+
+  if (state.sessionId) {
+    // LIVE SUBMISSION
+    const { data, error } = await supabaseClient.rpc('submit_live_assessment', {
+      p_session_id: state.sessionId, p_full_name: state.participant.fullName,
+      p_pf_number: state.participant.pfNumber, p_answers: answersPayload
+    });
+    if (error) { console.error(error); alert('Error saving.'); showScreen('scrLanding'); return; }
+    renderLiveLeaderboard(state.sessionId, data.score);
+  } else {
+    // STANDARD SUBMISSION
+    const { data, error } = await supabaseClient.rpc('submit_assessment', {
+      p_topic_id: state.topicId, p_full_name: state.participant.fullName, p_region: state.participant.region,
+      p_branch: state.participant.branch, p_email: state.participant.email, p_pf_number: state.participant.pfNumber,
+      p_mode: state.mode, p_answers: answersPayload
+    });
+    if (error) { console.error(error); alert('Error saving.'); showScreen('scrLanding'); return; }
+    const level = getLevel(data.score);
+    state.lastSubmission = { ...data, full_name: state.participant.fullName, mode: state.mode, levelNumber: level ? level.n : null, levelName: level ? level.name : null, durationSec: Math.max(0, Math.round((Date.now() - state.startedAt) / 1000)) };
+    renderResult(state.lastSubmission);
+  }
 }
 
+// --- RENDER FUNCTIONS ---
 function renderResult(sub) {
   const level = getLevel(sub.score); const isPost = sub.mode === 'post';
   const levelBlock = level ? `<div class="level-badge"><span class="medal">${level.medal}</span><div><strong>Level ${level.n} – ${level.name}</strong><small>${escapeHtml(level.tagline)}</small></div></div>` : `<div class="level-badge none"><span class="medal">📘</span><div><strong>Keep Learning</strong><small>You need 50% to reach Level 1.</small></div></div>`;
@@ -709,13 +846,55 @@ function renderResult(sub) {
   }); }
 }
 
+async function fetchLeaderboard(sessionId) {
+  const { data } = await supabaseClient.from('submissions').select('full_name, score, pf_number').eq('session_id', sessionId).order('score', { ascending: false }).order('submitted_at', { ascending: true }).limit(10);
+  return data || [];
+}
+
+function generateLeaderboardHtml(data, isAdmin) {
+  if (data.length === 0) return `<p class="hint">Waiting for participants...</p>`;
+  return data.map((s, i) => {
+    let rankClass = ''; let trophy = (i+1);
+    if (i === 0) { rankClass = 'top-1'; trophy = '🥇'; }
+    else if (i === 1) { rankClass = 'top-2'; trophy = '🥈'; }
+    else if (i === 2) { rankClass = 'top-3'; trophy = '🥉'; }
+    
+    return `<div class="lb-row ${rankClass}">
+      <div class="lb-left">
+        <span class="lb-rank">${trophy}</span>
+        <span>${escapeHtml(s.full_name)} ${isAdmin ? `<small style="color:var(--muted)">(${escapeHtml(s.pf_number)})</small>` : ''}</span>
+      </div>
+      <div class="lb-score">${s.score}%</div>
+    </div>`;
+  }).join('');
+}
+
+async function renderLiveLeaderboard(sessionId, myScore) {
+  showScreen('scrLiveLeaderboard');
+  const container = $('#participantLeaderboard');
+  
+  const update = async () => {
+    const data = await fetchLeaderboard(sessionId);
+    container.innerHTML = generateLeaderboardHtml(data, false);
+  };
+
+  await update();
+
+  // Subscribe to Realtime
+  supabaseClient.channel('live_leaderboard_p_'+sessionId)
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'submissions', filter: `session_id=eq.${sessionId}` }, payload => {
+      update();
+    }).subscribe();
+}
+
 // --- ADMIN FLOW ---
-let adminDraft = null; let currentAdminTopicId = null; let currentAdminTopics = [];
+let adminDraft = null; let currentAdminTopicId = null; let currentAdminTopics = []; let activeLiveSession = null; let adminRealtimeChannel = null;
+let adminLiveTimerInterval = null;
 
 $('#btnAdminOpen').addEventListener('click', async () => {
   showScreen('scrAdmin');
   const { data: { session } } = await supabaseClient.auth.getSession();
-  if (session) { $('#adminLogin').hidden = true; $('#adminConsole').hidden = false; await loadAdminTopics(); openAdminTab('questions'); }
+  if (session) { $('#adminLogin').hidden = true; $('#adminConsole').hidden = false; await loadAdminTopics(); openAdminTab('live'); }
   else { $('#adminLogin').hidden = false; $('#adminConsole').hidden = true; $('#adminEmail').value = ''; $('#adminPwd').value = ''; $('#adminErr').textContent = ''; setTimeout(() => $('#adminEmail').focus(), 150); }
 });
 $('#btnAdminBack').addEventListener('click', () => showScreen('scrLanding'));
@@ -728,7 +907,7 @@ $('#adminLoginForm').addEventListener('submit', async (e) => {
   submitBtn.textContent = 'Sign In'; submitBtn.disabled = false;
   if (error) { errEl.textContent = error.message; return; }
   $('#adminPwd').value = ''; $('#adminLogin').hidden = true; $('#adminConsole').hidden = false;
-  await loadAdminTopics(); openAdminTab('questions');
+  await loadAdminTopics(); openAdminTab('live');
 });
 
 async function loadAdminTopics() {
@@ -748,47 +927,110 @@ async function updateTopicUI() {
     $('#btnToggleTopicStatus').style.color = topic.is_active ? 'var(--danger)' : 'var(--yellow)';
     $('#btnToggleTopicStatus').style.borderColor = topic.is_active ? 'var(--danger)' : 'var(--yellow)';
   }
-  
   $('#topicAdminList').innerHTML = 'Loading shared admins...';
   const { data: admins } = await supabaseClient.rpc('get_topic_admins', { p_topic_id: currentAdminTopicId });
-  if (admins && admins.length > 0) {
-    $('#topicAdminList').innerHTML = `<strong>Shared Admins:</strong> ${admins.map(a => escapeHtml(a.email)).join(', ')}`;
-  } else {
-    $('#topicAdminList').innerHTML = '<strong>Shared Admins:</strong> Only you (or loading failed)';
-  }
+  if (admins && admins.length > 0) $('#topicAdminList').innerHTML = `<strong>Shared Admins:</strong> ${admins.map(a => escapeHtml(a.email)).join(', ')}`;
+  else $('#topicAdminList').innerHTML = '<strong>Shared Admins:</strong> Only you';
 }
 
 $('#adminTopicSelect').addEventListener('change', (e) => { currentAdminTopicId = e.target.value; updateTopicUI(); openAdminTab($('.admin-tabs .active').dataset.tab || 'questions'); });
 
 $('#btnToggleTopicStatus').addEventListener('click', async () => {
-  if (!currentAdminTopicId) return;
-  const topic = currentAdminTopics.find(t => t.id === currentAdminTopicId);
-  if (!topic) return;
-  const newStatus = !topic.is_active;
-  const btn = $('#btnToggleTopicStatus'); btn.textContent = 'Saving...'; btn.disabled = true;
-  const { error } = await supabaseClient.from('topics').update({ is_active: newStatus }).eq('id', currentAdminTopicId);
-  btn.disabled = false;
-  if (error) { alert('Error: ' + error.message); } else { await loadAdminTopics(); }
+  if (!currentAdminTopicId) return; const topic = currentAdminTopics.find(t => t.id === currentAdminTopicId); if (!topic) return;
+  const newStatus = !topic.is_active; const btn = $('#btnToggleTopicStatus'); btn.textContent = 'Saving...'; btn.disabled = true;
+  await supabaseClient.from('topics').update({ is_active: newStatus }).eq('id', currentAdminTopicId);
+  btn.disabled = false; await loadAdminTopics();
 });
 
 $('#btnCreateTopic').addEventListener('click', async () => {
   const name = prompt('Enter new topic name:'); if (!name) return;
   const { data: { user } } = await supabaseClient.auth.getUser();
   const { data, error } = await supabaseClient.from('topics').insert([{ name, is_active: false, admin_id: user.id }]).select();
-  if (error) { alert('Error creating topic: ' + error.message); return; }
+  if (error) { alert('Error: ' + error.message); return; }
   await loadAdminTopics(); $('#adminTopicSelect').value = data[0].id; currentAdminTopicId = data[0].id; await updateTopicUI(); openAdminTab('questions');
 });
 
 $$('.admin-tabs [data-tab]').forEach(btn => { btn.addEventListener('click', () => openAdminTab(btn.dataset.tab)); });
 function openAdminTab(tab) {
   $$('.admin-tabs [data-tab]').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
-  $('#tabQuestions').hidden = tab !== 'questions'; $('#tabSubmissions').hidden = tab !== 'submissions'; $('#tabDropdowns').hidden = tab !== 'dropdowns'; $('#tabSettings').hidden = tab !== 'settings';
+  $('#tabQuestions').hidden = tab !== 'questions'; $('#tabSubmissions').hidden = tab !== 'submissions'; 
+  $('#tabLive').hidden = tab !== 'live'; $('#tabDropdowns').hidden = tab !== 'dropdowns'; $('#tabSettings').hidden = tab !== 'settings';
   if (tab === 'questions') loadAdminQuestions(); 
   if (tab === 'submissions') renderSubmissions(); 
   if (tab === 'dropdowns') loadDropdownManager();
   if (tab === 'settings') fillSettingsForm();
 }
 
+// --- ADMIN LIVE HOST LOGIC ---
+$('#btnStartLive').addEventListener('click', async () => {
+  if (!currentAdminTopicId) return alert('Select a topic first.');
+  const targetGroup = $('#liveTargetGroup').value.trim();
+  const duration = Number($('#liveDuration').value);
+  if (!targetGroup || duration < 1) return alert('Enter target group and valid duration.');
+
+  const btn = $('#btnStartLive'); btn.textContent = 'Starting...'; btn.disabled = true;
+  
+  // Generate random 6 char code (A-Z, 0-9)
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let code = ''; for(let i=0; i<6; i++) code += chars.charAt(Math.floor(Math.random() * chars.length));
+
+  const { data: { user } } = await supabaseClient.auth.getUser();
+  
+  const { data, error } = await supabaseClient.from('live_sessions').insert([{
+    topic_id: currentAdminTopicId, admin_id: user.id, join_code: code, target_group: targetGroup, status: 'active', duration_minutes: duration
+  }]).select().single();
+
+  btn.textContent = 'Generate Join Code & Start'; btn.disabled = false;
+
+  if (error) { alert('Error starting session: ' + error.message); return; }
+
+  activeLiveSession = data;
+  startAdminLiveDashboard(data);
+});
+
+function startAdminLiveDashboard(session) {
+  $('#liveSetup').hidden = true; $('#liveDashboard').hidden = false;
+  $('#displayJoinCode').textContent = session.join_code;
+  $('#displayTargetGroup').textContent = session.target_group;
+
+  // Local Timer for Admin
+  let timeLeft = session.duration_minutes * 60;
+  clearInterval(adminLiveTimerInterval);
+  const paintAdminTimer = () => {
+    const m = Math.floor(Math.max(timeLeft, 0) / 60); const s = Math.max(timeLeft, 0) % 60;
+    $('#adminLiveTimer').textContent = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+    $('#adminLiveTimer').classList.toggle('warn', timeLeft <= 60);
+  };
+  paintAdminTimer();
+  adminLiveTimerInterval = setInterval(() => { timeLeft -= 1; paintAdminTimer(); if(timeLeft <= 0) clearInterval(adminLiveTimerInterval); }, 1000);
+
+  // Initial fetch
+  updateAdminLeaderboard(session.id);
+
+  // Realtime Subscription
+  if(adminRealtimeChannel) supabaseClient.removeChannel(adminRealtimeChannel);
+  adminRealtimeChannel = supabaseClient.channel('live_admin_'+session.id)
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'submissions', filter: `session_id=eq.${session.id}` }, payload => {
+      updateAdminLeaderboard(session.id);
+    }).subscribe();
+}
+
+async function updateAdminLeaderboard(sessionId) {
+  const data = await fetchLeaderboard(sessionId);
+  $('#adminLeaderboard').innerHTML = generateLeaderboardHtml(data, true);
+}
+
+$('#btnEndLive').addEventListener('click', async () => {
+  if (!activeLiveSession || !confirm('End this live session?')) return;
+  await supabaseClient.from('live_sessions').update({ status: 'ended' }).eq('id', activeLiveSession.id);
+  if(adminRealtimeChannel) supabaseClient.removeChannel(adminRealtimeChannel);
+  clearInterval(adminLiveTimerInterval);
+  activeLiveSession = null;
+  $('#liveSetup').hidden = false; $('#liveDashboard').hidden = true;
+  $('#liveTargetGroup').value = '';
+});
+
+// --- OTHER ADMIN LOGIC ---
 async function loadAdminQuestions() {
   if (!currentAdminTopicId) { $('#adminQuestions').innerHTML = '<p class="hint">Select a topic.</p>'; return; }
   $('#adminQuestions').innerHTML = '<p class="hint">Loading...</p>';
@@ -822,43 +1064,34 @@ $('#btnRestoreQuestions').addEventListener('click', async () => {
   await supabaseClient.from('questions').insert(seeds); btn.textContent = 'Restore Default Bank'; btn.disabled = false; alert('Restored.'); loadAdminQuestions();
 });
 
-// --- DROPDOWN MANAGER ---
+// Dropdown Manager
 async function loadDropdownManager() {
   const regions = await fetchDropdownOptions('region');
   const units = await fetchDropdownOptions('unit');
-
   $('#regionList').innerHTML = regions.map(r => `<div class="dropdown-item">${escapeHtml(r.value)} <button onclick="deleteDropdownItem('${r.id}')">&times;</button></div>`).join('');
   $('#unitList').innerHTML = units.map(u => `<div class="dropdown-item">${escapeHtml(u.value)} <button onclick="deleteDropdownItem('${u.id}')">&times;</button></div>`).join('');
 }
-
 window.deleteDropdownItem = async (id) => {
   if (!confirm('Delete this option?')) return;
-  const { error } = await supabaseClient.from('dropdown_options').delete().eq('id', id);
-  if (error) alert(error.message); else loadDropdownManager();
+  await supabaseClient.from('dropdown_options').delete().eq('id', id); loadDropdownManager();
 };
-
 $('#btnAddRegion').addEventListener('click', async () => {
-  const val = $('#newRegionInput').value.trim(); if (!val) return;
-  $('#newRegionInput').value = '';
-  const { error } = await supabaseClient.from('dropdown_options').insert([{ category: 'region', value: val }]);
-  if (error) alert(error.message); else loadDropdownManager();
+  const val = $('#newRegionInput').value.trim(); if (!val) return; $('#newRegionInput').value = '';
+  await supabaseClient.from('dropdown_options').insert([{ category: 'region', value: val }]); loadDropdownManager();
 });
-
 $('#btnAddUnit').addEventListener('click', async () => {
-  const val = $('#newUnitInput').value.trim(); if (!val) return;
-  $('#newUnitInput').value = '';
-  const { error } = await supabaseClient.from('dropdown_options').insert([{ category: 'unit', value: val }]);
-  if (error) alert(error.message); else loadDropdownManager();
+  const val = $('#newUnitInput').value.trim(); if (!val) return; $('#newUnitInput').value = '';
+  await supabaseClient.from('dropdown_options').insert([{ category: 'unit', value: val }]); loadDropdownManager();
 });
 
-// --- SUBMISSIONS & SETTINGS ---
+// Submissions & Settings
 async function renderSubmissions() {
   if (!currentAdminTopicId) { $('#adminSubs').innerHTML = '<p class="hint">Select topic.</p>'; return; }
   const wrap = $('#adminSubs'); wrap.innerHTML = '<p class="hint">Loading...</p>';
   const { data, error } = await supabaseClient.from('submissions').select('*').eq('topic_id', currentAdminTopicId).order('submitted_at', { ascending: false });
   if (error || !data) { wrap.innerHTML = '<p class="hint" style="color:var(--danger)">Error loading.</p>'; return; }
   if (data.length === 0) { wrap.innerHTML = '<p class="hint">No submissions yet.</p>'; return; }
-  const rows = data.map(s => `<tr><td>${escapeHtml(new Date(s.submitted_at).toLocaleString())}</td><td>${escapeHtml(s.full_name)}</td><td>${escapeHtml(s.email)}</td><td>${escapeHtml(s.pf_number)}</td><td>${escapeHtml(s.region)}</td><td>${escapeHtml(s.branch)}</td><td><span class="pill ${s.mode === 'pre' ? 'pre' : ''}">${s.mode === 'pre' ? 'Pre' : 'Post'}</span></td><td><strong>${s.score}%</strong> (${s.correct_count}/${s.total_questions})</td><td>${s.score >= 50 ? escapeHtml(getLevel(s.score).name) : '—'}</td><td><button class="btn-mini" type="button" data-view="${escapeHtml(s.id)}">View</button></td></tr>`).join('');
+  const rows = data.map(s => `<tr><td>${escapeHtml(new Date(s.submitted_at).toLocaleString())}</td><td>${escapeHtml(s.full_name)}</td><td>${escapeHtml(s.email)}</td><td>${escapeHtml(s.pf_number)}</td><td>${escapeHtml(s.region)}</td><td>${escapeHtml(s.branch)}</td><td><span class="pill ${s.mode === 'pre' ? 'pre' : ''} ${s.mode === 'live' ? 'live' : ''}">${s.mode.toUpperCase()}</span></td><td><strong>${s.score}%</strong> (${s.correct_count}/${s.total_questions})</td><td>${s.score >= 50 ? escapeHtml(getLevel(s.score).name) : '—'}</td><td><button class="btn-mini" type="button" data-view="${escapeHtml(s.id)}">View</button></td></tr>`).join('');
   wrap.innerHTML = `<div class="table-wrap"><table><thead><tr><th>Submitted</th><th>Name</th><th>Email</th><th>PF</th><th>Region</th><th>Branch/Unit</th><th>Type</th><th>Score</th><th>Level</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>`;
 }
 $('#adminSubs').addEventListener('click', async (e) => {
@@ -867,7 +1100,7 @@ $('#adminSubs').addEventListener('click', async (e) => {
   if (!error && data) { data.correct = data.correct_count; data.total = data.total_questions; data.levelNumber = data.score >= 50 ? getLevel(data.score).n : null; data.levelName = data.score >= 50 ? getLevel(data.score).name : null; openSubmissionModal(data); }
 });
 function openSubmissionModal(sub) {
-  $('#modalBody').innerHTML = `<h2 style="margin:0 0 4px;font-size:1.15rem">${escapeHtml(sub.full_name)}</h2><p class="hint" style="margin:0 0 18px">${escapeHtml(sub.email)} · PF ${escapeHtml(sub.pf_number)}<br />${escapeHtml(sub.region)} · ${escapeHtml(sub.branch)}<br />${sub.mode === 'pre' ? 'Pre' : 'Post'}-Training · ${escapeHtml(new Date(sub.submitted_at).toLocaleString())}</p><div class="level-badge" style="margin-bottom:18px"><span class="medal">${sub.score}%</span><div><strong>${sub.levelName ? 'Level ' + sub.levelNumber + ' – ' + escapeHtml(sub.levelName) : 'No level'}</strong><small>${sub.correct} of ${sub.total} correct</small></div></div><div class="review">${sub.answers.map((a, i) => `<div class="review-item"><div class="rq">${i + 1}. ${escapeHtml(a.question)}</div><p class="ra ${a.isCorrect ? 'ok' : 'no'}">Selected: <b>${escapeHtml(a.selectedText ?? '—')}</b> ${a.isCorrect ? '✓' : '✗'}</p>${a.isCorrect ? '' : `<p class="ra ok">Correct: <b>${escapeHtml(a.correctText)}</b></p>`}</div>`).join('')}</div>`;
+  $('#modalBody').innerHTML = `<h2 style="margin:0 0 4px;font-size:1.15rem">${escapeHtml(sub.full_name)}</h2><p class="hint" style="margin:0 0 18px">${escapeHtml(sub.email)} · PF ${escapeHtml(sub.pf_number)}<br />${escapeHtml(sub.region)} · ${escapeHtml(sub.branch)}<br />${sub.mode.toUpperCase()} · ${escapeHtml(new Date(sub.submitted_at).toLocaleString())}</p><div class="level-badge" style="margin-bottom:18px"><span class="medal">${sub.score}%</span><div><strong>${sub.levelName ? 'Level ' + sub.levelNumber + ' – ' + escapeHtml(sub.levelName) : 'No level'}</strong><small>${sub.correct} of ${sub.total} correct</small></div></div><div class="review">${sub.answers.map((a, i) => `<div class="review-item"><div class="rq">${i + 1}. ${escapeHtml(a.question || 'Question text hidden for live')}</div><p class="ra ${a.isCorrect ? 'ok' : 'no'}">Selected: <b>${escapeHtml(a.selectedText ?? '—')}</b> ${a.isCorrect ? '✓' : '✗'}</p>${a.isCorrect ? '' : `<p class="ra ok">Correct: <b>${escapeHtml(a.correctText || 'Hidden')}</b></p>`}</div>`).join('')}</div>`;
   $('#modal').hidden = false;
 }
 $('#modalClose').addEventListener('click', () => { $('#modal').hidden = true; }); $('#modal').addEventListener('click', (e) => { if (e.target.id === 'modal') $('#modal').hidden = true; });
@@ -877,7 +1110,7 @@ $('#btnExportCsv').addEventListener('click', async () => {
   const { data, error } = await supabaseClient.from('submissions').select('*').eq('topic_id', currentAdminTopicId).order('submitted_at', { ascending: false }); btn.textContent = 'Export CSV';
   if (error || !data || data.length === 0) { alert('No records.'); return; }
   const head = ['Submitted', 'Name', 'Email', 'PF', 'Region', 'Branch/Unit', 'Type', 'Score', 'Correct', 'Total', 'Level'];
-  const rows = data.map(s => [new Date(s.submitted_at).toLocaleString(), s.full_name, s.email, s.pf_number, s.region, s.branch, s.mode === 'pre' ? 'Pre' : 'Post', s.score, s.correct_count, s.total_questions, s.score >= 50 ? getLevel(s.score).name : '-']);
+  const rows = data.map(s => [new Date(s.submitted_at).toLocaleString(), s.full_name, s.email, s.pf_number, s.region, s.branch, s.mode.toUpperCase(), s.score, s.correct_count, s.total_questions, s.score >= 50 ? getLevel(s.score).name : '-']);
   const csv = [head, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\r\n'); download(`m2e-submissions-${new Date().toISOString().slice(0, 10)}.csv`, csv);
 });
 $('#btnClearSubs').addEventListener('click', async () => { if (!currentAdminTopicId || !confirm('Delete ALL submissions for this topic?')) return; const btn = $('#btnClearSubs'); btn.textContent = '...'; await supabaseClient.from('submissions').delete().eq('topic_id', currentAdminTopicId); btn.textContent = 'Clear All Records'; renderSubmissions(); });

@@ -616,7 +616,7 @@ const SCREENS = ['scrLanding', 'scrRegistration', 'scrJoinLive', 'scrLiveLobby',
 function showScreen(id) { SCREENS.forEach(s => { const el = document.getElementById(s); if (el) el.hidden = (s !== id); }); window.scrollTo(0, 0); }
 const state = { 
   participant: null, mode: 'pre', topicId: null, questions: [], answers: [], current: 0, timeLeft: 300, timerId: null, startedAt: null, lastSubmission: null, 
-  liveSessionId: null, liveParticipantId: null, liveTimerId: null, liveCurrentQuestion: null, liveCurrentQIndex: null, liveSelectedText: null 
+  liveSessionId: null, liveParticipantId: null, liveTimerId: null, liveCurrentQuestion: null, liveCurrentQIndex: null, liveSelectedText: null, liveAnswerSubmitted: false 
 };
 
 // --- GATE ---
@@ -626,7 +626,6 @@ function initGate() {
   const urlParams = new URLSearchParams(window.location.search);
   const joinCode = urlParams.get('join');
   
-  // Deep link bypass
   if (sessionStorage.getItem(GATE_SESSION_KEY) === '1' || joinCode) {
     unlockApp();
     if (joinCode) {
@@ -766,6 +765,7 @@ async function handleLivePhaseUpdate(session) {
     state.liveCurrentQuestion = q;
     state.liveCurrentQIndex = session.current_q_index;
     state.liveSelectedText = null;
+    state.liveAnswerSubmitted = false; // RESET SUBMIT FLAG
     
     $('#liveQText').textContent = q.text;
     $('#liveOptions').hidden = true;
@@ -788,6 +788,7 @@ async function handleLivePhaseUpdate(session) {
       const btn = document.createElement('button'); btn.type = 'button'; btn.className = 'option';
       btn.innerHTML = `<span class="key">${String.fromCharCode(65 + i)}</span><span>${escapeHtml(opt)}</span>`;
       btn.addEventListener('click', () => {
+          if (state.liveAnswerSubmitted) return;
           $$('#liveOptions .option').forEach(b => b.classList.remove('selected'));
           btn.classList.add('selected');
           state.liveSelectedText = opt;
@@ -822,8 +823,13 @@ function startLiveTimer(seconds, label) {
 }
 
 on('#btnLiveSubmit', 'click', async () => {
+    if (state.liveAnswerSubmitted) return; // PREVENT DOUBLE CLICK
     if (!state.liveSelectedText) return alert('Please select an option first.');
+    
+    // LOCK UI IMMEDIATELY
+    state.liveAnswerSubmitted = true; 
     const btn = $('#btnLiveSubmit'); btn.textContent = 'Submitting...'; btn.disabled = true;
+    $$('#liveOptions .option').forEach(b => b.classList.add('disabled'));
     
     const { data, error } = await supabaseClient.rpc('submit_live_answer', {
         p_session_id: state.liveSessionId, 
@@ -833,12 +839,17 @@ on('#btnLiveSubmit', 'click', async () => {
         p_selected_text: state.liveSelectedText
     });
     
-    btn.textContent = 'Submit Answer'; btn.disabled = false;
+    if (error) {
+        alert('Submission failed: ' + error.message);
+        state.liveAnswerSubmitted = false;
+        btn.textContent = 'Submit Answer'; btn.disabled = false;
+        return;
+    }
 
-    if (!error && data) {
-        $('#liveResTitle').textContent = data.is_correct ? 'Correct! 🎉' : 'Wrong ❌';
-        $('#liveResTitle').style.color = data.is_correct ? 'var(--success)' : 'var(--danger)';
-        $('#liveResPoints').textContent = data.is_correct ? `+${data.points_earned}` : `+0`;
+    if (data) {
+        $('#liveResTitle').textContent = data.is_correct === true ? 'Correct! 🎉' : 'Wrong ❌';
+        $('#liveResTitle').style.color = data.is_correct === true ? 'var(--success)' : 'var(--danger)';
+        $('#liveResPoints').textContent = data.is_correct === true ? `+${data.points_earned}` : `+0`;
         
         const { data: pData } = await supabaseClient.from('live_participants').select('total_score').eq('id', state.liveParticipantId).single();
         if(pData) $('#liveResTotal').textContent = pData.total_score;
@@ -933,7 +944,6 @@ function startAdminDashboard(session) {
 
   updateLobbyView(session.id);
   
-  // Fallback polling to guarantee updates
   if(adminLobbyPoll) clearInterval(adminLobbyPoll);
   adminLobbyPoll = setInterval(() => updateLobbyView(session.id), 3000);
 }
@@ -962,7 +972,7 @@ async function updateAdminLeaderboard(sessionId) {
 on('#btnStartQuiz', 'click', async () => {
   await supabaseClient.from('live_sessions').update({ phase: 'reading', current_q_index: 0, question_started_at: new Date().toISOString() }).eq('id', activeLiveSession.id);
   $('#phaseLobby').hidden = true; $('#phasePlaying').hidden = false;
-  if(adminLobbyPoll) clearInterval(adminLobbyPoll); // Stop lobby polling
+  if(adminLobbyPoll) clearInterval(adminLobbyPoll); 
   
   showAdminQuestion(activeLiveSession, 0);
   
@@ -1002,7 +1012,6 @@ on('#btnNextPhase', 'click', async () => {
       $('#btnNextPhase').textContent = 'Next Question';
     }
     
-    // Force update exactly when leaderboard is shown
     setTimeout(async () => {
         await updateAdminLeaderboard(session.id);
     }, 500);
@@ -1037,7 +1046,7 @@ on('#btnResetLive', 'click', () => {
   $('#liveSetup').hidden = false; $('#liveDashboard').hidden = true;
 });
 
-// Standard Admin Helpers (Questions, Subs, Dropdowns, Settings)
+// Standard Admin Helpers
 function loadAdminQuestions() {
   if (!currentAdminTopicId) return;
   $('#adminQuestions').innerHTML = '<p class="hint">Loading...</p>';

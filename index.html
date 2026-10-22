@@ -64,6 +64,8 @@ a{color:var(--yellow)}
 .btn-primary:hover:not(:disabled){background:var(--yellow-soft);transform:translateY(-2px)}
 .btn-ghost{background:transparent;color:#fff;border:1px solid var(--line-strong);padding:15px 30px;font-size:.94rem;}
 .btn-ghost:hover:not(:disabled){border-color:var(--yellow);color:var(--yellow)}
+.btn-danger{background:var(--danger);color:#fff;padding:18px 48px;font-size:1.05rem;letter-spacing:.02em;box-shadow:0 16px 40px -16px rgba(255,107,107,.95);}
+.btn-danger:hover:not(:disabled){background:#ff5252;transform:translateY(-2px)}
 .btn-block{width:100%}
 .btn-sm{padding:11px 20px;font-size:.85rem}
 .cta-note{margin-top:16px;color:var(--muted-2);font-size:.8rem;letter-spacing:.02em;}
@@ -474,6 +476,15 @@ tbody tr:hover{background:#0b0b0b}
                   <div class="field" style="flex:1;"><label for="liveAnswerTime">Answer Time (sec)</label><input id="liveAnswerTime" type="number" value="13" min="3" max="60" /></div>
                   <div class="field" style="flex:1;"><label for="liveMaxPoints">Max Points</label><input id="liveMaxPoints" type="number" value="100" min="10" max="1000" /></div>
                 </div>
+
+                <!-- NEW: QUESTION SELECTION LIST -->
+                <div class="field" style="margin-top:16px;">
+                  <label>Select Questions for Live Session</label>
+                  <div id="liveQuestionSelection" style="max-height: 200px; overflow-y: auto; background: #080808; border: 1px solid var(--line-strong); border-radius: 10px; padding: 10px;">
+                    <p class="hint">Select a topic to load questions...</p>
+                  </div>
+                </div>
+
                 <button class="btn btn-primary btn-sm" id="btnStartLive" type="button" style="width:100%; margin-top:10px;">Generate Join Code & Start</button>
               </div>
             </div>
@@ -517,8 +528,10 @@ tbody tr:hover{background:#0b0b0b}
                     <p class="hint">Waiting for participants...</p>
                   </div>
 
-                  <div class="admin-actions" style="justify-content:center; margin-top:24px;">
-                    <button class="btn btn-primary" id="btnNextPhase" type="button" style="padding:16px 60px; font-size:1.2rem;">Show Options</button>
+                  <div class="admin-actions" style="justify-content:center; margin-top:24px; display:flex; gap:12px; flex-wrap:wrap;">
+                    <button class="btn btn-primary" id="btnNextPhase" type="button" style="padding:16px 40px; font-size:1.2rem; flex: 1 1 200px;">Show Options</button>
+                    <!-- NEW: END SESSION BUTTON -->
+                    <button class="btn btn-danger" id="btnEndLive" type="button" style="padding:16px 40px; font-size:1.2rem; flex: 1 1 200px;">End Session</button>
                   </div>
                 </div>
 
@@ -801,11 +814,9 @@ async function handleLivePhaseUpdate(session) {
     startLiveTimer(session.answer_time, 'Choose now!');
   }
   else if (session.phase === 'results') {
-    // AUTO SUBMIT if they selected but didn't click submit, and admin ends the phase
     if (!state.liveAnswerSubmitted && state.liveSelectedText) {
         await processAnswerSubmission(true);
     } else if (!state.liveAnswerSubmitted) {
-        // Time is up, no selection
         state.liveAnswerSubmitted = true;
         $('#liveResTitle').textContent = 'Time is up! ⏰';
         $('#liveResTitle').style.color = 'var(--danger)';
@@ -836,7 +847,6 @@ function startLiveTimer(seconds, label) {
       clearInterval(liveTimerInt);
       $('#liveTimer').textContent = '0s';
       
-      // AUTO SUBMIT on local timer end
       if (!state.liveAnswerSubmitted) {
           if (state.liveSelectedText) {
               processAnswerSubmission(true); 
@@ -931,8 +941,16 @@ async function loadAdminTopics() {
   if (currentAdminTopics.length === 0) { select.innerHTML = '<option value="">No topics.</option>'; currentAdminTopicId = null; return; }
   select.innerHTML = currentAdminTopics.map(t => `<option value="${t.id}">${escapeHtml(t.name)}</option>`).join('');
   if (!currentAdminTopicId) currentAdminTopicId = currentAdminTopics[0].id; select.value = currentAdminTopicId;
+  
+  // Also load the questions for the live session selection list when topics load
+  loadQuestionsForSelection();
 }
-on('#adminTopicSelect', 'change', (e) => { currentAdminTopicId = e.target.value; openAdminTab($('.admin-tabs .active').dataset.tab || 'questions'); });
+on('#adminTopicSelect', 'change', (e) => { 
+  currentAdminTopicId = e.target.value; 
+  openAdminTab($('.admin-tabs .active').dataset.tab || 'questions'); 
+  loadQuestionsForSelection();
+});
+
 on('#btnCreateTopic', 'click', async () => {
   const name = prompt('Name:'); if (!name) return; const { data: { user } } = await supabaseClient.auth.getUser();
   await supabaseClient.from('topics').insert([{ name, is_active: false, admin_id: user.id }]); await loadAdminTopics();
@@ -943,6 +961,24 @@ function openAdminTab(tab) {
   $$('.admin-tabs [data-tab]').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
   $('#tabQuestions').hidden = tab !== 'questions'; $('#tabSubmissions').hidden = tab !== 'submissions'; $('#tabLive').hidden = tab !== 'live'; $('#tabDropdowns').hidden = tab !== 'dropdowns'; $('#tabSettings').hidden = tab !== 'settings';
   if (tab === 'questions') loadAdminQuestions(); if (tab === 'submissions') renderSubmissions(); if (tab === 'dropdowns') loadDropdownManager(); if (tab === 'settings') fillSettingsForm();
+  if (tab === 'live') loadQuestionsForSelection();
+}
+
+// NEW: Load questions specifically for the live session checkboxes
+async function loadQuestionsForSelection() {
+  const box = $('#liveQuestionSelection');
+  if (!currentAdminTopicId) { box.innerHTML = '<p class="hint">Select a topic first.</p>'; return; }
+  box.innerHTML = '<p class="hint">Loading questions...</p>';
+  
+  const qs = await fetchQuestionsFromDB(currentAdminTopicId, true);
+  if (qs.length === 0) { box.innerHTML = '<p class="hint">No questions available for this topic.</p>'; return; }
+  
+  box.innerHTML = qs.map(q => `
+    <label style="display:flex; align-items:flex-start; gap:10px; margin-bottom:8px; cursor:pointer;">
+      <input type="checkbox" class="live-q-checkbox" value="${q.id}" checked style="margin-top:4px;" />
+      <span style="font-size:0.85rem; color:#ddd;">${escapeHtml(q.text)}</span>
+    </label>
+  `).join('');
 }
 
 // --- ADMIN LIVE HOST LOGIC ---
@@ -955,11 +991,17 @@ on('#btnStartLive', 'click', async () => {
   
   if (!target) return alert('Enter target group.');
 
+  // Get selected question IDs
+  const selectedIds = Array.from($$('#liveQuestionSelection input.live-q-checkbox:checked')).map(cb => cb.value);
+  if (selectedIds.length === 0) return alert('Please select at least one question for the live session.');
+
   const btn = $('#btnStartLive'); btn.textContent = 'Starting...'; btn.disabled = true;
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'; let code = ''; for(let i=0; i<6; i++) code += chars.charAt(Math.floor(Math.random() * chars.length));
   const { data: { user } } = await supabaseClient.auth.getUser();
   
-  adminCurrentQuestions = await fetchQuestionsFromDB(currentAdminTopicId, true);
+  // Filter the questions based on checkboxes
+  const allQuestions = await fetchQuestionsFromDB(currentAdminTopicId, true);
+  adminCurrentQuestions = allQuestions.filter(q => selectedIds.includes(q.id));
 
   const { data, error } = await supabaseClient.from('live_sessions').insert([{
     topic_id: currentAdminTopicId, admin_id: user.id, join_code: code, target_group: target, status: 'active', 
@@ -1076,6 +1118,20 @@ on('#btnNextPhase', 'click', async () => {
       showAdminQuestion(activeLiveSession, nextIdx);
     }
   }
+});
+
+// NEW: End Session Anytime Button
+on('#btnEndLive', 'click', async () => {
+  if (!activeLiveSession || !confirm('Are you sure you want to end the session immediately?')) return;
+  
+  await supabaseClient.from('live_sessions').update({ phase: 'ended', status: 'ended' }).eq('id', activeLiveSession.id);
+  
+  $('#phasePlaying').hidden = true; 
+  $('#phaseEnded').hidden = false;
+  
+  clearInterval(adminTimerInt);
+  if(adminLeaderboardPoll) clearInterval(adminLeaderboardPoll);
+  if(adminSessionSub) supabaseClient.removeChannel(adminSessionSub);
 });
 
 let adminTimerInt = null;

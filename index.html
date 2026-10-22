@@ -334,7 +334,16 @@ tbody tr:hover{background:#0b0b0b}
         <div class="quiz-meta"><span id="liveQCounter">Question 1</span><span class="timer" id="liveTimer">13s</span></div>
         <div class="q-card">
           <h2 id="liveQText">Loading…</h2>
-          <div class="options" id="liveOptions"></div>
+          
+          <div id="liveReadingMsg" style="text-align:center; margin:40px 0; font-size:1.2rem; color:var(--muted);">
+              Read the question carefully. Options will appear soon...
+          </div>
+
+          <div class="options" id="liveOptions" hidden></div>
+          
+          <div id="liveSubmitContainer" style="margin-top:20px;" hidden>
+              <button class="btn btn-primary btn-block" id="btnLiveSubmit" type="button">Submit Answer</button>
+          </div>
         </div>
       </div>
     </section>
@@ -480,6 +489,11 @@ tbody tr:hover{background:#0b0b0b}
                   <div class="qr-container"><img id="qrCodeImg" src="" alt="QR Code" /></div>
                   <p style="font-size:1.2rem; margin-bottom:20px;">Target Group: <strong id="displayTargetGroup" style="color:var(--yellow);"></strong></p>
                   <h3 style="font-size:2rem; color:var(--success);"><span id="lobbyCount">0</span> Participants Joined</h3>
+                  
+                  <div id="lobbyList" style="display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin-top:15px; max-height:150px; overflow-y:auto; padding:10px; background:#111; border-radius:12px; border:1px solid var(--line-strong);">
+                      <!-- Names render here -->
+                  </div>
+
                   <div style="margin-top:20px; font-size:2rem;">⏳</div>
                   <div class="admin-actions" style="justify-content:center; margin-top:24px;">
                     <button class="btn btn-primary" id="btnStartQuiz" type="button" style="padding:16px 60px; font-size:1.2rem;">Start Quiz</button>
@@ -540,7 +554,6 @@ const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
 
-// SAFE EVENT LISTENER TO PREVENT APP CRASHES
 const on = (sel, event, handler) => {
   const el = $(sel);
   if (el) el.addEventListener(event, handler);
@@ -601,7 +614,10 @@ async function fetchDropdownOptions(category) { const { data } = await supabaseC
 // --- SCREENS & STATE ---
 const SCREENS = ['scrLanding', 'scrRegistration', 'scrJoinLive', 'scrLiveLobby', 'scrLiveQuiz', 'scrLiveResult', 'scrAssessment', 'scrResult', 'scrAdmin'];
 function showScreen(id) { SCREENS.forEach(s => { const el = document.getElementById(s); if (el) el.hidden = (s !== id); }); window.scrollTo(0, 0); }
-const state = { participant: null, mode: 'pre', topicId: null, questions: [], answers: [], current: 0, timeLeft: 300, timerId: null, startedAt: null, lastSubmission: null, liveSessionId: null, liveParticipantId: null, liveTimerId: null };
+const state = { 
+  participant: null, mode: 'pre', topicId: null, questions: [], answers: [], current: 0, timeLeft: 300, timerId: null, startedAt: null, lastSubmission: null, 
+  liveSessionId: null, liveParticipantId: null, liveTimerId: null, liveCurrentQuestion: null, liveCurrentQIndex: null, liveSelectedText: null 
+};
 
 // --- GATE ---
 const GATE_SESSION_KEY = 'm2e.unlocked';
@@ -732,26 +748,44 @@ async function handleLivePhaseUpdate(session) {
     
     const bank = await fetchQuestionsFromDB(session.topic_id, false);
     const q = bank[session.current_q_index];
+    state.liveCurrentQuestion = q;
+    state.liveCurrentQIndex = session.current_q_index;
+    state.liveSelectedText = null;
     
     $('#liveQText').textContent = q.text;
-    const box = $('#liveOptions'); box.innerHTML = '';
-    const shuffledOpts = shuffle(q.options);
+    $('#liveOptions').hidden = true;
+    $('#liveOptions').innerHTML = '';
+    $('#liveReadingMsg').hidden = false;
+    $('#liveSubmitContainer').hidden = true;
     
-    shuffledOpts.forEach((opt, i) => {
-      const btn = document.createElement('button'); btn.type = 'button'; btn.className = 'option disabled';
-      btn.innerHTML = `<span class="key">${String.fromCharCode(65 + i)}</span><span>${escapeHtml(opt)}</span>`;
-      btn.dataset.text = opt;
-      btn.addEventListener('click', () => submitLiveAnswer(btn, opt, q.id, session.current_q_index, session.answer_time));
-      box.appendChild(btn);
-    });
     startLiveTimer(session.read_time, 'Wait...');
   } 
   else if (session.phase === 'answering') {
     showScreen('scrLiveQuiz');
-    $$('#liveOptions .option').forEach(btn => btn.classList.remove('disabled'));
+    $('#liveReadingMsg').hidden = true;
+    $('#liveOptions').hidden = false;
+    $('#liveSubmitContainer').hidden = false;
+    
+    const box = $('#liveOptions'); box.innerHTML = '';
+    const shuffledOpts = shuffle(state.liveCurrentQuestion.options);
+    
+    shuffledOpts.forEach((opt, i) => {
+      const btn = document.createElement('button'); btn.type = 'button'; btn.className = 'option';
+      btn.innerHTML = `<span class="key">${String.fromCharCode(65 + i)}</span><span>${escapeHtml(opt)}</span>`;
+      btn.addEventListener('click', () => {
+          $$('#liveOptions .option').forEach(b => b.classList.remove('selected'));
+          btn.classList.add('selected');
+          state.liveSelectedText = opt;
+      });
+      box.appendChild(btn);
+    });
     startLiveTimer(session.answer_time, 'Choose now!');
   }
   else if (session.phase === 'results') {
+    $('#liveOptions').hidden = true;
+    $('#liveReadingMsg').hidden = false;
+    $('#liveReadingMsg').textContent = "Look at the main screen for the results!";
+    $('#liveSubmitContainer').hidden = true;
     showScreen('scrLiveResult');
   }
   else if (session.phase === 'ended') {
@@ -772,26 +806,31 @@ function startLiveTimer(seconds, label) {
   }, 1000);
 }
 
-async function submitLiveAnswer(btnElement, selectedText, questionId, qIndex, answerTime) {
-  $$('#liveOptions .option').forEach(b => b.classList.add('disabled'));
-  btnElement.classList.add('selected');
-
-  const { data, error } = await supabaseClient.rpc('submit_live_answer', {
-    p_session_id: state.liveSessionId, p_participant_id: state.liveParticipantId,
-    p_q_index: qIndex, p_q_id: questionId, p_selected_text: selectedText
-  });
-
-  if (!error && data) {
-    $('#liveResTitle').textContent = data.is_correct ? 'Correct! 🎉' : 'Wrong ❌';
-    $('#liveResTitle').style.color = data.is_correct ? 'var(--success)' : 'var(--danger)';
-    $('#liveResPoints').textContent = data.is_correct ? `+${data.points_earned}` : `+0`;
+on('#btnLiveSubmit', 'click', async () => {
+    if (!state.liveSelectedText) return alert('Please select an option first.');
+    const btn = $('#btnLiveSubmit'); btn.textContent = 'Submitting...'; btn.disabled = true;
     
-    const { data: pData } = await supabaseClient.from('live_participants').select('total_score').eq('id', state.liveParticipantId).single();
-    if(pData) $('#liveResTotal').textContent = pData.total_score;
+    const { data, error } = await supabaseClient.rpc('submit_live_answer', {
+        p_session_id: state.liveSessionId, 
+        p_participant_id: state.liveParticipantId,
+        p_q_index: state.liveCurrentQIndex, 
+        p_q_id: state.liveCurrentQuestion.id, 
+        p_selected_text: state.liveSelectedText
+    });
     
-    showScreen('scrLiveResult');
-  }
-}
+    btn.textContent = 'Submit Answer'; btn.disabled = false;
+
+    if (!error && data) {
+        $('#liveResTitle').textContent = data.is_correct ? 'Correct! 🎉' : 'Wrong ❌';
+        $('#liveResTitle').style.color = data.is_correct ? 'var(--success)' : 'var(--danger)';
+        $('#liveResPoints').textContent = data.is_correct ? `+${data.points_earned}` : `+0`;
+        
+        const { data: pData } = await supabaseClient.from('live_participants').select('total_score').eq('id', state.liveParticipantId).single();
+        if(pData) $('#liveResTotal').textContent = pData.total_score;
+        
+        showScreen('scrLiveResult');
+    }
+});
 
 // --- ADMIN FLOW ---
 let adminDraft = null; let currentAdminTopicId = null; let currentAdminTopics = []; let activeLiveSession = null; let adminSessionSub = null; let adminCurrentQuestions = [];
@@ -860,24 +899,29 @@ function startAdminDashboard(session) {
   $('#liveSetup').hidden = true; $('#liveDashboard').hidden = false;
   $('#phaseLobby').hidden = false; $('#phasePlaying').hidden = true; $('#phaseEnded').hidden = true;
   $('#displayJoinCode').textContent = session.join_code; $('#displayTargetGroup').textContent = session.target_group;
-  $('#qrCodeImg').src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(window.location.origin + '?join=' + session.join_code)}`;
+  $('#qrCodeImg').src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(window.location.href.split('?')[0] + '?join=' + session.join_code)}`;
   
   if(adminSessionSub) supabaseClient.removeChannel(adminSessionSub);
   adminSessionSub = supabaseClient.channel('admin_live_'+session.id)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'live_participants', filter: `session_id=eq.${session.id}` }, () => {
-      updateLobbyCount(session.id);
+      updateLobbyView(session.id);
     })
     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'live_answers', filter: `session_id=eq.${session.id}` }, () => {
       updateAdminLeaderboard(session.id);
     })
     .subscribe();
 
-  updateLobbyCount(session.id);
+  updateLobbyView(session.id);
 }
 
-async function updateLobbyCount(sessionId) {
-  const { count } = await supabaseClient.from('live_participants').select('*', { count: 'exact', head: true }).eq('session_id', sessionId);
+async function updateLobbyView(sessionId) {
+  const { data, count } = await supabaseClient.from('live_participants').select('name', { count: 'exact' }).eq('session_id', sessionId).order('joined_at');
   $('#lobbyCount').textContent = count || 0;
+  if(data && data.length > 0) {
+      $('#lobbyList').innerHTML = data.map(p => `<span class="pill" style="padding:6px 12px; font-size:0.9rem;">${escapeHtml(p.name)}</span>`).join('');
+  } else {
+      $('#lobbyList').innerHTML = '<span class="hint">Waiting for participants...</span>';
+  }
 }
 
 async function updateAdminLeaderboard(sessionId) {
@@ -928,6 +972,9 @@ on('#btnNextPhase', 'click', async () => {
     } else {
       $('#btnNextPhase').textContent = 'Next Question';
     }
+    
+    // Force leaderboard refresh right when moving to results phase
+    await updateAdminLeaderboard(session.id);
   }
   else if (session.phase === 'results') {
     const nextIdx = session.current_q_index + 1;

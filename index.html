@@ -539,6 +539,14 @@ const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
+
+// SAFE EVENT LISTENER TO PREVENT APP CRASHES
+const on = (sel, event, handler) => {
+  const el = $(sel);
+  if (el) el.addEventListener(event, handler);
+  else console.warn(`[M2E] Element not found for event: ${sel}`);
+};
+
 const escapeHtml = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'}[c]));
 const uid = () => 'q' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 const shuffle = (arr) => { const a = arr.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
@@ -602,7 +610,7 @@ function initGate() {
   if (sessionStorage.getItem(GATE_SESSION_KEY) === '1') { unlockApp(); return; }
   $('#scrGate').hidden = false; $('#app').hidden = true;
   setTimeout(() => $('#gatePwd').focus(), 250);
-  $('#gateForm').addEventListener('submit', async (e) => {
+  on('#gateForm', 'submit', async (e) => {
     e.preventDefault(); const input = $('#gatePwd').value.trim(); const errEl = $('#gateErr'); const btn = e.target.querySelector('button[type="submit"]');
     btn.textContent = 'Verifying...'; btn.disabled = true; errEl.textContent = '';
     const { data: isMatch, error } = await supabaseClient.rpc('verify_app_password', { input_password: input, role: 'gate' });
@@ -613,19 +621,19 @@ function initGate() {
 }
 
 // --- STANDARD ASSESSMENT ---
-$('#btnBegin').addEventListener('click', async () => {
+on('#btnBegin', 'click', async () => {
   showScreen('scrRegistration'); setTimeout(() => $('#fullName').focus(), 150);
   const topicSelect = $('#topicSelect'); topicSelect.innerHTML = '<option value="">Loading...</option>';
   const topics = await fetchActiveTopics(); topicSelect.innerHTML = '<option value="">— Select Topic —</option>' + topics.map(t => `<option value="${t.id}">${escapeHtml(t.name)}</option>`).join('');
   const regions = await fetchDropdownOptions('region'); $('#region').innerHTML = '<option value="">— Select —</option>' + regions.map(r => `<option value="${escapeHtml(r.value)}">${escapeHtml(r.value)}</option>`).join('');
   const units = await fetchDropdownOptions('unit'); $('#otherUnit').innerHTML = '<option value="">— Select —</option>' + units.map(u => `<option value="${escapeHtml(u.value)}">${escapeHtml(u.value)}</option>`).join('');
 });
-$('#btnBackHome').addEventListener('click', () => showScreen('scrLanding'));
-$('#participantCategory').addEventListener('change', (e) => { const c = e.target.value; $('#regionField').hidden = (c === 'other'); $('#branchField').hidden = (c !== 'branch'); $('#unitField').hidden = (c !== 'other'); });
+on('#btnBackHome', 'click', () => showScreen('scrLanding'));
+on('#participantCategory', 'change', (e) => { const c = e.target.value; $('#regionField').hidden = (c === 'other'); $('#branchField').hidden = (c !== 'branch'); $('#unitField').hidden = (c !== 'other'); });
 const EMAIL_RE = /^[A-Za-z0-9._%+-]+@maybank\.com$/i; const PF_RE = /^\d{4,12}$/;
 function setFieldError(id, err, msg) { const inp = document.getElementById(id); const e = document.getElementById(err); if (msg) { inp.classList.add('invalid'); e.textContent = msg; } else { inp.classList.remove('invalid'); e.textContent = ''; } }
 
-$('#regForm').addEventListener('submit', async (e) => {
+on('#regForm', 'submit', async (e) => {
   e.preventDefault(); let ok = true;
   const cat = $('#participantCategory').value; const tid = $('#topicSelect').value; const name = $('#fullName').value.trim();
   const reg = $('#region').value; const br = $('#branch').value.trim(); const unit = $('#otherUnit').value;
@@ -663,9 +671,9 @@ function renderQuestion() {
   });
   $('#btnPrev').disabled = state.current === 0; const isLast = state.current === total - 1; $('#btnNext').hidden = isLast; $('#btnSubmit').hidden = !isLast;
 }
-$('#btnPrev').addEventListener('click', () => { if (state.current > 0) { state.current--; renderQuestion(); } });
-$('#btnNext').addEventListener('click', () => { if (state.current < state.questions.length - 1) { state.current++; renderQuestion(); } });
-$('#btnSubmit').addEventListener('click', () => submitAssessment(false));
+on('#btnPrev', 'click', () => { if (state.current > 0) { state.current--; renderQuestion(); } });
+on('#btnNext', 'click', () => { if (state.current < state.questions.length - 1) { state.current++; renderQuestion(); } });
+on('#btnSubmit', 'click', () => submitAssessment(false));
 
 async function submitAssessment(auto) {
   const unans = state.answers.filter(a => a === null).length; if (!auto && unans > 0 && !confirm(`${unans} unanswered. Submit?`)) return;
@@ -686,10 +694,10 @@ function renderResult(sub) {
 }
 
 // --- LIVE PARTICIPANT FLOW ---
-$('#btnJoinLive').addEventListener('click', () => { showScreen('scrJoinLive'); setTimeout(() => $('#liveCode').focus(), 150); });
-$('#btnBackHome2').addEventListener('click', () => showScreen('scrLanding'));
+on('#btnJoinLive', 'click', () => { showScreen('scrJoinLive'); setTimeout(() => $('#liveCode').focus(), 150); });
+on('#btnBackHome2', 'click', () => showScreen('scrLanding'));
 
-$('#joinLiveForm').addEventListener('submit', async (e) => {
+on('#joinLiveForm', 'submit', async (e) => {
   e.preventDefault(); const code = $('#liveCode').value.trim().toUpperCase(); const name = $('#liveName').value.trim(); const pf = $('#livePf').value.trim();
   if (!code || !name || !pf) { alert('Fill all fields'); return; }
   const btn = e.target.querySelector('button[type="submit"]'); btn.textContent = 'Joining...'; btn.disabled = true;
@@ -788,15 +796,15 @@ async function submitLiveAnswer(btnElement, selectedText, questionId, qIndex, an
 // --- ADMIN FLOW ---
 let adminDraft = null; let currentAdminTopicId = null; let currentAdminTopics = []; let activeLiveSession = null; let adminSessionSub = null; let adminCurrentQuestions = [];
 
-$('#btnAdminOpen').addEventListener('click', async () => {
+on('#btnAdminOpen', 'click', async () => {
   showScreen('scrAdmin');
   const { data: { session } } = await supabaseClient.auth.getSession();
   if (session) { $('#adminLogin').hidden = true; $('#adminConsole').hidden = false; await loadAdminTopics(); openAdminTab('live'); }
   else { $('#adminLogin').hidden = false; $('#adminConsole').hidden = true; $('#adminEmail').value = ''; $('#adminPwd').value = ''; $('#adminErr').textContent = ''; setTimeout(() => $('#adminEmail').focus(), 150); }
 });
-$('#btnAdminBack').addEventListener('click', () => showScreen('scrLanding'));
-$('#btnAdminLogout').addEventListener('click', async () => { await supabaseClient.auth.signOut(); showScreen('scrLanding'); });
-$('#adminLoginForm').addEventListener('submit', async (e) => {
+on('#btnAdminBack', 'click', () => showScreen('scrLanding'));
+on('#btnAdminLogout', 'click', async () => { await supabaseClient.auth.signOut(); showScreen('scrLanding'); });
+on('#adminLoginForm', 'submit', async (e) => {
   e.preventDefault(); const email = $('#adminEmail').value.trim(); const pwd = $('#adminPwd').value.trim(); const errEl = $('#adminErr'); const submitBtn = e.target.querySelector('button[type="submit"]');
   submitBtn.textContent = 'Auth...'; submitBtn.disabled = true; errEl.textContent = '';
   const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password: pwd });
@@ -811,8 +819,8 @@ async function loadAdminTopics() {
   select.innerHTML = currentAdminTopics.map(t => `<option value="${t.id}">${escapeHtml(t.name)}</option>`).join('');
   if (!currentAdminTopicId) currentAdminTopicId = currentAdminTopics[0].id; select.value = currentAdminTopicId;
 }
-$('#adminTopicSelect').addEventListener('change', (e) => { currentAdminTopicId = e.target.value; openAdminTab($('.admin-tabs .active').dataset.tab || 'questions'); });
-$('#btnCreateTopic').addEventListener('click', async () => {
+on('#adminTopicSelect', 'change', (e) => { currentAdminTopicId = e.target.value; openAdminTab($('.admin-tabs .active').dataset.tab || 'questions'); });
+on('#btnCreateTopic', 'click', async () => {
   const name = prompt('Name:'); if (!name) return; const { data: { user } } = await supabaseClient.auth.getUser();
   await supabaseClient.from('topics').insert([{ name, is_active: false, admin_id: user.id }]); await loadAdminTopics();
 });
@@ -825,7 +833,7 @@ function openAdminTab(tab) {
 }
 
 // --- ADMIN LIVE HOST LOGIC ---
-$('#btnStartLive').addEventListener('click', async () => {
+on('#btnStartLive', 'click', async () => {
   if (!currentAdminTopicId) return alert('Select a topic.');
   const target = $('#liveTargetGroup').value.trim(); const readT = Number($('#liveReadTime').value); const ansT = Number($('#liveAnswerTime').value); const maxP = Number($('#liveMaxPoints').value);
   if (!target) return alert('Enter target group.');
@@ -883,7 +891,7 @@ async function updateAdminLeaderboard(sessionId) {
   }).join('');
 }
 
-$('#btnStartQuiz').addEventListener('click', async () => {
+on('#btnStartQuiz', 'click', async () => {
   await supabaseClient.from('live_sessions').update({ phase: 'reading', current_q_index: 0, question_started_at: new Date().toISOString() }).eq('id', activeLiveSession.id);
   $('#phaseLobby').hidden = true; $('#phasePlaying').hidden = false;
   showAdminQuestion(activeLiveSession, 0);
@@ -900,7 +908,7 @@ async function showAdminQuestion(session, idx) {
   updateAdminLeaderboard(session.id);
 }
 
-$('#btnNextPhase').addEventListener('click', async () => {
+on('#btnNextPhase', 'click', async () => {
   const currentSession = activeLiveSession;
   const { data: session } = await supabaseClient.from('live_sessions').select('*').eq('id', currentSession.id).single();
   
@@ -943,7 +951,7 @@ function startAdminTimer(seconds) {
   adminTimerInt = setInterval(() => { t -= 1; $('#adminPhaseTimer').textContent = t + 's'; if(t <= 0) clearInterval(adminTimerInt); }, 1000);
 }
 
-$('#btnResetLive').addEventListener('click', () => {
+on('#btnResetLive', 'click', () => {
   if(adminSessionSub) supabaseClient.removeChannel(adminSessionSub);
   $('#liveSetup').hidden = false; $('#liveDashboard').hidden = true;
 });
@@ -971,13 +979,13 @@ function loadAdminQuestions() {
 }
 function paintAdminQuestions() { $('#adminQuestions').innerHTML = adminDraft.map((q, i) => `<div class="admin-q" data-i="${i}"><div class="admin-q-head"><span class="badge">Q ${i + 1}</span><button type="button" class="btn-mini danger" data-del="${i}">Del</button></div><textarea class="q-text" rows="2">${escapeHtml(q.text)}</textarea><div class="opt-list">${q.options.map((o, oi) => `<label class="opt-row"><input type="radio" name="correct-${i}" value="${oi}" ${q.correct === oi ? 'checked' : ''} /><span class="key">${String.fromCharCode(65 + oi)}</span><input type="text" class="opt-input" value="${escapeHtml(o)}" /></label>`).join('')}</div><div class="admin-q-foot"><button type="button" class="btn-mini" data-addopt="${i}">+ Opt</button><button type="button" class="btn-mini" data-delopt="${i}">− Opt</button></div></div>`).join(''); }
 function syncDraftFromDOM() { $$('#adminQuestions .admin-q').forEach(card => { const i = Number(card.dataset.i); if (!adminDraft[i]) return; adminDraft[i].text = card.querySelector('.q-text').value; adminDraft[i].options = $$('.opt-input', card).map(inp => inp.value); const checked = card.querySelector('input[type="radio"]:checked'); if (checked) adminDraft[i].correct = Number(checked.value); }); }
-$('#adminQuestions').addEventListener('click', (e) => {
+on('#adminQuestions', 'click', (e) => {
   const addBtn = e.target.closest('[data-addopt]'); if (addBtn) { syncDraftFromDOM(); const i = Number(addBtn.dataset.addopt); if (adminDraft[i].options.length < 8) { adminDraft[i].options.push(''); paintAdminQuestions(); } return; }
   const delOptBtn = e.target.closest('[data-delopt]'); if (delOptBtn) { syncDraftFromDOM(); const i = Number(delOptBtn.dataset.delopt); if (adminDraft[i].options.length > 2) { adminDraft[i].options.pop(); if (adminDraft[i].correct >= adminDraft[i].options.length) adminDraft[i].correct = 0; paintAdminQuestions(); } return; }
   const delBtn = e.target.closest('[data-del]'); if (delBtn) { if (confirm('Delete?')) { syncDraftFromDOM(); adminDraft.splice(Number(delBtn.dataset.del), 1); paintAdminQuestions(); } }
 });
-$('#btnAddQuestion').addEventListener('click', () => { syncDraftFromDOM(); adminDraft.push({ id: uid(), text: '', options: ['', '', '', ''], correct: 0 }); paintAdminQuestions(); });
-$('#btnSaveQuestions').addEventListener('click', async () => {
+on('#btnAddQuestion', 'click', () => { syncDraftFromDOM(); adminDraft.push({ id: uid(), text: '', options: ['', '', '', ''], correct: 0 }); paintAdminQuestions(); });
+on('#btnSaveQuestions', 'click', async () => {
   if (!currentAdminTopicId) return; syncDraftFromDOM(); const cleaned = [];
   adminDraft.forEach(q => { const text = (q.text || '').trim(); const options = []; let correct = 0; q.options.forEach((o, i) => { const v = (o || '').trim(); if (v) { if (i === q.correct) correct = options.length; options.push(v); } }); if (text && options.length >= 2) { cleaned.push({ id: q.id || uid(), text, options, correct_index: Math.min(correct, options.length - 1) }); } });
   const btn = $('#btnSaveQuestions'); btn.textContent = 'Saving...'; btn.disabled = true;
@@ -985,7 +993,7 @@ $('#btnSaveQuestions').addEventListener('click', async () => {
   await supabaseClient.from('questions').insert(cleaned.map(q => ({ ...q, topic_id: currentAdminTopicId })));
   btn.textContent = 'Save All Changes'; btn.disabled = false; alert('Saved.'); loadAdminQuestions();
 });
-$('#btnRestoreQuestions').addEventListener('click', async () => {
+on('#btnRestoreQuestions', 'click', async () => {
   if (!currentAdminTopicId || !confirm('Restore default?')) return; const btn = $('#btnRestoreQuestions'); btn.textContent = 'Restoring...'; btn.disabled = true;
   await supabaseClient.from('questions').delete().eq('topic_id', currentAdminTopicId);
   const seeds = DEFAULT_QUESTIONS.map(q => ({ id: uid(), text: q.text, options: q.options, correct_index: q.correct, topic_id: currentAdminTopicId }));
@@ -999,7 +1007,7 @@ async function renderSubmissions() {
   const rows = data.map(s => `<tr><td>${escapeHtml(new Date(s.submitted_at).toLocaleString())}</td><td>${escapeHtml(s.full_name)}</td><td>${escapeHtml(s.email)}</td><td>${escapeHtml(s.pf_number)}</td><td>${escapeHtml(s.region)}</td><td>${escapeHtml(s.branch)}</td><td><span class="pill ${s.mode === 'pre' ? 'pre' : ''} ${s.mode === 'live' ? 'live' : ''}">${s.mode.toUpperCase()}</span></td><td>${s.score}%</td><td><button class="btn-mini" type="button" data-view="${escapeHtml(s.id)}">View</button></td></tr>`).join('');
   wrap.innerHTML = `<div class="table-wrap"><table><thead><tr><th>Time</th><th>Name</th><th>Email</th><th>PF</th><th>Reg</th><th>Branch</th><th>Type</th><th>Score</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>`;
 }
-$('#adminSubs').addEventListener('click', async (e) => {
+on('#adminSubs', 'click', async (e) => {
   const btn = e.target.closest('[data-view]'); if (!btn) return; const id = btn.dataset.view; btn.textContent = '...';
   const { data } = await supabaseClient.from('submissions').select('*').eq('id', id).single(); btn.textContent = 'View';
   if (data) openSubmissionModal(data);
@@ -1008,9 +1016,9 @@ function openSubmissionModal(sub) {
   $('#modalBody').innerHTML = `<h2>${escapeHtml(sub.full_name)}</h2><p class="hint">${escapeHtml(sub.email)} · ${sub.score}%</p>`;
   $('#modal').hidden = false;
 }
-$('#modalClose').addEventListener('click', () => { $('#modal').hidden = true; });
+on('#modalClose', 'click', () => { $('#modal').hidden = true; });
 
-$('#btnExportCsv').addEventListener('click', async () => {
+on('#btnExportCsv', 'click', async () => {
   if (!currentAdminTopicId) return; const btn = $('#btnExportCsv'); btn.textContent = '...';
   const { data, error } = await supabaseClient.from('submissions').select('*').eq('topic_id', currentAdminTopicId).order('submitted_at', { ascending: false }); btn.textContent = 'Export CSV';
   if (error || !data || data.length === 0) { alert('No records.'); return; }
@@ -1019,7 +1027,7 @@ $('#btnExportCsv').addEventListener('click', async () => {
   const csv = [head, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\r\n'); download(`m2e-submissions-${new Date().toISOString().slice(0, 10)}.csv`, csv);
 });
 
-$('#btnClearSubs').addEventListener('click', async () => { 
+on('#btnClearSubs', 'click', async () => { 
   if (!currentAdminTopicId || !confirm('Delete ALL submissions for this topic?')) return; 
   const btn = $('#btnClearSubs'); btn.textContent = '...'; 
   await supabaseClient.from('submissions').delete().eq('topic_id', currentAdminTopicId); 
@@ -1033,11 +1041,11 @@ async function loadDropdownManager() {
   $('#unitList').innerHTML = (u||[]).map(x => `<div class="dropdown-item">${escapeHtml(x.value)} <button onclick="deleteDropdownItem('${x.id}')">&times;</button></div>`).join('');
 }
 window.deleteDropdownItem = async (id) => { await supabaseClient.from('dropdown_options').delete().eq('id', id); loadDropdownManager(); };
-$('#btnAddRegion').addEventListener('click', async () => { const v = $('#newRegionInput').value.trim(); if(!v) return; $('#newRegionInput').value=''; await supabaseClient.from('dropdown_options').insert([{category:'region', value:v}]); loadDropdownManager(); });
-$('#btnAddUnit').addEventListener('click', async () => { const v = $('#newUnitInput').value.trim(); if(!v) return; $('#newUnitInput').value=''; await supabaseClient.from('dropdown_options').insert([{category:'unit', value:v}]); loadDropdownManager(); });
+on('#btnAddRegion', 'click', async () => { const v = $('#newRegionInput').value.trim(); if(!v) return; $('#newRegionInput').value=''; await supabaseClient.from('dropdown_options').insert([{category:'region', value:v}]); loadDropdownManager(); });
+on('#btnAddUnit', 'click', async () => { const v = $('#newUnitInput').value.trim(); if(!v) return; $('#newUnitInput').value=''; await supabaseClient.from('dropdown_options').insert([{category:'unit', value:v}]); loadDropdownManager(); });
 
 function fillSettingsForm() { const s = loadSettings(); $('#setDuration').value = s.durationMinutes; $('#setCount').value = s.questionsPerAssessment; }
-$('#settingsForm').addEventListener('submit', (e) => { e.preventDefault(); const duration = Number($('#setDuration').value); const count = Number($('#setCount').value); if (duration < 1 || duration > 60 || count < 1) { alert('Invalid.'); return; } saveSettings({ durationMinutes: duration, questionsPerAssessment: count }); alert('Saved.'); });
+on('#settingsForm', 'submit', (e) => { e.preventDefault(); const duration = Number($('#setDuration').value); const count = Number($('#setCount').value); if (duration < 1 || duration > 60 || count < 1) { alert('Invalid.'); return; } saveSettings({ durationMinutes: duration, questionsPerAssessment: count }); alert('Saved.'); });
 
 (function init() { initGate(); })();
 </script>

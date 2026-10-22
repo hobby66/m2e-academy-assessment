@@ -493,7 +493,7 @@ tbody tr:hover{background:#0b0b0b}
                   <div class="field" style="flex:1;"><label for="liveMaxPoints">Max Points</label><input id="liveMaxPoints" type="number" value="100" min="10" max="1000" /></div>
                 </div>
 
-                <!-- IMPROVED: QUESTION SELECTION LIST -->
+                <!-- QUESTION SELECTION LIST -->
                 <div class="field" style="margin-top:16px;">
                   <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:8px;">
                     <label style="margin:0;">Select Questions for Live Session</label>
@@ -557,7 +557,7 @@ tbody tr:hover{background:#0b0b0b}
                   </div>
 
                   <div class="admin-actions" style="justify-content:center; margin-top:24px; display:flex; gap:12px; flex-wrap:wrap;">
-                    <button class="btn btn-primary" id="btnNextPhase" type="button" style="padding:16px 40px; font-size:1.2rem; flex: 1 1 200px;">Show Options</button>
+                    <button class="btn btn-primary" id="btnNextQuestion" type="button" style="padding:16px 40px; font-size:1.2rem; flex: 1 1 200px;" disabled>Next Question</button>
                     <button class="btn btn-danger" id="btnEndLive" type="button" style="padding:16px 40px; font-size:1.2rem; flex: 1 1 200px;">End Session</button>
                   </div>
                 </div>
@@ -990,7 +990,7 @@ function openAdminTab(tab) {
   if (tab === 'live') loadQuestionsForSelection();
 }
 
-// NEW: Load questions for the UI
+// NEW: Load questions specifically for the live session checkboxes
 async function loadQuestionsForSelection() {
   const box = $('#liveQuestionSelection');
   if (!currentAdminTopicId) { box.innerHTML = '<p class="hint" style="padding:10px;">Select a topic first.</p>'; return; }
@@ -1113,6 +1113,8 @@ on('#btnStartQuiz', 'click', async () => {
   if(adminLobbyPoll) clearInterval(adminLobbyPoll); 
   
   showAdminQuestion(activeLiveSession, 0);
+  $('#btnNextQuestion').disabled = true;
+  startAdminTimer(activeLiveSession.read_time, 'reading');
   
   if(adminLeaderboardPoll) clearInterval(adminLeaderboardPoll);
   adminLeaderboardPoll = setInterval(() => updateAdminLeaderboard(activeLiveSession.id), 2000);
@@ -1122,72 +1124,69 @@ async function showAdminQuestion(session, idx) {
   const q = adminCurrentQuestions[idx];
   $('#adminQIndexDisplay').textContent = idx + 1; $('#adminQTotalDisplay').textContent = adminCurrentQuestions.length;
   $('#adminQText').textContent = q.text;
-  
-  let phaseTime = session.read_time; let btnText = 'Show Options';
-  $('#btnNextPhase').textContent = btnText;
-  startAdminTimer(phaseTime);
   updateAdminLeaderboard(session.id);
 }
 
-on('#btnNextPhase', 'click', async () => {
-  const currentSession = activeLiveSession;
-  const { data: session } = await supabaseClient.from('live_sessions').select('*').eq('id', currentSession.id).single();
-  
-  if (session.phase === 'reading') {
-    await supabaseClient.from('live_sessions').update({ phase: 'answering', question_started_at: new Date().toISOString() }).eq('id', session.id);
-    activeLiveSession.phase = 'answering'; activeLiveSession.question_started_at = new Date().toISOString();
-    $('#btnNextPhase').textContent = 'Show Leaderboard';
-    startAdminTimer(session.answer_time);
-  } 
-  else if (session.phase === 'answering') {
-    await supabaseClient.from('live_sessions').update({ phase: 'results' }).eq('id', session.id);
+async function transitionToAnswering() {
+    const now = new Date().toISOString();
+    await supabaseClient.from('live_sessions').update({ phase: 'answering', question_started_at: now }).eq('id', activeLiveSession.id);
+    activeLiveSession.phase = 'answering';
+    activeLiveSession.question_started_at = now;
+    startAdminTimer(activeLiveSession.answer_time, 'answering');
+}
+
+async function transitionToResults() {
+    await supabaseClient.from('live_sessions').update({ phase: 'results' }).eq('id', activeLiveSession.id);
     activeLiveSession.phase = 'results';
+    $('#btnNextQuestion').disabled = false;
+    await updateAdminLeaderboard(activeLiveSession.id);
+}
+
+on('#btnNextQuestion', 'click', async () => {
+    if(!activeLiveSession) return;
+    $('#btnNextQuestion').disabled = true;
+    const nextIdx = activeLiveSession.current_q_index + 1;
     
-    const nextIdx = session.current_q_index + 1;
     if (nextIdx >= adminCurrentQuestions.length) {
-      $('#btnNextPhase').textContent = 'End Session';
+        await supabaseClient.from('live_sessions').update({ phase: 'ended', status: 'ended' }).eq('id', activeLiveSession.id);
+        $('#phasePlaying').hidden = true; $('#phaseEnded').hidden = false;
+        clearInterval(adminTimerInt);
+        if(adminLeaderboardPoll) clearInterval(adminLeaderboardPoll);
     } else {
-      $('#btnNextPhase').textContent = 'Next Question';
+        await supabaseClient.from('live_sessions').update({ phase: 'reading', current_q_index: nextIdx, question_started_at: new Date().toISOString() }).eq('id', activeLiveSession.id);
+        activeLiveSession.phase = 'reading'; activeLiveSession.current_q_index = nextIdx;
+        showAdminQuestion(activeLiveSession, nextIdx);
+        startAdminTimer(activeLiveSession.read_time, 'reading');
     }
-    
-    setTimeout(async () => {
-        await updateAdminLeaderboard(session.id);
-    }, 500);
-  }
-  else if (session.phase === 'results') {
-    const nextIdx = session.current_q_index + 1;
-    if (nextIdx >= adminCurrentQuestions.length) {
-      await supabaseClient.from('live_sessions').update({ phase: 'ended', status: 'ended' }).eq('id', session.id);
-      $('#phasePlaying').hidden = true; $('#phaseEnded').hidden = false;
-      clearInterval(adminTimerInt);
-      if(adminLeaderboardPoll) clearInterval(adminLeaderboardPoll);
-    } else {
-      await supabaseClient.from('live_sessions').update({ phase: 'reading', current_q_index: nextIdx, question_started_at: new Date().toISOString() }).eq('id', session.id);
-      activeLiveSession.phase = 'reading'; activeLiveSession.current_q_index = nextIdx;
-      showAdminQuestion(activeLiveSession, nextIdx);
-    }
-  }
 });
 
 on('#btnEndLive', 'click', async () => {
   if (!activeLiveSession || !confirm('Are you sure you want to end the session immediately?')) return;
-  
   await supabaseClient.from('live_sessions').update({ phase: 'ended', status: 'ended' }).eq('id', activeLiveSession.id);
-  
   $('#phasePlaying').hidden = true; 
   $('#phaseEnded').hidden = false;
-  
   clearInterval(adminTimerInt);
   if(adminLeaderboardPoll) clearInterval(adminLeaderboardPoll);
   if(adminSessionSub) supabaseClient.removeChannel(adminSessionSub);
 });
 
 let adminTimerInt = null;
-function startAdminTimer(seconds) {
+function startAdminTimer(seconds, phase) {
   clearInterval(adminTimerInt);
   let t = seconds;
   $('#adminPhaseTimer').textContent = t + 's';
-  adminTimerInt = setInterval(() => { t -= 1; $('#adminPhaseTimer').textContent = t + 's'; if(t <= 0) clearInterval(adminTimerInt); }, 1000);
+  adminTimerInt = setInterval(async () => {
+      t -= 1;
+      $('#adminPhaseTimer').textContent = t + 's';
+      if(t <= 0) {
+          clearInterval(adminTimerInt);
+          if (phase === 'reading') {
+              await transitionToAnswering();
+          } else if (phase === 'answering') {
+              await transitionToResults();
+          }
+      }
+  }, 1000);
 }
 
 on('#btnResetLive', 'click', () => {

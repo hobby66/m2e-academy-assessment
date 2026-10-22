@@ -801,6 +801,17 @@ async function handleLivePhaseUpdate(session) {
     startLiveTimer(session.answer_time, 'Choose now!');
   }
   else if (session.phase === 'results') {
+    // AUTO SUBMIT if they selected but didn't click submit, and admin ends the phase
+    if (!state.liveAnswerSubmitted && state.liveSelectedText) {
+        await processAnswerSubmission(true);
+    } else if (!state.liveAnswerSubmitted) {
+        // Time is up, no selection
+        state.liveAnswerSubmitted = true;
+        $('#liveResTitle').textContent = 'Time is up! ⏰';
+        $('#liveResTitle').style.color = 'var(--danger)';
+        $('#liveResPoints').textContent = '+0';
+    }
+    
     $('#liveOptions').hidden = true;
     $('#liveReadingMsg').hidden = false;
     $('#liveReadingMsg').textContent = "Look at the main screen for the results!";
@@ -821,17 +832,37 @@ function startLiveTimer(seconds, label) {
   $('#liveTimer').textContent = t + 's';
   liveTimerInt = setInterval(() => {
     t -= 1; $('#liveTimer').textContent = t + 's';
-    if(t <= 0) { clearInterval(liveTimerInt); $('#liveTimer').textContent = '0s'; }
+    if(t <= 0) {
+      clearInterval(liveTimerInt);
+      $('#liveTimer').textContent = '0s';
+      
+      // AUTO SUBMIT on local timer end
+      if (!state.liveAnswerSubmitted) {
+          if (state.liveSelectedText) {
+              processAnswerSubmission(true); 
+          } else {
+              state.liveAnswerSubmitted = true;
+              $('#liveResTitle').textContent = 'Time is up! ⏰';
+              $('#liveResTitle').style.color = 'var(--danger)';
+              $('#liveResPoints').textContent = '+0';
+              showScreen('scrLiveResult');
+          }
+      }
+    }
   }, 1000);
 }
 
-on('#btnLiveSubmit', 'click', async () => {
+async function processAnswerSubmission(isAuto = false) {
     if (state.liveAnswerSubmitted || state.isSubmitting) return; 
-    if (!state.liveSelectedText) return alert('Please select an option first.');
+    if (!state.liveSelectedText) {
+        if (!isAuto) alert('Please select an option first.');
+        return;
+    }
     
     state.isSubmitting = true;
     state.liveAnswerSubmitted = true; 
-    const btn = $('#btnLiveSubmit'); btn.textContent = 'Submitting...'; btn.disabled = true;
+    const btn = $('#btnLiveSubmit'); 
+    if(btn) { btn.textContent = 'Submitting...'; btn.disabled = true; }
     $$('#liveOptions .option').forEach(b => b.classList.add('disabled'));
     
     try {
@@ -845,7 +876,7 @@ on('#btnLiveSubmit', 'click', async () => {
 
         if (error) {
             console.error('RPC Error:', error);
-            if (!error.message.includes('already submitted')) {
+            if (!error.message.includes('already submitted') && !isAuto) {
                 alert('Submission failed: ' + error.message);
             }
             showScreen('scrLiveResult');
@@ -864,13 +895,15 @@ on('#btnLiveSubmit', 'click', async () => {
         }
     } catch (err) {
         console.error('Unexpected error:', err);
-        alert('A network error occurred. Please check your connection.');
+        if(!isAuto) alert('A network error occurred.');
         state.liveAnswerSubmitted = false;
         state.isSubmitting = false;
-        btn.textContent = 'Submit Answer'; btn.disabled = false;
+        if(btn) { btn.textContent = 'Submit Answer'; btn.disabled = false; }
         $$('#liveOptions .option').forEach(b => b.classList.remove('disabled'));
     }
-});
+}
+
+on('#btnLiveSubmit', 'click', () => processAnswerSubmission(false));
 
 // --- ADMIN FLOW ---
 let adminDraft = null; let currentAdminTopicId = null; let currentAdminTopics = []; let activeLiveSession = null; let adminSessionSub = null; let adminCurrentQuestions = [];

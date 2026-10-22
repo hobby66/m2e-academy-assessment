@@ -796,6 +796,9 @@ function listenToLiveSession() {
 
 async function handleLivePhaseUpdate(session) {
   if (session.phase === 'reading') {
+    // Don't re-render if we are already on this question
+    if (state.liveCurrentQIndex === session.current_q_index && !$('#liveReadingMsg').hidden) return;
+
     showScreen('scrLiveQuiz');
     $('#liveQCounter').textContent = `Question ${session.current_q_index + 1}`;
     $('#liveTimer').textContent = session.read_time + 's';
@@ -814,9 +817,12 @@ async function handleLivePhaseUpdate(session) {
     $('#liveReadingMsg').hidden = false;
     $('#liveSubmitContainer').hidden = true;
     
-    startLiveTimer(session.read_time, 'Wait...');
+    startLiveTimer(session.read_time, 'reading');
   } 
   else if (session.phase === 'answering') {
+    // Don't re-render options if we are already on this question, prevents selection flashing
+    if (state.liveCurrentQIndex === session.current_q_index && !$('#liveOptions').hidden) return;
+
     showScreen('scrLiveQuiz');
     $('#liveReadingMsg').hidden = true;
     $('#liveOptions').hidden = false;
@@ -831,23 +837,28 @@ async function handleLivePhaseUpdate(session) {
       const btnOpt = document.createElement('button'); btnOpt.type = 'button'; btnOpt.className = 'option';
       btnOpt.innerHTML = `<span class="key">${String.fromCharCode(65 + i)}</span><span>${escapeHtml(opt)}</span>`;
       btnOpt.addEventListener('click', () => {
-          if (state.liveAnswerSubmitted) return;
+          if (state.liveAnswerSubmitted || state.isSubmitting) return;
           $$('#liveOptions .option').forEach(b => b.classList.remove('selected'));
           btnOpt.classList.add('selected');
           state.liveSelectedText = opt;
       });
       box.appendChild(btnOpt);
     });
-    startLiveTimer(session.answer_time, 'Choose now!');
+    startLiveTimer(session.answer_time, 'answering');
   }
   else if (session.phase === 'results') {
-    if (!state.liveAnswerSubmitted && state.liveSelectedText) {
-        await processAnswerSubmission(true);
-    } else if (!state.liveAnswerSubmitted) {
-        state.liveAnswerSubmitted = true;
-        $('#liveResTitle').textContent = 'Time is up! ⏰';
-        $('#liveResTitle').style.color = 'var(--danger)';
-        $('#liveResPoints').textContent = '+0';
+    clearInterval(liveTimerInt); // Stop the local timer
+    
+    // Auto-submit logic for when admin ends the phase
+    if (!state.liveAnswerSubmitted) {
+        if (state.liveSelectedText) {
+            await processAnswerSubmission(true);
+        } else {
+            state.liveAnswerSubmitted = true;
+            $('#liveResTitle').textContent = 'Time is up! ⏰';
+            $('#liveResTitle').style.color = 'var(--danger)';
+            $('#liveResPoints').textContent = '+0';
+        }
     }
     
     $('#liveOptions').hidden = true;
@@ -857,6 +868,7 @@ async function handleLivePhaseUpdate(session) {
     showScreen('scrLiveResult');
   }
   else if (session.phase === 'ended') {
+    clearInterval(liveTimerInt);
     showScreen('scrLiveLobby');
     $('#lobbySpinner').textContent = '🏁';
     $('.score-box').textContent = 'Quiz Ended';
@@ -864,17 +876,18 @@ async function handleLivePhaseUpdate(session) {
 }
 
 let liveTimerInt = null;
-function startLiveTimer(seconds, label) {
+function startLiveTimer(seconds, phase) {
   clearInterval(liveTimerInt);
   let t = seconds;
   $('#liveTimer').textContent = t + 's';
   liveTimerInt = setInterval(() => {
-    t -= 1; $('#liveTimer').textContent = t + 's';
+    t -= 1; 
+    $('#liveTimer').textContent = Math.max(0, t) + 's';
+    
     if(t <= 0) {
       clearInterval(liveTimerInt);
-      $('#liveTimer').textContent = '0s';
-      
-      if (!state.liveAnswerSubmitted) {
+      // ONLY auto-submit if we are in the ANSWERING phase
+      if (phase === 'answering' && !state.liveAnswerSubmitted && !state.isSubmitting) {
           if (state.liveSelectedText) {
               processAnswerSubmission(true); 
           } else {

@@ -750,15 +750,15 @@ tbody tr:hover{background:#0b0b0b}
 
     <!-- Header Text -->
     <div style="position: absolute; top: 22mm; left: 0; right: 0; text-align: center; color: #FFC600; font-family: 'Poppins', sans-serif; font-weight: 700; font-size: 28pt; letter-spacing: 5px; z-index: 3;">M2E ACADEMY</div>
-    <div style="position: absolute; top: 38mm; left: 0; right: 0; text-align: center; color: #CFCFCF; font-family: 'Montserrat', sans-serif; font-weight: 500; font-size: 10pt; letter-spacing: 5px; z-index: 3;">TRANSACTION BANKING</div>
+    <div style="position: absolute; top: 35mm; left: 0; right: 0; text-align: center; color: #CFCFCF; font-family: 'Montserrat', sans-serif; font-weight: 500; font-size: 10pt; letter-spacing: 5px; z-index: 3;">TRANSACTION BANKING</div>
     
     <!-- Title -->
     <div style="position: absolute; top: 62mm; left: 0; right: 0; text-align: center; color: #FFFFFF; font-family: 'Cormorant Garamond', serif; font-weight: 700; font-size: 34pt; letter-spacing: 0.5px; z-index: 3;">Certificate of Achievement</div>
     <div style="position: absolute; top: 86mm; left: 0; right: 0; text-align: center; color: #D8D8D8; font-family: 'EB Garamond', serif; font-style: italic; font-size: 15pt; z-index: 3;">This is to certify that</div>
 
     <!-- Name -->
-    <div style="position: absolute; top: 128mm; left: 0; right: 0; text-align: center; z-index: 3;">
-        <div id="certName" style="font-family: 'Satisfy', cursive; font-weight: 400; font-size: 62pt; line-height: 1.1; color: #1A1A1A; display: inline-block; border-bottom: 2pt solid #FFC600; padding: 0 10mm 4mm;">Jane Oo</div>
+    <div style="position: absolute; top: 134mm; left: 0; right: 0; text-align: center; z-index: 3;">
+        <div id="certName" style="font-family: 'Satisfy', cursive; font-weight: 400; font-size: 62pt; line-height: 1.1; color: #1A1A1A; display: inline-block; border-bottom: 2pt solid #FFC600; padding: 0 10mm 2mm;">Jane Oo</div>
     </div>
 
     <!-- Body -->
@@ -906,39 +906,65 @@ function initGate() {
   });
 }
 
-// --- CERTIFICATE GENERATOR ---
+// --- CERTIFICATE GENERATOR (Prestige v2 HTML to PDF) ---
 window.generateCertificate = async function(name, score, topicName) {
+    // 1. Populate the template fields
     $('#certName').textContent = name;
     
-    if (name.length > 25) $('#certName').style.fontSize = '48pt';
-    else if (name.length > 18) $('#certName').style.fontSize = '52pt';
-    else $('#certName').style.fontSize = '62pt';
+    // Dynamic font sizing for long names
+    if (name.length > 25) {
+        $('#certName').style.fontSize = '48pt';
+    } else if (name.length > 18) {
+        $('#certName').style.fontSize = '52pt';
+    } else {
+        $('#certName').style.fontSize = '62pt';
+    }
     
     $('#certCourse').textContent = topicName;
     
     const level = getLevel(score);
-    $('#certLevel').textContent = level ? `Level ${level.n}` : 'N/A';
-    $('#certLevelTitle').textContent = level ? level.name : 'Keep Learning';
+    const levelNum = level ? `Level ${level.n}` : 'N/A';
+    const levelTitle = level ? level.name : 'Keep Learning';
+    $('#certLevel').textContent = levelNum;
+    $('#certLevelTitle').textContent = levelTitle;
+    
     $('#certScore').textContent = `${score}%`;
     
     const today = new Date();
-    $('#certDate').textContent = today.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
-    $('#certYear').textContent = today.getFullYear().toString();
+    const dayMonth = today.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+    const year = today.getFullYear().toString();
+    $('#certDate').textContent = dayMonth;
+    $('#certYear').textContent = year;
 
+    // 2. Temporarily show the template for html2canvas
     const template = $('#certificateTemplate');
     template.hidden = false;
 
     try {
+        // 3. Wait for fonts to be fully loaded before capturing
         await document.fonts.ready;
-        const canvas = await html2canvas(template, { scale: 2, useCORS: true, backgroundColor: '#FFFDF7' });
+
+        // 4. Render canvas (using scale 2 for high resolution)
+        const canvas = await html2canvas(template, {
+            scale: 2,
+            useCORS: true,
+            backgroundColor: '#FFFDF7'
+        });
+
+        // 5. Generate PDF
         const { jsPDF } = window.jspdf;
         const pdf = new jsPDF('p', 'mm', 'a4');
-        pdf.addImage(canvas.toDataURL('image/jpeg', 1.0), 'JPEG', 0, 0, 210, 297);
+        
+        const imgData = canvas.toDataURL('image/jpeg', 1.0);
+        pdf.addImage(imgData, 'JPEG', 0, 0, 210, 297);
+        
         pdf.save(`M2E_Certificate_${name.replace(/\s+/g, '_')}.pdf`);
+
     } catch (err) {
         console.error('Error generating certificate:', err);
         alert('Could not generate PDF certificate. Please try again.');
     } finally {
+        // 6. Hide template again
         template.hidden = true;
     }
 };
@@ -974,11 +1000,9 @@ on('#regForm', 'submit', async (e) => {
   
   let fReg = reg; let fBr = br; if (cat === 'tbc') fBr = 'TBC'; else if (cat === 'other') { fReg = 'N/A'; fBr = unit; }
   
-  const topicSelectEl = $('#topicSelect');
-  const selectedTopicName = topicSelectEl.options[topicSelectEl.selectedIndex].text;
-  
+  const selectedTopic = topics.find(t => t.id === tid);
   state.topicId = tid; 
-  state.topicName = selectedTopicName;
+  state.topicName = selectedTopic ? selectedTopic.name : 'M2E Assessment';
   state.mode = ($('input[name="mode"]:checked') || {}).value || 'pre'; 
   state.participant = { fullName: name, region: fReg, branch: fBr, email, pfNumber: pf };
   
@@ -1214,4 +1238,680 @@ async function updateParticipantResultScreen(submissionData = null, isFinal = fa
     const shareBtnHtml = isFinal ? `
         <div style="margin-top: 24px; padding-bottom: 20px;">
             <button onclick="shareResultImage('${rank}', '${currentScore}')" class="btn btn-whatsapp" id="btnShareResult">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+                Share Result
+            </button>
+        </div>
+    ` : '';
+
+    $('#liveResultCard').className = cardClass;
+    $('#liveResultCard').innerHTML = `
+        <h2 style="color:${headerColor}; font-weight:900;">${headerText}</h2>
+        ${pointsEarnedHtml}
+        ${trophyHtml}
+        <p style="font-size:1.2rem; margin-top:15px;">Total Score: <strong style="color:var(--yellow);">${currentScore} pts</strong></p>
+        <p class="hint" style="margin-top:10px;">Look at the main screen for the leaderboard!</p>
+        ${shareBtnHtml}
+    `;
+}
+
+async function processAnswerSubmission(isAuto = false) {
+    if (state.liveAnswerSubmitted || state.isSubmitting) return; 
+    if (!state.liveSelectedText) {
+        if (!isAuto) alert('Please select an option first.');
+        return;
+    }
+    
+    state.isSubmitting = true;
+    state.liveAnswerSubmitted = true; 
+    const btn = $('#btnLiveSubmit'); 
+    if(btn) { btn.textContent = 'Submitting...'; btn.disabled = true; }
+    $$('#liveOptions .option').forEach(b => b.classList.add('disabled'));
+    
+    try {
+        const { data, error } = await supabaseClient.rpc('submit_live_answer', {
+            p_session_id: state.liveSessionId, 
+            p_participant_id: state.liveParticipantId,
+            p_q_index: state.liveCurrentQIndex, 
+            p_q_id: state.liveCurrentQuestion.id, 
+            p_selected_text: state.liveSelectedText
+        });
+
+        if (error) {
+            console.error('RPC Error:', error);
+            if (!error.message.includes('already submitted') && !isAuto) {
+                alert('Submission failed: ' + error.message);
+            }
+            showScreen('scrLiveResult');
+            return;
+        }
+
+        if (data) {
+            await updateParticipantResultScreen(data, false);
+            showScreen('scrLiveResult');
+        }
+    } catch (err) {
+        console.error('Unexpected error:', err);
+        if(!isAuto) alert('A network error occurred.');
+        state.liveAnswerSubmitted = false;
+        state.isSubmitting = false;
+        if(btn) { btn.textContent = 'Submit Answer'; btn.disabled = false; }
+        $$('#liveOptions .option').forEach(b => b.classList.remove('disabled'));
+    }
+}
+
+on('#btnLiveSubmit', 'click', () => processAnswerSubmission(false));
+
+// Share Result as Image
+window.shareResultImage = async function(rank, score) {
+    const btn = $('#btnShareResult');
+    const originalText = btn.innerHTML;
+    btn.innerHTML = 'Generating...';
+    btn.disabled = true;
+
+    try {
+        let trophy = '';
+        let congrats = '';
+        
+        if (rank == 1) {
+            trophy = `<div class="share-trophy">🥇</div><div style="color:var(--gold); font-size:1.5rem; font-weight:800;">1st Place!</div>`;
+            congrats = `Congratulations, ${escapeHtml(state.participant.fullName)}! You are the M2E Grandmaster!`;
+        } else if (rank == 2) {
+            trophy = `<div class="share-trophy">🥈</div><div style="color:var(--silver); font-size:1.5rem; font-weight:800;">2nd Place!</div>`;
+            congrats = `Congratulations, ${escapeHtml(state.participant.fullName)}! Outstanding performance!`;
+        } else if (rank == 3) {
+            trophy = `<div class="share-trophy">🥉</div><div style="color:var(--bronze); font-size:1.5rem; font-weight:800;">3rd Place!</div>`;
+            congrats = `Congratulations, ${escapeHtml(state.participant.fullName)}! Excellent work!`;
+        } else {
+            trophy = `<div style="font-size:3rem; margin-bottom:10px;">👏</div><div style="color:#fff; font-size:1.2rem; font-weight:800;">Rank #${rank}</div>`;
+            congrats = `Thank you for participating, ${escapeHtml(state.participant.fullName)}! Keep learning!`;
+        }
+
+        $('#shareBodyContent').innerHTML = `
+            <div class="share-title">Final Results</div>
+            <div class="share-subtitle">${congrats}</div>
+            ${trophy}
+            <div class="share-score">Total Score: <span style="color:var(--yellow);">${score} pts</span></div>
+        `;
+
+        const template = $('#shareImageTemplate');
+        template.hidden = false;
+        template.style.position = 'absolute';
+        template.style.left = '-9999px';
+        template.style.top = '0';
+
+        const canvas = await html2canvas(template, {
+            backgroundColor: '#000',
+            scale: 2,
+            useCORS: true
+        });
+        
+        template.hidden = true;
+        template.style.position = '';
+        template.style.left = '';
+
+        canvas.toBlob(async function(blob) {
+            const file = new File([blob], 'm2e-result.png', { type: 'image/png' });
+            
+            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                try {
+                    await navigator.share({
+                        files: [file],
+                        title: 'M2E Academy Result',
+                        text: 'Check out my result from the M2E Academy Live Quiz!',
+                    });
+                } catch (shareError) { console.log('Share failed', shareError); }
+            } else {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'm2e-result.png';
+                a.click();
+                URL.revokeObjectURL(url);
+                alert("Image downloaded! You can now attach it to WhatsApp manually.");
+            }
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }, 'image/png');
+        
+    } catch (err) {
+        console.error('Error generating image:', err);
+        alert('Could not generate image. Please try again.');
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    }
+}
+
+
+// --- ADMIN FLOW ---
+let adminDraft = null; let currentAdminTopicId = null; let currentAdminTopics = []; let activeLiveSession = null; let adminSessionSub = null; let adminCurrentQuestions = [];
+let adminLobbyPoll = null; let adminLeaderboardPoll = null;
+let allSubmissions = [];
+
+on('#btnAdminOpen', 'click', async () => {
+  showScreen('scrAdmin');
+  const { data: { session } } = await supabaseClient.auth.getSession();
+  if (session) { $('#adminLogin').hidden = true; $('#adminConsole').hidden = false; await loadAdminTopics(); openAdminTab('live'); }
+  else { $('#adminLogin').hidden = false; $('#adminConsole').hidden = true; $('#adminEmail').value = ''; $('#adminPwd').value = ''; $('#adminErr').textContent = ''; setTimeout(() => $('#adminEmail').focus(), 150); }
+});
+on('#btnAdminBack', 'click', () => showScreen('scrLanding'));
+on('#btnAdminLogout', 'click', async () => { await supabaseClient.auth.signOut(); showScreen('scrLanding'); });
+on('#adminLoginForm', 'submit', async (e) => {
+  e.preventDefault(); const email = $('#adminEmail').value.trim(); const pwd = $('#adminPwd').value.trim(); const errEl = $('#adminErr'); const submitBtn = e.target.querySelector('button[type="submit"]');
+  submitBtn.textContent = 'Auth...'; submitBtn.disabled = true; errEl.textContent = '';
+  const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password: pwd });
+  submitBtn.textContent = 'Sign In'; submitBtn.disabled = false;
+  if (error) { errEl.textContent = error.message; return; }
+  $('#adminPwd').value = ''; $('#adminLogin').hidden = true; $('#adminConsole').hidden = false; await loadAdminTopics(); openAdminTab('live');
+});
+
+async function loadAdminTopics() {
+  currentAdminTopics = await fetchAdminTopics(); const select = $('#adminTopicSelect');
+  if (currentAdminTopics.length === 0) { select.innerHTML = '<option value="">No topics.</option>'; currentAdminTopicId = null; $('#btnToggleTopicStatus').disabled = true; return; }
+  
+  select.innerHTML = currentAdminTopics.map(t => `<option value="${t.id}">${escapeHtml(t.name)} ${t.is_active ? '(Active)' : '(Draft)'}</option>`).join('');
+  if (!currentAdminTopicId) currentAdminTopicId = currentAdminTopics[0].id; select.value = currentAdminTopicId;
+  
+  updateTopicToggleBtn();
+  loadQuestionsForSelection();
+}
+
+function updateTopicToggleBtn() {
+    const topic = currentAdminTopics.find(t => t.id === currentAdminTopicId);
+    if (topic) {
+        $('#btnToggleTopicStatus').textContent = topic.is_active ? 'Set to Draft' : 'Publish Active';
+        $('#btnToggleTopicStatus').style.color = topic.is_active ? 'var(--danger)' : 'var(--yellow)';
+        $('#btnToggleTopicStatus').style.borderColor = topic.is_active ? 'var(--danger)' : 'var(--yellow)';
+        $('#btnToggleTopicStatus').disabled = false;
+    } else {
+        $('#btnToggleTopicStatus').disabled = true;
+    }
+}
+
+on('#btnToggleTopicStatus', 'click', async () => {
+    if (!currentAdminTopicId) return;
+    const topic = currentAdminTopics.find(t => t.id === currentAdminTopicId);
+    if (!topic) return;
+    
+    const newStatus = !topic.is_active;
+    const btn = $('#btnToggleTopicStatus');
+    btn.textContent = 'Saving...';
+    btn.disabled = true;
+    
+    const { error } = await supabaseClient.from('topics').update({ is_active: newStatus }).eq('id', currentAdminTopicId);
+    
+    if (error) {
+        alert('Error updating status: ' + error.message);
+    } else {
+        await loadAdminTopics(); // Refresh dropdown and button
+    }
+});
+
+on('#adminTopicSelect', 'change', (e) => { 
+  currentAdminTopicId = e.target.value; 
+  updateTopicToggleBtn();
+  openAdminTab($('.admin-tabs .active').dataset.tab || 'questions'); 
+  loadQuestionsForSelection();
+});
+
+on('#btnCreateTopic', 'click', async () => {
+  const name = prompt('Name:'); if (!name) return; const { data: { user } } = await supabaseClient.auth.getUser();
+  await supabaseClient.from('topics').insert([{ name, is_active: false, admin_id: user.id }]); await loadAdminTopics();
+});
+
+$$('.admin-tabs [data-tab]').forEach(btn => { btn.addEventListener('click', () => openAdminTab(btn.dataset.tab)); });
+function openAdminTab(tab) {
+  $$('.admin-tabs [data-tab]').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+  $('#tabQuestions').hidden = tab !== 'questions'; $('#tabSubmissions').hidden = tab !== 'submissions'; $('#tabLive').hidden = tab !== 'live'; $('#tabDropdowns').hidden = tab !== 'dropdowns'; $('#tabSettings').hidden = tab !== 'settings';
+  if (tab === 'questions') loadAdminQuestions(); if (tab === 'submissions') renderSubmissions(); if (tab === 'dropdowns') loadDropdownManager(); if (tab === 'settings') fillSettingsForm();
+  if (tab === 'live') loadQuestionsForSelection();
+}
+
+async function loadQuestionsForSelection() {
+  const box = $('#liveQuestionSelection');
+  if (!currentAdminTopicId) { box.innerHTML = '<p class="hint" style="padding:10px;">Select a topic first.</p>'; return; }
+  box.innerHTML = '<p class="hint" style="padding:10px;">Loading questions...</p>';
+  
+  const qs = await fetchQuestionsFromDB(currentAdminTopicId, true);
+  if (qs.length === 0) { box.innerHTML = '<p class="hint" style="padding:10px;">No questions available for this topic.</p>'; return; }
+  
+  box.innerHTML = qs.map(q => `
+    <label class="q-select-item">
+      <input type="checkbox" class="live-q-checkbox" value="${q.id}" checked />
+      <span class="q-text">${escapeHtml(q.text)}</span>
+    </label>
+  `).join('');
+
+  updateQuestionCount();
+  
+  $$('.live-q-checkbox').forEach(cb => {
+      cb.addEventListener('change', updateQuestionCount);
+  });
+}
+
+function updateQuestionCount() {
+    const total = $$('.live-q-checkbox').length;
+    const checked = $$('.live-q-checkbox:checked').length;
+    $('#qSelectCount').textContent = `${checked} of ${total} Selected`;
+}
+
+on('#btnSelectAllQs', 'click', () => {
+    $$('.live-q-checkbox').forEach(cb => cb.checked = true);
+    updateQuestionCount();
+});
+on('#btnDeselectAllQs', 'click', () => {
+    $$('.live-q-checkbox').forEach(cb => cb.checked = false);
+    updateQuestionCount();
+});
+
+// --- ADMIN LIVE HOST LOGIC ---
+on('#btnStartLive', 'click', async () => {
+  if (!currentAdminTopicId) return alert('Select a topic.');
+  const target = $('#liveTargetGroup').value.trim(); 
+  const readT = Math.max(3, Number($('#liveReadTime').value) || 13);
+  const ansT = Math.max(3, Number($('#liveAnswerTime').value) || 13);
+  const maxP = Math.max(10, Number($('#liveMaxPoints').value) || 100);
+  
+  if (!target) return alert('Enter target group.');
+
+  const selectedIds = Array.from($$('.live-q-checkbox:checked')).map(cb => cb.value);
+  if (selectedIds.length === 0) return alert('Please select at least one question for the live session.');
+
+  const btn = $('#btnStartLive'); btn.textContent = 'Starting...'; btn.disabled = true;
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'; let code = ''; for(let i=0; i<6; i++) code += chars.charAt(Math.floor(Math.random() * chars.length));
+  const { data: { user } } = await supabaseClient.auth.getUser();
+  
+  const allQuestions = await fetchQuestionsFromDB(currentAdminTopicId, true);
+  adminCurrentQuestions = allQuestions.filter(q => selectedIds.includes(q.id));
+
+  const { data, error } = await supabaseClient.from('live_sessions').insert([{
+    topic_id: currentAdminTopicId, admin_id: user.id, join_code: code, target_group: target, status: 'active', 
+    phase: 'lobby', read_time: readT, answer_time: ansT, max_points: maxP, current_q_index: 0
+  }]).select().single();
+
+  btn.textContent = 'Generate Code'; btn.disabled = false;
+  if (error) { alert(error.message); return; }
+
+  activeLiveSession = data;
+  startAdminDashboard(data);
+});
+
+function startAdminDashboard(session) {
+  $('#liveSetup').hidden = true; $('#liveDashboard').hidden = false;
+  $('#phaseLobby').hidden = false; $('#phasePlaying').hidden = true; $('#phaseEnded').hidden = true;
+  $('#displayJoinCode').textContent = session.join_code; $('#displayTargetGroup').textContent = session.target_group;
+  $('#qrCodeImg').src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(window.location.href.split('?')[0] + '?join=' + session.join_code)}`;
+  
+  if(adminSessionSub) supabaseClient.removeChannel(adminSessionSub);
+  adminSessionSub = supabaseClient.channel('admin_live_'+session.id)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'live_participants', filter: `session_id=eq.${session.id}` }, () => {
+      updateLobbyView(session.id);
+    })
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'live_answers', filter: `session_id=eq.${session.id}` }, () => {
+      updateAdminLeaderboard(session.id);
+    })
+    .subscribe();
+
+  updateLobbyView(session.id);
+  
+  if(adminLobbyPoll) clearInterval(adminLobbyPoll);
+  adminLobbyPoll = setInterval(() => updateLobbyView(session.id), 3000);
+}
+
+async function updateLobbyView(sessionId) {
+  const { data, count } = await supabaseClient.from('live_participants').select('name', { count: 'exact' }).eq('session_id', sessionId).order('joined_at');
+  $('#lobbyCount').textContent = count || 0;
+  if(data && data.length > 0) {
+      $('#lobbyList').innerHTML = data.map(p => `<span class="pill" style="padding:6px 12px; font-size:0.9rem;">${escapeHtml(p.name)}</span>`).join('');
+  } else {
+      $('#lobbyList').innerHTML = '<span class="hint">Waiting for participants...</span>';
+  }
+}
+
+async function updateAdminLeaderboard(sessionId) {
+  const { data } = await supabaseClient.from('live_participants').select('name, total_score').eq('session_id', sessionId).order('total_score', { ascending: false }).limit(10);
+  if(!data || data.length === 0) return $('#adminLeaderboard').innerHTML = '<p class="hint">Waiting...</p>';
+  
+  $('#adminLeaderboard').innerHTML = data.map((s, i) => {
+    let cls = ''; let trophy = (i+1);
+    if (i === 0) { cls = 'top-1'; trophy = '🥇'; } else if (i === 1) { cls = 'top-2'; trophy = '🥈'; } else if (i === 2) { cls = 'top-3'; trophy = '🥉'; }
+    return `<div class="lb-row ${cls}"><div class="lb-left"><span class="lb-rank">${trophy}</span><span>${escapeHtml(s.name)}</span></div><div class="lb-score">${s.total_score} pts</div></div>`;
+  }).join('');
+}
+
+on('#btnStartQuiz', 'click', async () => {
+  await supabaseClient.from('live_sessions').update({ phase: 'reading', current_q_index: 0, question_started_at: new Date().toISOString() }).eq('id', activeLiveSession.id);
+  $('#phaseLobby').hidden = true; $('#phasePlaying').hidden = false;
+  if(adminLobbyPoll) clearInterval(adminLobbyPoll); 
+  
+  showAdminQuestion(activeLiveSession, 0);
+  $('#btnNextQuestion').disabled = true;
+  startAdminTimer(activeLiveSession.read_time, 'reading');
+  
+  if(adminLeaderboardPoll) clearInterval(adminLeaderboardPoll);
+  adminLeaderboardPoll = setInterval(() => updateAdminLeaderboard(activeLiveSession.id), 2000);
+});
+
+async function showAdminQuestion(session, idx) {
+  const q = adminCurrentQuestions[idx];
+  $('#adminQIndexDisplay').textContent = idx + 1; $('#adminQTotalDisplay').textContent = adminCurrentQuestions.length;
+  $('#adminQText').textContent = q.text;
+  updateAdminLeaderboard(session.id);
+}
+
+async function transitionToAnswering() {
+    const now = new Date().toISOString();
+    await supabaseClient.from('live_sessions').update({ phase: 'answering', question_started_at: now }).eq('id', activeLiveSession.id);
+    activeLiveSession.phase = 'answering';
+    activeLiveSession.question_started_at = now;
+    startAdminTimer(activeLiveSession.answer_time, 'answering');
+}
+
+async function transitionToResults() {
+    await supabaseClient.from('live_sessions').update({ phase: 'results' }).eq('id', activeLiveSession.id);
+    activeLiveSession.phase = 'results';
+    $('#btnNextQuestion').disabled = false;
+    await updateAdminLeaderboard(activeLiveSession.id);
+}
+
+on('#btnNextQuestion', 'click', async () => {
+    if(!activeLiveSession) return;
+    $('#btnNextQuestion').disabled = true;
+    const nextIdx = activeLiveSession.current_q_index + 1;
+    
+    if (nextIdx >= adminCurrentQuestions.length) {
+        await supabaseClient.from('live_sessions').update({ phase: 'ended', status: 'ended' }).eq('id', activeLiveSession.id);
+        $('#phasePlaying').hidden = true; $('#phaseEnded').hidden = false;
+        clearInterval(adminTimerInt);
+        if(adminLeaderboardPoll) clearInterval(adminLeaderboardPoll);
+    } else {
+        await supabaseClient.from('live_sessions').update({ phase: 'reading', current_q_index: nextIdx, question_started_at: new Date().toISOString() }).eq('id', activeLiveSession.id);
+        activeLiveSession.phase = 'reading'; activeLiveSession.current_q_index = nextIdx;
+        showAdminQuestion(activeLiveSession, nextIdx);
+        startAdminTimer(activeLiveSession.read_time, 'reading');
+    }
+});
+
+on('#btnEndLive', 'click', async () => {
+  if (!activeLiveSession || !confirm('Are you sure you want to end the session immediately?')) return;
+  await supabaseClient.from('live_sessions').update({ phase: 'ended', status: 'ended' }).eq('id', activeLiveSession.id);
+  $('#phasePlaying').hidden = true; 
+  $('#phaseEnded').hidden = false;
+  clearInterval(adminTimerInt);
+  if(adminLeaderboardPoll) clearInterval(adminLeaderboardPoll);
+  if(adminSessionSub) supabaseClient.removeChannel(adminSessionSub);
+});
+
+let adminTimerInt = null;
+function startAdminTimer(seconds, phase) {
+  clearInterval(adminTimerInt);
+  let t = seconds;
+  $('#adminPhaseTimer').textContent = t + 's';
+  adminTimerInt = setInterval(async () => {
+      t -= 1;
+      $('#adminPhaseTimer').textContent = t + 's';
+      if(t <= 0) {
+          clearInterval(adminTimerInt);
+          if (phase === 'reading') {
+              await transitionToAnswering();
+          } else if (phase === 'answering') {
+              await transitionToResults();
+          }
+      }
+  }, 1000);
+}
+
+on('#btnResetLive', 'click', () => {
+  if(adminSessionSub) supabaseClient.removeChannel(adminSessionSub);
+  if(adminLobbyPoll) clearInterval(adminLobbyPoll);
+  if(adminLeaderboardPoll) clearInterval(adminLeaderboardPoll);
+  $('#liveSetup').hidden = false; $('#liveDashboard').hidden = true;
+});
+
+// --- SUBMISSIONS TAB LOGIC ---
+function toggleSubType(type) {
+    $('#standardSubsContainer').hidden = (type !== 'standard');
+    $('#liveSubsContainer').hidden = (type !== 'live');
+    
+    if (type === 'standard') {
+        $('#btnSubStandard').className = 'btn btn-primary btn-sm';
+        $('#btnSubLive').className = 'btn btn-ghost btn-sm';
+        renderSubmissions();
+    } else {
+        $('#btnSubStandard').className = 'btn btn-ghost btn-sm';
+        $('#btnSubLive').className = 'btn btn-primary btn-sm';
+        renderLiveSessions();
+    }
+}
+
+async function renderLiveSessions() {
+    const wrap = $('#adminLiveSubs'); 
+    wrap.innerHTML = '<p class="hint">Loading live sessions...</p>';
+    
+    const { data: { user } } = await supabaseClient.auth.getUser();
+    const { data: sessions, error } = await supabaseClient
+        .from('live_sessions')
+        .select('*, live_participants(count)')
+        .eq('admin_id', user.id)
+        .order('created_at', { ascending: false });
+
+    if (error || !sessions) { wrap.innerHTML = '<p class="hint" style="color:var(--danger)">Error loading sessions.</p>'; return; }
+    if (sessions.length === 0) { wrap.innerHTML = '<p class="hint">No live sessions hosted yet.</p>'; return; }
+
+    const rows = sessions.map(s => {
+        const date = new Date(s.created_at).toLocaleString();
+        const count = s.live_participants && s.live_participants[0] ? s.live_participants[0].count : 0;
+        return `
+            <tr>
+                <td>${escapeHtml(date)}</td>
+                <td>${escapeHtml(s.target_group)}</td>
+                <td><code>${escapeHtml(s.join_code)}</code></td>
+                <td>${count}</td>
+                <td><span class="pill ${s.status === 'active' ? 'live' : 'pre'}">${s.status.toUpperCase()}</span></td>
+                <td><button class="btn-mini" type="button" onclick="viewLiveSession('${s.id}', '${escapeHtml(s.target_group)}')">View Leaderboard</button></td>
+            </tr>`;
+    }).join('');
+
+    wrap.innerHTML = `
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr><th>Date</th><th>Target Group</th><th>Code</th><th>Participants</th><th>Status</th><th>Action</th></tr>
+                </thead>
+                <tbody>${rows}</tbody>
+            </table>
+        </div>`;
+}
+
+window.viewLiveSession = async (sessionId, groupName) => {
+    $('#liveModalBody').innerHTML = `<h2>Leaderboard: ${groupName}</h2><p class="hint">Loading...</p>`;
+    $('#liveSessionModal').hidden = false;
+
+    const { data: participants } = await supabaseClient
+        .from('live_participants')
+        .select('name, pf_number, total_score')
+        .eq('session_id', sessionId)
+        .order('total_score', { ascending: false });
+
+    if (!participants || participants.length === 0) {
+        $('#liveModalBody').innerHTML = `<h2>Leaderboard: ${groupName}</h2><p class="hint">No participants joined this session.</p>`;
+        return;
+    }
+
+    const rows = participants.map((p, i) => {
+        let trophy = (i+1) + '.';
+        let color = '#fff';
+        if (i === 0) { trophy = '🥇'; color = 'var(--gold)'; }
+        else if (i === 1) { trophy = '🥈'; color = 'var(--silver)'; }
+        else if (i === 2) { trophy = '🥉'; color = 'var(--bronze)'; }
+        
+        return `
+            <div style="display:flex; justify-content:space-between; padding:12px; border-bottom:1px solid var(--line);">
+                <div style="display:flex; gap:15px; align-items:center;">
+                    <span style="font-size:1.2rem; width:30px;">${trophy}</span>
+                    <div>
+                        <div style="font-weight:800; color:${color};">${escapeHtml(p.name)}</div>
+                        <div style="font-size:0.8rem; color:var(--muted);">PF: ${escapeHtml(p.pf_number)}</div>
+                    </div>
+                </div>
+                <div style="font-weight:900; color:var(--yellow); font-size:1.1rem;">${p.total_score} pts</div>
+            </div>
+        `;
+    }).join('');
+
+    $('#liveModalBody').innerHTML = `
+        <h2 style="margin:0 0 20px;">Leaderboard: ${groupName}</h2>
+        <div style="background:#080808; border:1px solid var(--line-strong); border-radius:12px; padding:10px;">
+            ${rows}
+        </div>
+    `;
+};
+
+on('#liveModalClose', 'click', () => { $('#liveSessionModal').hidden = true; });
+on('#liveSessionModal', 'click', (e) => { if (e.target.id === 'liveSessionModal') $('#liveSessionModal').hidden = true; });
+
+
+// Standard Admin Helpers
+function loadAdminQuestions() {
+  if (!currentAdminTopicId) return;
+  $('#adminQuestions').innerHTML = '<p class="hint">Loading...</p>';
+  fetchQuestionsFromDB(currentAdminTopicId, true).then(qs => {
+    adminDraft = qs.map(q => ({ id: q.id || uid(), text: q.text, options: q.options.slice(), correct: q.correct })); paintAdminQuestions();
+  });
+}
+function paintAdminQuestions() { $('#adminQuestions').innerHTML = adminDraft.map((q, i) => `<div class="admin-q" data-i="${i}"><div class="admin-q-head"><span class="badge">Q ${i + 1}</span><button type="button" class="btn-mini danger" data-del="${i}">Del</button></div><textarea class="q-text" rows="2">${escapeHtml(q.text)}</textarea><div class="opt-list">${q.options.map((o, oi) => `<label class="opt-row"><input type="radio" name="correct-${i}" value="${oi}" ${q.correct === oi ? 'checked' : ''} /><span class="key">${String.fromCharCode(65 + oi)}</span><input type="text" class="opt-input" value="${escapeHtml(o)}" /></label>`).join('')}</div><div class="admin-q-foot"><button type="button" class="btn-mini" data-addopt="${i}">+ Opt</button><button type="button" class="btn-mini" data-delopt="${i}">− Opt</button></div></div>`).join(''); }
+function syncDraftFromDOM() { $$('#adminQuestions .admin-q').forEach(card => { const i = Number(card.dataset.i); if (!adminDraft[i]) return; adminDraft[i].text = card.querySelector('.q-text').value; adminDraft[i].options = $$('.opt-input', card).map(inp => inp.value); const checked = card.querySelector('input[type="radio"]:checked'); if (checked) adminDraft[i].correct = Number(checked.value); }); }
+on('#adminQuestions', 'click', (e) => {
+  const addBtn = e.target.closest('[data-addopt]'); if (addBtn) { syncDraftFromDOM(); const i = Number(addBtn.dataset.addopt); if (adminDraft[i].options.length < 8) { adminDraft[i].options.push(''); paintAdminQuestions(); } return; }
+  const delOptBtn = e.target.closest('[data-delopt]'); if (delOptBtn) { syncDraftFromDOM(); const i = Number(delOptBtn.dataset.delopt); if (adminDraft[i].options.length > 2) { adminDraft[i].options.pop(); if (adminDraft[i].correct >= adminDraft[i].options.length) adminDraft[i].correct = 0; paintAdminQuestions(); } return; }
+  const delBtn = e.target.closest('[data-del]'); if (delBtn) { if (confirm('Delete?')) { syncDraftFromDOM(); adminDraft.splice(Number(delBtn.dataset.del), 1); paintAdminQuestions(); } }
+});
+on('#btnAddQuestion', 'click', () => { syncDraftFromDOM(); adminDraft.push({ id: uid(), text: '', options: ['', '', '', ''], correct: 0 }); paintAdminQuestions(); });
+on('#btnSaveQuestions', 'click', async () => {
+  if (!currentAdminTopicId) return; syncDraftFromDOM(); const cleaned = [];
+  adminDraft.forEach(q => { const text = (q.text || '').trim(); const options = []; let correct = 0; q.options.forEach((o, i) => { const v = (o || '').trim(); if (v) { if (i === q.correct) correct = options.length; options.push(v); } }); if (text && options.length >= 2) { cleaned.push({ id: q.id || uid(), text, options, correct_index: Math.min(correct, options.length - 1) }); } });
+  const btn = $('#btnSaveQuestions'); btn.textContent = 'Saving...'; btn.disabled = true;
+  await supabaseClient.from('questions').delete().eq('topic_id', currentAdminTopicId);
+  await supabaseClient.from('questions').insert(cleaned.map(q => ({ ...q, topic_id: currentAdminTopicId })));
+  btn.textContent = 'Save All Changes'; btn.disabled = false; alert('Saved.'); loadAdminQuestions(); loadQuestionsForSelection();
+});
+on('#btnRestoreQuestions', 'click', async () => {
+  if (!currentAdminTopicId || !confirm('Restore default?')) return; const btn = $('#btnRestoreQuestions'); btn.textContent = 'Restoring...'; btn.disabled = true;
+  await supabaseClient.from('questions').delete().eq('topic_id', currentAdminTopicId);
+  const seeds = DEFAULT_QUESTIONS.map(q => ({ id: uid(), text: q.text, options: q.options, correct_index: q.correct, topic_id: currentAdminTopicId }));
+  await supabaseClient.from('questions').insert(seeds); btn.textContent = 'Restore Default Bank'; btn.disabled = false; alert('Restored.'); loadAdminQuestions(); loadQuestionsForSelection();
+});
+
+async function renderSubmissions() {
+  if (!currentAdminTopicId) return; const wrap = $('#adminSubs'); wrap.innerHTML = '<p class="hint">Loading...</p>';
+  const { data } = await supabaseClient.from('submissions').select('*').eq('topic_id', currentAdminTopicId).order('submitted_at', { ascending: false });
+  if (!data) return;
+  allSubmissions = data; // Store for filtering
+  filterSubmissions();
+}
+
+function filterSubmissions() {
+    const searchTime = $('#searchTime').value.toLowerCase();
+    const searchName = $('#searchName').value.toLowerCase();
+    const searchEmail = $('#searchEmail').value.toLowerCase();
+    const searchPF = $('#searchPF').value.toLowerCase();
+    const searchBranch = $('#searchBranch').value.toLowerCase();
+
+    const filtered = allSubmissions.filter(s => {
+        const dateStr = new Date(s.submitted_at).toLocaleString().toLowerCase();
+        return (!searchTime || dateStr.includes(searchTime)) &&
+               (!searchName || (s.full_name||'').toLowerCase().includes(searchName)) &&
+               (!searchEmail || (s.email||'').toLowerCase().includes(searchEmail)) &&
+               (!searchPF || (s.pf_number||'').toLowerCase().includes(searchPF)) &&
+               (!searchBranch || (s.branch||'').toLowerCase().includes(searchBranch));
+    });
+
+    const wrap = $('#adminSubs');
+    if (filtered.length === 0) { wrap.innerHTML = '<p class="hint">No records match your search.</p>'; return; }
+
+    const rows = filtered.map(s => `
+        <tr>
+            <td>${escapeHtml(new Date(s.submitted_at).toLocaleString())}</td>
+            <td>${escapeHtml(s.full_name)}</td>
+            <td>${escapeHtml(s.email)}</td>
+            <td>${escapeHtml(s.pf_number)}</td>
+            <td>${escapeHtml(s.region)}</td>
+            <td>${escapeHtml(s.branch)}</td>
+            <td><span class="pill ${s.mode === 'pre' ? 'pre' : 'live'}">${s.mode.toUpperCase()}</span></td>
+            <td>${s.score}%</td>
+            <td>
+                <button class="btn-mini" type="button" data-view="${escapeHtml(s.id)}">View</button>
+                <button class="btn-mini" type="button" onclick="generateCertificate('${escapeHtml(s.full_name)}', ${s.score}, '${escapeHtml(currentAdminTopics.find(t => t.id === currentAdminTopicId)?.name || 'M2E Assessment')}')" style="margin-left:4px;">Cert</button>
+            </td>
+        </tr>
+    `).join('');
+    
+    wrap.innerHTML = `<div class="table-wrap"><table><thead><tr><th>Time</th><th>Name</th><th>Email</th><th>PF</th><th>Reg</th><th>Branch</th><th>Type</th><th>Score</th><th>Action</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+}
+
+on('#adminSubs', 'click', async (e) => {
+  const btn = e.target.closest('[data-view]'); if (!btn) return; const id = btn.dataset.view; btn.textContent = '...';
+  const { data } = await supabaseClient.from('submissions').select('*').eq('id', id).single(); btn.textContent = 'View';
+  if (data) {
+      const sub = data;
+      let answersHtml = '';
+      if (sub.answers && Array.isArray(sub.answers)) {
+          answersHtml = sub.answers.map((a, i) => `
+            <div class="review-item" style="margin-bottom:10px; padding:12px; border:1px solid var(--line-strong); border-radius:10px;">
+                <div style="font-weight:800; font-size:0.9rem; margin-bottom:6px;">Q${i+1}. ${escapeHtml(a.question)}</div>
+                <div style="font-size:0.85rem; color:${a.isCorrect ? 'var(--success)' : 'var(--danger)'};">
+                    Selected: <strong>${escapeHtml(a.selectedText || 'Not answered')}</strong> ${a.isCorrect ? '✓' : '✗'}
+                </div>
+                ${!a.isCorrect ? `<div style="font-size:0.85rem; color:var(--success); margin-top:4px;">Correct Answer: <strong>${escapeHtml(a.correctText)}</strong></div>` : ''}
+            </div>
+          `).join('');
+      } else {
+          answersHtml = '<p class="hint">No detailed answers available for this submission.</p>';
+      }
+
+      $('#liveModalBody').innerHTML = `
+        <h2>${escapeHtml(sub.full_name)}</h2>
+        <p class="hint" style="margin-bottom:20px;">${escapeHtml(sub.email)} · PF: ${escapeHtml(sub.pf_number)} · ${sub.score}%</p>
+        <div style="max-height: 50vh; overflow-y: auto;">
+            ${answersHtml}
+        </div>
+      `;
+      $('#liveSessionModal').hidden = false;
+  }
+});
+
+on('#modalClose', 'click', () => { $('#modal').hidden = true; });
+
+on('#btnExportCsv', 'click', async () => {
+  if (!currentAdminTopicId) return; const btn = $('#btnExportCsv'); btn.textContent = '...';
+  const { data, error } = await supabaseClient.from('submissions').select('*').eq('topic_id', currentAdminTopicId).order('submitted_at', { ascending: false }); btn.textContent = 'Export CSV';
+  if (error || !data || data.length === 0) { alert('No records.'); return; }
+  const head = ['Submitted', 'Name', 'Email', 'PF', 'Region', 'Branch/Unit', 'Type', 'Score', 'Correct', 'Total', 'Level'];
+  const rows = data.map(s => [new Date(s.submitted_at).toLocaleString(), s.full_name, s.email, s.pf_number, s.region, s.branch, s.mode.toUpperCase(), s.score, s.correct_count, s.total_questions, s.score >= 50 ? getLevel(s.score).name : '-']);
+  const csv = [head, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\r\n'); download(`m2e-submissions-${new Date().toISOString().slice(0, 10)}.csv`, csv);
+});
+
+on('#btnClearSubs', 'click', async () => { 
+  if (!currentAdminTopicId || !confirm('Delete ALL submissions for this topic?')) return; 
+  const btn = $('#btnClearSubs'); btn.textContent = '...'; 
+  await supabaseClient.from('submissions').delete().eq('topic_id', currentAdminTopicId); 
+  btn.textContent = 'Clear All Records'; renderSubmissions(); 
+});
+
+async function loadDropdownManager() {
+  const { data: r } = await supabaseClient.from('dropdown_options').select('*').eq('category', 'region');
+  const { data: u } = await supabaseClient.from('dropdown_options').select('*').eq('category', 'unit');
+  $('#regionList').innerHTML = (r||[]).map(x => `<div class="dropdown-item">${escapeHtml(x.value)} <button onclick="deleteDropdownItem('${x.id}')">&times;</button></div>`).join('');
+  $('#unitList').innerHTML = (u||[]).map(x => `<div class="dropdown-item">${escapeHtml(x.value)} <button onclick="deleteDropdownItem('${x.id}')">&times;</button></div>`).join('');
+}
+window.deleteDropdownItem = async (id) => { await supabaseClient.from('dropdown_options').delete().eq('id', id); loadDropdownManager(); };
+on('#btnAddRegion', 'click', async () => { const v = $('#newRegionInput').value.trim(); if(!v) return; $('#newRegionInput').value=''; await supabaseClient.from('dropdown_options').insert([{category:'region', value:v}]); loadDropdownManager(); });
+on('#btnAddUnit', 'click', async () => { const v = $('#newUnitInput').value.trim(); if(!v) return; $('#newUnitInput').value=''; await supabaseClient.from('dropdown_options').insert([{category:'unit', value:v}]); loadDropdownManager(); });
+
+function fillSettingsForm() { const s = loadSettings(); $('#setDuration').value = s.durationMinutes; $('#setCount').value = s.questionsPerAssessment; }
+on('#settingsForm', 'submit', (e) => { e.preventDefault(); const duration = Number($('#setDuration').value); const count = Number($('#setCount').value); if (duration < 1 || duration > 60 || count < 1) { alert('Invalid.'); return; } saveSettings({ durationMinutes: duration, questionsPerAssessment: count }); alert('Saved.'); });
+
+(function init() { initGate(); })();
+</script>
+</body>
+</html>

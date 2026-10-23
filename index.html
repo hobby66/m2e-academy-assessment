@@ -104,6 +104,20 @@ a{color:var(--yellow)}
 .err{color:var(--danger);font-size:.76rem;min-height:0}
 .err:empty{display:none}
 
+/* FIXED SEGMENTED TOGGLE */
+.segmented { display:grid; grid-template-columns:1fr 1fr; gap:8px; background:#080808; border:1px solid var(--line-strong); border-radius:999px; padding:6px; margin-bottom:22px; }
+.segmented label { position:relative; display:block; cursor:pointer; margin:0; }
+.segmented input { position:absolute; opacity:0; width:0; height:0; }
+.segmented span {
+    display: block; text-align: center; padding: 12px 10px; border-radius: 999px;
+    font-size: .85rem; font-weight: 800; color: var(--muted);
+    transition: background .2s, color .2s;
+}
+.segmented input:checked + span {
+    background: var(--yellow);
+    color: #000;
+}
+
 /* QUIZ & OPTIONS */
 .quiz-shell{max-width:760px;margin:0 auto;padding:34px 0 20px}
 .quiz-meta{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;font-size:.82rem;font-weight:700;color:var(--muted);letter-spacing:.05em;}
@@ -250,7 +264,7 @@ tbody tr:hover{background:#0b0b0b}
 #certificateTemplate .sub { font:500 10pt 'Montserrat'; letter-spacing:5px; color:#CFCFCF; margin-top:3mm; text-transform: uppercase;}
 #certificateTemplate .t1 { font:700 34pt 'Cormorant Garamond'; letter-spacing:.5px; color:#fff; }
 #certificateTemplate .lead { font:italic 15pt 'EB Garamond'; color:#D8D8D8; }
-#certificateTemplate .nm { font:400 62pt 'Satisfy', cursive; line-height:1.2; display:inline-block; border-bottom:2pt solid #FFC600; padding:0 10mm 2mm; color: #1A1A1A;}
+#certificateTemplate .nm { font:400 62pt 'Satisfy', cursive; line-height:1.1; display:inline-block; border-bottom:2pt solid #FFC600; padding:0 10mm 2mm; color: #1A1A1A;}
 #certificateTemplate .body { font:400 11.5pt 'Lato'; color:#555; }
 #certificateTemplate .crs { font:700 19pt 'Montserrat'; margin-top:2mm; color: #1A1A1A;}
 #certificateTemplate .cards { position:absolute; top:212mm; left:20mm; right:20mm; display:flex; gap:5mm; z-index: 2;}
@@ -350,9 +364,16 @@ tbody tr:hover{background:#0b0b0b}
             </select>
           </div>
 
-          <div class="segmented" role="radiogroup" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;background:#080808;border:1px solid var(--line-strong);border-radius:999px;padding:6px;margin-bottom:22px;">
-            <label style="position:relative;display:block;text-align:center;cursor:pointer;padding:12px 10px;border-radius:999px;font-size:.85rem;font-weight:800;color:var(--muted);transition:background .2s,color .2s;"><input type="radio" name="mode" value="pre" checked style="position:absolute;opacity:0;" /><span style="position:relative;z-index:1;">Pre-Training</span></label>
-            <label style="position:relative;display:block;text-align:center;cursor:pointer;padding:12px 10px;border-radius:999px;font-size:.85rem;font-weight:800;color:var(--muted);transition:background .2s,color .2s;"><input type="radio" name="mode" value="post" style="position:absolute;opacity:0;" /><span style="position:relative;z-index:1;">Post-Training</span></label>
+          <!-- FIXED TOGGLE -->
+          <div class="segmented" role="radiogroup">
+            <label>
+              <input type="radio" name="mode" value="pre" checked />
+              <span>Pre-Training</span>
+            </label>
+            <label>
+              <input type="radio" name="mode" value="post" />
+              <span>Post-Training</span>
+            </label>
           </div>
 
           <form id="regForm" novalidate>
@@ -729,15 +750,15 @@ tbody tr:hover{background:#0b0b0b}
 
     <!-- Header Text -->
     <div style="position: absolute; top: 22mm; left: 0; right: 0; text-align: center; color: #FFC600; font-family: 'Poppins', sans-serif; font-weight: 700; font-size: 28pt; letter-spacing: 5px; z-index: 3;">M2E ACADEMY</div>
-    <div style="position: absolute; top: 32mm; left: 0; right: 0; text-align: center; color: #CFCFCF; font-family: 'Montserrat', sans-serif; font-weight: 500; font-size: 10pt; letter-spacing: 5px; z-index: 3;">TRANSACTION BANKING</div>
+    <div style="position: absolute; top: 35mm; left: 0; right: 0; text-align: center; color: #CFCFCF; font-family: 'Montserrat', sans-serif; font-weight: 500; font-size: 10pt; letter-spacing: 5px; z-index: 3;">TRANSACTION BANKING</div>
     
     <!-- Title -->
     <div style="position: absolute; top: 62mm; left: 0; right: 0; text-align: center; color: #FFFFFF; font-family: 'Cormorant Garamond', serif; font-weight: 700; font-size: 34pt; letter-spacing: 0.5px; z-index: 3;">Certificate of Achievement</div>
     <div style="position: absolute; top: 86mm; left: 0; right: 0; text-align: center; color: #D8D8D8; font-family: 'EB Garamond', serif; font-style: italic; font-size: 15pt; z-index: 3;">This is to certify that</div>
 
     <!-- Name -->
-    <div style="position: absolute; top: 138mm; left: 0; right: 0; text-align: center; z-index: 3;">
-        <div id="certName" style="font-family: 'Satisfy', cursive; font-weight: 400; font-size: 62pt; line-height: 1.2; color: #1A1A1A; display: inline-block; border-bottom: 2pt solid #FFC600; padding: 0 10mm 2mm;">Jane Oo</div>
+    <div style="position: absolute; top: 134mm; left: 0; right: 0; text-align: center; z-index: 3;">
+        <div id="certName" style="font-family: 'Satisfy', cursive; font-weight: 400; font-size: 62pt; line-height: 1.1; color: #1A1A1A; display: inline-block; border-bottom: 2pt solid #FFC600; padding: 0 10mm 2mm;">Jane Oo</div>
     </div>
 
     <!-- Body -->

@@ -867,7 +867,11 @@ const LEVELS = [
 const getLevel = (score) => LEVELS.find(l => score >= l.min) || null;
 
 async function fetchActiveTopics() { const { data } = await supabaseClient.from('topics').select('*').eq('is_active', true); return data || []; }
-async function fetchAdminTopics() { const { data } = await supabaseClient.from('topics').select('*').order('name'); return data || []; }
+async function fetchAdminTopics() { 
+  const { data, error } = await supabaseClient.from('topics').select('*').order('name'); 
+  if (error) console.error('[M2E] Error fetching topics (Check RLS):', error);
+  return data || []; 
+}
 async function fetchQuestionsFromDB(topicId, isAdmin = false) {
   if (isAdmin) { const { data } = await supabaseClient.from('questions').select('*').eq('topic_id', topicId); return (data||[]).map(q => ({ id: q.id, text: q.text, options: q.options, correct: q.correct_index })); }
   else { const { data } = await supabaseClient.rpc('get_questions_for_participant', { p_topic_id: topicId }); return data || []; }
@@ -1572,7 +1576,7 @@ async function loadAdminTopics() {
   currentAdminTopics = await fetchAdminTopics(); 
   const select = $('#adminTopicSelect');
   if (currentAdminTopics.length === 0) { 
-    select.innerHTML = '<option value="">No topics.</option>'; 
+    select.innerHTML = '<option value="">No topics found. (Please check RLS)</option>'; 
     currentAdminTopicId = null; 
     $('#btnToggleTopicStatus').disabled = true; 
     return; 
@@ -1652,11 +1656,22 @@ function openAdminTab(tab) {
 
 /* ---------------- TEAM ACCESS LOGIC ---------------- */
 async function loadTeamAccess() {
+    // Check if a topic is actually selected
     const topic = currentAdminTopics.find(t => t.id === currentAdminTopicId);
-    if (!topic) return;
+    if (!topic) {
+        $('#teamTopicName').textContent = 'None Selected';
+        $('#teamAdminCount').textContent = `0 / 5 Added`;
+        $('#currentAdminsList').innerHTML = '<p class="hint" style="padding:20px; text-align:center;">Please create or select a topic above to manage admins.</p>';
+        $('#availableAdminsList').innerHTML = '';
+        return;
+    }
     
     $('#teamTopicName').textContent = topic.name;
     $('#teamErr').textContent = '';
+    
+    // Show loading state
+    $('#currentAdminsList').innerHTML = '<p class="hint">Loading admins...</p>';
+    $('#availableAdminsList').innerHTML = '';
     
     const [currentAdminsRes, availableAdminsRes] = await Promise.all([
         supabaseClient.rpc('get_topic_admins', { p_topic_id: currentAdminTopicId }),
@@ -1664,7 +1679,8 @@ async function loadTeamAccess() {
     ]);
     
     if (currentAdminsRes.error || availableAdminsRes.error) {
-        $('#currentAdminsList').innerHTML = `<p class="err">Error loading admins: ${currentAdminsRes.error?.message || availableAdminsRes.error?.message}</p>`;
+        console.error("RPC Error:", currentAdminsRes.error, availableAdminsRes.error);
+        $('#currentAdminsList').innerHTML = `<p class="err">Error loading admins. Did you run the SQL for get_available_admins? <br><br>Details: ${currentAdminsRes.error?.message || availableAdminsRes.error?.message}</p>`;
         return;
     }
     

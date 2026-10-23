@@ -193,6 +193,21 @@ tbody tr:hover{background:#0b0b0b}
 .site-footer .foot-brand{color:#5c5c5c;font-size:.7rem;letter-spacing:.16em;text-transform:uppercase}
 .admin-link{background:none;border:none;color:#3d3d3d;font-size:.7rem;letter-spacing:.14em;text-transform:uppercase;cursor:pointer;padding:8px;transition:color .2s;}
 .admin-link:hover{color:var(--yellow)}
+
+/* SHARE IMAGE TEMPLATE SPECIFIC */
+#shareImageTemplate { width: 600px; background: #000; padding: 30px; border-radius: 16px; border: 1px solid #333; font-family: -apple-system, sans-serif; color: #fff; }
+.share-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; padding-bottom: 20px; margin-bottom: 30px; }
+.share-logo { display: flex; align-items: center; gap: 10px; }
+.share-logo-box { background: var(--yellow); color: #000; font-weight: 900; padding: 8px 12px; border-radius: 8px; font-size: 1.2rem; }
+.share-logo-text { display: flex; flex-direction: column; line-height: 1.1; }
+.share-logo-text strong { font-size: 1.1rem; letter-spacing: .05em; }
+.share-logo-text small { font-size: .7rem; color: #888; text-transform: uppercase; letter-spacing: .1em; }
+.share-badge { border: 1px solid var(--yellow); color: var(--yellow); padding: 6px 16px; border-radius: 999px; font-size: 0.75rem; font-weight: 800; letter-spacing: .1em; }
+.share-body { text-align: center; padding: 20px 0; }
+.share-title { font-size: 2rem; font-weight: 900; color: var(--yellow); margin-bottom: 10px; }
+.share-subtitle { font-size: 1.1rem; color: #ddd; margin-bottom: 30px; }
+.share-trophy { font-size: 5rem; line-height: 1; margin-bottom: 10px; }
+.share-score { font-size: 1.5rem; font-weight: 800; color: #fff; margin-top: 20px; }
 </style>
 </head>
 <body>
@@ -421,7 +436,7 @@ tbody tr:hover{background:#0b0b0b}
 
           <div class="form-card" style="margin:0 0 22px; max-width:100%; padding:16px 20px; display:flex; gap:16px; align-items:flex-start; flex-wrap:wrap;">
             <div class="field" style="margin:0; flex:1; min-width:200px;">
-              <label for="adminTopicSelect">Active Topic</label>
+              <label for="adminTopicSelect">Topic</label>
               <select id="adminTopicSelect"></select>
             </div>
             <div style="display:flex; gap:8px; margin-top:24px;">
@@ -595,12 +610,29 @@ tbody tr:hover{background:#0b0b0b}
   </footer>
 </div>
 
-<!-- Modal for viewing Live Session leaderboards -->
+<!-- Modal for viewing Live Session leaderboards AND Standard Submissions -->
 <div class="modal" id="liveSessionModal" hidden>
   <div class="modal-card">
     <button class="modal-close" id="liveModalClose" type="button">&times;</button>
     <div id="liveModalBody"></div>
   </div>
+</div>
+
+<!-- HIDDEN TEMPLATE FOR IMAGE CAPTURE -->
+<div id="shareImageTemplate" hidden>
+    <div class="share-header">
+        <div class="share-logo">
+            <div class="share-logo-box">M2E</div>
+            <div class="share-logo-text">
+                <strong>M2E ACADEMY</strong>
+                <small>Learning Assessment</small>
+            </div>
+        </div>
+        <div class="share-badge">TRANSACTION BANKING</div>
+    </div>
+    <div class="share-body" id="shareBodyContent">
+        <!-- Dynamic content injected here -->
+    </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -928,23 +960,28 @@ async function updateParticipantResultScreen(submissionData = null, isFinal = fa
     
     let trophyHtml = '';
     let cardClass = 'result-card';
+    let congratsText = '';
 
     if (rank === 1) {
         trophyHtml = `<div style="font-size:5rem; line-height:1; margin-bottom:10px;">🥇</div><h3 style="color:var(--gold); font-size:1.5rem; margin:0;">1st Place!</h3>`;
         cardClass += ' top-1'; 
+        congratsText = `Congratulations, ${escapeHtml(state.participant.fullName)}! You are the M2E Grandmaster!`;
     } else if (rank === 2) {
         trophyHtml = `<div style="font-size:5rem; line-height:1; margin-bottom:10px;">🥈</div><h3 style="color:var(--silver); font-size:1.5rem; margin:0;">2nd Place!</h3>`;
         cardClass += ' top-2';
+        congratsText = `Congratulations, ${escapeHtml(state.participant.fullName)}! Outstanding performance!`;
     } else if (rank === 3) {
         trophyHtml = `<div style="font-size:5rem; line-height:1; margin-bottom:10px;">🥉</div><h3 style="color:var(--bronze); font-size:1.5rem; margin:0;">3rd Place!</h3>`;
         cardClass += ' top-3';
+        congratsText = `Congratulations, ${escapeHtml(state.participant.fullName)}! Excellent work!`;
     } else {
         trophyHtml = `<div style="font-size:3rem; line-height:1; margin-bottom:10px;">👏</div><h3 style="color:#fff; font-size:1.2rem; margin:0;">Rank #${rank}</h3>`;
+        congratsText = `Thank you for participating, ${escapeHtml(state.participant.fullName)}! Keep learning!`;
     }
 
     const shareBtnHtml = isFinal ? `
         <div style="margin-top: 24px; padding-bottom: 20px;">
-            <button onclick="shareResultImage()" class="btn btn-whatsapp" id="btnShareResult">
+            <button onclick="shareResultImage('${rank}', '${currentScore}')" class="btn btn-whatsapp" id="btnShareResult">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
                 Share Result
             </button>
@@ -1009,32 +1046,60 @@ async function processAnswerSubmission(isAuto = false) {
 
 on('#btnLiveSubmit', 'click', () => processAnswerSubmission(false));
 
-// NEW: Share Result as Image
-window.shareResultImage = async function() {
+// NEW: Share Result as Image with Custom Template
+window.shareResultImage = async function(rank, score) {
     const btn = $('#btnShareResult');
     const originalText = btn.innerHTML;
     btn.innerHTML = 'Generating...';
     btn.disabled = true;
 
     try {
-        const card = $('#liveResultCard');
+        let trophy = '';
+        let congrats = '';
         
-        // Temporarily hide the button itself during capture so it doesn't appear in the image
-        btn.style.display = 'none';
+        if (rank == 1) {
+            trophy = `<div class="share-trophy">🥇</div><div style="color:var(--gold); font-size:1.5rem; font-weight:800;">1st Place!</div>`;
+            congrats = `Congratulations, ${escapeHtml(state.participant.fullName)}! You are the M2E Grandmaster!`;
+        } else if (rank == 2) {
+            trophy = `<div class="share-trophy">🥈</div><div style="color:var(--silver); font-size:1.5rem; font-weight:800;">2nd Place!</div>`;
+            congrats = `Congratulations, ${escapeHtml(state.participant.fullName)}! Outstanding performance!`;
+        } else if (rank == 3) {
+            trophy = `<div class="share-trophy">🥉</div><div style="color:var(--bronze); font-size:1.5rem; font-weight:800;">3rd Place!</div>`;
+            congrats = `Congratulations, ${escapeHtml(state.participant.fullName)}! Excellent work!`;
+        } else {
+            trophy = `<div style="font-size:3rem; margin-bottom:10px;">👏</div><div style="color:#fff; font-size:1.2rem; font-weight:800;">Rank #${rank}</div>`;
+            congrats = `Thank you for participating, ${escapeHtml(state.participant.fullName)}! Keep learning!`;
+        }
 
-        const canvas = await html2canvas(card, {
-            backgroundColor: card.classList.contains('top-1') ? '#111' : (card.classList.contains('top-2') ? '#111' : (card.classList.contains('top-3') ? '#111' : '#060606')),
-            scale: 2, // High resolution
+        // Populate the hidden template
+        $('#shareBodyContent').innerHTML = `
+            <div class="share-title">Final Results</div>
+            <div class="share-subtitle">${congrats}</div>
+            ${trophy}
+            <div class="share-score">Total Score: <span style="color:var(--yellow);">${score} pts</span></div>
+        `;
+
+        // Temporarily unhide it for html2canvas to render
+        const template = $('#shareImageTemplate');
+        template.hidden = false;
+        template.style.position = 'absolute';
+        template.style.left = '-9999px'; // Render off-screen
+        template.style.top = '0';
+
+        const canvas = await html2canvas(template, {
+            backgroundColor: '#000',
+            scale: 2,
             useCORS: true
         });
         
-        // Restore button
-        btn.style.display = 'inline-flex';
+        // Hide it again
+        template.hidden = true;
+        template.style.position = '';
+        template.style.left = '';
 
         canvas.toBlob(async function(blob) {
             const file = new File([blob], 'm2e-result.png', { type: 'image/png' });
             
-            // Check if Web Share API is supported and can share files
             if (navigator.canShare && navigator.canShare({ files: [file] })) {
                 try {
                     await navigator.share({
@@ -1042,11 +1107,8 @@ window.shareResultImage = async function() {
                         title: 'M2E Academy Result',
                         text: 'Check out my result from the M2E Academy Live Quiz!',
                     });
-                } catch (shareError) {
-                    console.log('Share failed', shareError);
-                }
+                } catch (shareError) { console.log('Share failed', shareError); }
             } else {
-                // Fallback for Desktop / Unsupported Browsers
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
@@ -1091,14 +1153,49 @@ on('#adminLoginForm', 'submit', async (e) => {
 
 async function loadAdminTopics() {
   currentAdminTopics = await fetchAdminTopics(); const select = $('#adminTopicSelect');
-  if (currentAdminTopics.length === 0) { select.innerHTML = '<option value="">No topics.</option>'; currentAdminTopicId = null; return; }
-  select.innerHTML = currentAdminTopics.map(t => `<option value="${t.id}">${escapeHtml(t.name)}</option>`).join('');
+  if (currentAdminTopics.length === 0) { select.innerHTML = '<option value="">No topics.</option>'; currentAdminTopicId = null; $('#btnToggleTopicStatus').disabled = true; return; }
+  
+  select.innerHTML = currentAdminTopics.map(t => `<option value="${t.id}">${escapeHtml(t.name)} ${t.is_active ? '(Active)' : '(Draft)'}</option>`).join('');
   if (!currentAdminTopicId) currentAdminTopicId = currentAdminTopics[0].id; select.value = currentAdminTopicId;
   
+  updateTopicToggleBtn();
   loadQuestionsForSelection();
 }
+
+function updateTopicToggleBtn() {
+    const topic = currentAdminTopics.find(t => t.id === currentAdminTopicId);
+    if (topic) {
+        $('#btnToggleTopicStatus').textContent = topic.is_active ? 'Set to Draft' : 'Publish Active';
+        $('#btnToggleTopicStatus').style.color = topic.is_active ? 'var(--danger)' : 'var(--yellow)';
+        $('#btnToggleTopicStatus').style.borderColor = topic.is_active ? 'var(--danger)' : 'var(--yellow)';
+        $('#btnToggleTopicStatus').disabled = false;
+    } else {
+        $('#btnToggleTopicStatus').disabled = true;
+    }
+}
+
+on('#btnToggleTopicStatus', 'click', async () => {
+    if (!currentAdminTopicId) return;
+    const topic = currentAdminTopics.find(t => t.id === currentAdminTopicId);
+    if (!topic) return;
+    
+    const newStatus = !topic.is_active;
+    const btn = $('#btnToggleTopicStatus');
+    btn.textContent = 'Saving...';
+    btn.disabled = true;
+    
+    const { error } = await supabaseClient.from('topics').update({ is_active: newStatus }).eq('id', currentAdminTopicId);
+    
+    if (error) {
+        alert('Error updating status: ' + error.message);
+    } else {
+        await loadAdminTopics(); // Refresh dropdown and button
+    }
+});
+
 on('#adminTopicSelect', 'change', (e) => { 
   currentAdminTopicId = e.target.value; 
+  updateTopicToggleBtn();
   openAdminTab($('.admin-tabs .active').dataset.tab || 'questions'); 
   loadQuestionsForSelection();
 });
@@ -1459,11 +1556,39 @@ async function renderSubmissions() {
   const rows = data.map(s => `<tr><td>${escapeHtml(new Date(s.submitted_at).toLocaleString())}</td><td>${escapeHtml(s.full_name)}</td><td>${escapeHtml(s.email)}</td><td>${escapeHtml(s.pf_number)}</td><td>${escapeHtml(s.region)}</td><td>${escapeHtml(s.branch)}</td><td><span class="pill ${s.mode === 'pre' ? 'pre' : ''} ${s.mode === 'live' ? 'live' : ''}">${s.mode.toUpperCase()}</span></td><td>${s.score}%</td><td><button class="btn-mini" type="button" data-view="${escapeHtml(s.id)}">View</button></td></tr>`).join('');
   wrap.innerHTML = `<div class="table-wrap"><table><thead><tr><th>Time</th><th>Name</th><th>Email</th><th>PF</th><th>Reg</th><th>Branch</th><th>Type</th><th>Score</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>`;
 }
+
+// NEW: Proper Submission Modal
 on('#adminSubs', 'click', async (e) => {
   const btn = e.target.closest('[data-view]'); if (!btn) return; const id = btn.dataset.view; btn.textContent = '...';
   const { data } = await supabaseClient.from('submissions').select('*').eq('id', id).single(); btn.textContent = 'View';
-  if (data) openSubmissionModal(data);
+  if (data) {
+      const sub = data;
+      let answersHtml = '';
+      if (sub.answers && Array.isArray(sub.answers)) {
+          answersHtml = sub.answers.map((a, i) => `
+            <div class="review-item" style="margin-bottom:10px; padding:12px; border:1px solid var(--line-strong); border-radius:10px;">
+                <div style="font-weight:800; font-size:0.9rem; margin-bottom:6px;">Q${i+1}. ${escapeHtml(a.question)}</div>
+                <div style="font-size:0.85rem; color:${a.isCorrect ? 'var(--success)' : 'var(--danger)'};">
+                    Selected: <strong>${escapeHtml(a.selectedText || 'Not answered')}</strong> ${a.isCorrect ? '✓' : '✗'}
+                </div>
+                ${!a.isCorrect ? `<div style="font-size:0.85rem; color:var(--success); margin-top:4px;">Correct Answer: <strong>${escapeHtml(a.correctText)}</strong></div>` : ''}
+            </div>
+          `).join('');
+      } else {
+          answersHtml = '<p class="hint">No detailed answers available for this submission.</p>';
+      }
+
+      $('#liveModalBody').innerHTML = `
+        <h2>${escapeHtml(sub.full_name)}</h2>
+        <p class="hint" style="margin-bottom:20px;">${escapeHtml(sub.email)} · PF: ${escapeHtml(sub.pf_number)} · ${sub.score}%</p>
+        <div style="max-height: 50vh; overflow-y: auto;">
+            ${answersHtml}
+        </div>
+      `;
+      $('#liveSessionModal').hidden = false;
+  }
 });
+
 function openSubmissionModal(sub) {
   $('#modalBody').innerHTML = `<h2>${escapeHtml(sub.full_name)}</h2><p class="hint">${escapeHtml(sub.email)} · ${sub.score}%</p>`;
   $('#modal').hidden = false;

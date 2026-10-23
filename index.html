@@ -5,6 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <meta name="theme-color" content="#000000" />
 <title>M2E Academy — Learning Assessment</title>
+<!-- Google Fonts for Certificate -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Cormorant+Garamond:wght@700&family=EB+Garamond:ital@1&family=Lato:ital,wght@0,400;1,400&family=Montserrat:wght@500;600;700&family=Playfair+Display:wght@700&family=Poppins:wght@700&family=Satisfy&display=swap" rel="stylesheet">
+
 <style>
 /* ============================================================
    M2E ACADEMY — DESIGN TOKENS
@@ -56,7 +61,7 @@ a{color:var(--yellow)}
 .info-card .val{font-size:1.35rem;font-weight:900;color:var(--yellow);letter-spacing:-.01em}
 .info-card .lbl{font-size:.76rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted-2);margin-top:4px}
 
-/* ACHIEVEMENT LEVELS (Restored) */
+/* ACHIEVEMENT LEVELS */
 .levels{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); margin: 40px auto; max-width: 1120px;}
 .level-card{position:relative;display:flex;flex-direction:column;gap:9px;background:linear-gradient(180deg,#101010,#080808);border:1px solid var(--line);border-radius:var(--radius);padding:24px 22px;transition:transform .28s var(--ease),border-color .28s,box-shadow .28s;}
 .level-card:hover{transform:translateY(-5px);border-color:rgba(255,198,0,.45);box-shadow:0 22px 46px -26px rgba(255,198,0,.75);}
@@ -213,7 +218,7 @@ tbody tr:hover{background:#0b0b0b}
 .admin-link{background:none;border:none;color:#3d3d3d;font-size:.7rem;letter-spacing:.14em;text-transform:uppercase;cursor:pointer;padding:8px;transition:color .2s;}
 .admin-link:hover{color:var(--yellow)}
 
-/* SHARE IMAGE TEMPLATE SPECIFIC */
+/* SHARE IMAGE TEMPLATE */
 #shareImageTemplate { width: 600px; background: #000; padding: 30px; border-radius: 16px; border: 1px solid #333; font-family: -apple-system, sans-serif; color: #fff; }
 .share-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; padding-bottom: 20px; margin-bottom: 30px; }
 .share-logo { display: flex; align-items: center; gap: 10px; }
@@ -227,6 +232,36 @@ tbody tr:hover{background:#0b0b0b}
 .share-subtitle { font-size: 1.1rem; color: #ddd; margin-bottom: 30px; }
 .share-trophy { font-size: 5rem; line-height: 1; margin-bottom: 10px; }
 .share-score { font-size: 1.5rem; font-weight: 800; color: #fff; margin-top: 20px; }
+
+/* ============================================================
+   CERTIFICATE TEMPLATE (Prestige v2)
+   ============================================================ */
+#certificateTemplate {
+    width: 210mm; height: 297mm; position: relative; overflow: hidden; background: #FFFDF7; color: #1A1A1A; text-align: center;
+    /* Ensure fonts load */
+    font-family: 'Lato', sans-serif; 
+}
+#certificateTemplate * { margin:0; padding:0; box-sizing:border-box; }
+#certificateTemplate::after { content:''; position:absolute; inset:7mm 7mm 29mm 7mm; border:.6pt solid #C9A227; z-index:5; }
+#certificateTemplate .c { position:absolute; left:0; right:0; }
+#certificateTemplate .edge { position:absolute; top:0; left:0; right:0; height:122.5mm; background:#FFC600; clip-path:polygon(0 0,100% 0,100% 84%,50% 100%,0 84%); }
+#certificateTemplate .hdr { position:absolute; top:0; left:0; right:0; height:120mm; background:linear-gradient(160deg,#151515,#262626); color:#fff; clip-path:polygon(0 0,100% 0,100% 84%,50% 100%,0 84%); }
+#certificateTemplate .brand { font:700 28pt 'Poppins'; letter-spacing:5px; color:#FFC600; }
+#certificateTemplate .sub { font:500 10pt 'Montserrat'; letter-spacing:5px; color:#CFCFCF; margin-top:3mm; text-transform: uppercase;}
+#certificateTemplate .t1 { font:700 34pt 'Cormorant Garamond'; letter-spacing:.5px; color:#fff; }
+#certificateTemplate .lead { font:italic 15pt 'EB Garamond'; color:#D8D8D8; }
+#certificateTemplate .nm { font:400 62pt 'Satisfy', cursive; line-height:1.2; display:inline-block; border-bottom:2pt solid #FFC600; padding:0 10mm 2mm; color: #1A1A1A;}
+#certificateTemplate .body { font:400 11.5pt 'Lato'; color:#555; }
+#certificateTemplate .crs { font:700 19pt 'Montserrat'; margin-top:2mm; }
+#certificateTemplate .cards { position:absolute; top:212mm; left:20mm; right:20mm; display:flex; gap:5mm; }
+#certificateTemplate .card { flex:1; border:.8pt solid #E2E2E2; border-top:2mm solid #1A1A1A; padding:5mm 3mm; border-radius:1.5mm; background: #FFFDF7;}
+#certificateTemplate .card.hi { border-top-color:#FFC600; background:#FFFBEA; }
+#certificateTemplate .card span { display:block; font:600 7pt 'Montserrat'; letter-spacing:2px; color:#888; }
+#certificateTemplate .card b { display:block; font:700 22pt 'Playfair Display'; margin-top:2mm; color:#1A1A1A; }
+#certificateTemplate .card i { display:block; font:italic 10pt 'Lato'; color:#666; }
+#certificateTemplate .foot { position:absolute; bottom:0; left:0; right:0; height:22mm; background:#1A1A1A; display:flex; align-items:center; justify-content:space-between; padding:0 20mm; z-index: 6;}
+#certificateTemplate .foot b { font:700 14pt 'Cinzel'; color:#FFC600; letter-spacing:3px; }
+#certificateTemplate .foot span { font:600 7.5pt 'Montserrat'; letter-spacing:3px; color:#CCC; }
 </style>
 </head>
 <body>
@@ -273,7 +308,7 @@ tbody tr:hover{background:#0b0b0b}
         </div>
       </div>
 
-      <!-- ACHIEVEMENT LEVELS (RESTORED) -->
+      <!-- ACHIEVEMENT LEVELS -->
       <div class="section container">
         <h2 class="section-title">Achievement Levels</h2>
         <p class="section-sub">Five tiers — from your first step to the elite circle.</p>
@@ -675,6 +710,51 @@ tbody tr:hover{background:#0b0b0b}
     </div>
 </div>
 
+<!-- HIDDEN TEMPLATE FOR CERTIFICATE -->
+<div id="certificateTemplate" hidden>
+    <div class="edge"></div>
+    <div class="hdr">
+        <div class="c" style="top:22mm">
+            <div class="brand">M2E ACADEMY</div>
+            <div class="sub">TRANSACTION BANKING</div>
+        </div>
+        <div class="c" style="top:62mm">
+            <div class="t1">Certificate of Achievement</div>
+        </div>
+        <div class="c" style="top:86mm">
+            <div class="lead">This is to certify that</div>
+        </div>
+    </div>
+    <div class="c" style="top:138mm">
+        <div class="nm" id="certName">Jane Oo</div>
+    </div>
+    <div class="c" style="top:176mm">
+        <div class="body">has successfully completed the assessment for</div>
+        <div class="crs" id="certCourse">M2E Overview</div>
+    </div>
+    <div class="cards">
+        <div class="card hi">
+            <span>MASTERY LEVEL</span>
+            <b id="certLevel">Level 5</b>
+            <i id="certLevelTitle">M2E Grandmaster</i>
+        </div>
+        <div class="card">
+            <span>SCORE</span>
+            <b id="certScore">100%</b>
+            <i>Assessment result</i>
+        </div>
+        <div class="card">
+            <span>DATE ISSUED</span>
+            <b id="certDate">23 Oct</b>
+            <i id="certYear">2026</i>
+        </div>
+    </div>
+    <div class="foot">
+        <b>M2E</b>
+        <span>ISSUED BY TRANSACTION BANKING</span>
+    </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <!-- Include html2canvas for image generation -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -785,89 +865,73 @@ function initGate() {
   });
 }
 
-// --- CERTIFICATE GENERATOR ---
-window.generateCertificate = function(name, score, topicName) {
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF('p', 'mm', 'a4'); // Portrait A4
+// --- CERTIFICATE GENERATOR (Prestige v2 HTML to PDF) ---
+window.generateCertificate = async function(name, score, topicName) {
+    // 1. Populate the template fields
+    $('#certName').textContent = name;
     
-    // Background / Border
-    doc.setFillColor(10, 10, 10);
-    doc.rect(0, 0, 210, 297, 'F');
+    // Dynamic font sizing for long names
+    if (name.length > 25) {
+        $('#certName').style.fontSize = '48pt';
+    } else if (name.length > 18) {
+        $('#certName').style.fontSize = '52pt';
+    } else {
+        $('#certName').style.fontSize = '62pt';
+    }
     
-    // Gold Border
-    doc.setDrawColor(255, 198, 0);
-    doc.setLineWidth(2);
-    doc.rect(10, 10, 190, 277);
-    doc.setLineWidth(0.5);
-    doc.rect(14, 14, 182, 269);
+    $('#certCourse').textContent = topicName;
     
-    // Header Labels
-    doc.setTextColor(255, 198, 0);
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(28);
-    doc.text("M2E ACADEMY", 105, 40, { align: "center" });
-    
-    doc.setTextColor(200, 200, 200);
-    doc.setFontSize(12);
-    doc.setFont("helvetica", "normal");
-    doc.text("Issued by Transaction Banking", 105, 48, { align: "center" });
-    
-    // Certificate Title
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(22);
-    doc.setFont("helvetica", "bold");
-    doc.text("Certificate of Achievement", 105, 80, { align: "center" });
-    
-    // Body Text
-    doc.setFontSize(14);
-    doc.setFont("helvetica", "normal");
-    doc.text("This is to certify that", 105, 110, { align: "center" });
-    
-    // Name
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(32);
-    doc.setFont("helvetica", "bold");
-    doc.text(name.toUpperCase(), 105, 130, { align: "center" });
-    
-    // Topic
-    doc.setTextColor(200, 200, 200);
-    doc.setFontSize(14);
-    doc.setFont("helvetica", "normal");
-    doc.text(`has successfully completed the assessment for`, 105, 150, { align: "center" });
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(16);
-    doc.setFont("helvetica", "bold");
-    doc.text(topicName, 105, 160, { align: "center" });
-    
-    // Level
     const level = getLevel(score);
-    const levelName = level ? `Level ${level.n} - ${level.name}` : "Keep Learning";
+    const levelNum = level ? `Level ${level.n}` : 'N/A';
+    const levelTitle = level ? level.name : 'Keep Learning';
+    $('#certLevel').textContent = levelNum;
+    $('#certLevelTitle').textContent = levelTitle;
     
-    doc.setTextColor(200, 200, 200);
-    doc.setFontSize(14);
-    doc.setFont("helvetica", "normal");
-    doc.text(`and achieved the mastery level of`, 105, 180, { align: "center" });
+    $('#certScore').textContent = `${score}%`;
     
-    doc.setTextColor(255, 198, 0);
-    doc.setFontSize(24);
-    doc.setFont("helvetica", "bold");
-    doc.text(levelName, 105, 195, { align: "center" });
-    
-    // Score & Date
-    doc.setTextColor(150, 150, 150);
-    doc.setFontSize(12);
-    doc.setFont("helvetica", "normal");
-    doc.text(`Score: ${score}%`, 105, 220, { align: "center" });
-    doc.text(`Date Issued: ${new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}`, 105, 230, { align: "center" });
-    
-    // Footer
-    doc.setTextColor(255, 198, 0);
-    doc.setFontSize(10);
-    doc.setFont("helvetica", "bold");
-    doc.text("TRANSACTION BANKING", 105, 260, { align: "center" });
-    
-    // Save
-    doc.save(`M2E_Certificate_${name.replace(/\s+/g, '_')}.pdf`);
+    const today = new Date();
+    const dayMonth = today.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+    const year = today.getFullYear().toString();
+    $('#certDate').textContent = dayMonth;
+    $('#certYear').textContent = year;
+
+    // 2. Temporarily show the template off-screen for html2canvas
+    const template = $('#certificateTemplate');
+    template.hidden = false;
+    template.style.position = 'fixed';
+    template.style.left = '-9999px';
+    template.style.top = '0';
+
+    try {
+        // 3. Wait for fonts to be fully loaded before capturing
+        await document.fonts.ready;
+
+        // 4. Render canvas (using scale 2 for high resolution)
+        const canvas = await html2canvas(template, {
+            scale: 2,
+            useCORS: true,
+            backgroundColor: '#FFFDF7'
+        });
+
+        // 5. Generate PDF
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF('p', 'mm', 'a4');
+        
+        const imgData = canvas.toDataURL('image/jpeg', 1.0);
+        pdf.addImage(imgData, 'JPEG', 0, 0, 210, 297);
+        
+        pdf.save(`M2E_Certificate_${name.replace(/\s+/g, '_')}.pdf`);
+
+    } catch (err) {
+        console.error('Error generating certificate:', err);
+        alert('Could not generate PDF certificate. Please try again.');
+    } finally {
+        // 6. Hide template again
+        template.hidden = true;
+        template.style.position = '';
+        template.style.left = '';
+        template.style.top = '';
+    }
 };
 
 // --- STANDARD ASSESSMENT ---
@@ -1203,7 +1267,7 @@ async function processAnswerSubmission(isAuto = false) {
 
 on('#btnLiveSubmit', 'click', () => processAnswerSubmission(false));
 
-// NEW: Share Result as Image with Custom Template
+// Share Result as Image
 window.shareResultImage = async function(rank, score) {
     const btn = $('#btnShareResult');
     const originalText = btn.innerHTML;
@@ -1228,7 +1292,6 @@ window.shareResultImage = async function(rank, score) {
             congrats = `Thank you for participating, ${escapeHtml(state.participant.fullName)}! Keep learning!`;
         }
 
-        // Populate the hidden template
         $('#shareBodyContent').innerHTML = `
             <div class="share-title">Final Results</div>
             <div class="share-subtitle">${congrats}</div>
@@ -1236,11 +1299,10 @@ window.shareResultImage = async function(rank, score) {
             <div class="share-score">Total Score: <span style="color:var(--yellow);">${score} pts</span></div>
         `;
 
-        // Temporarily unhide it for html2canvas to render
         const template = $('#shareImageTemplate');
         template.hidden = false;
         template.style.position = 'absolute';
-        template.style.left = '-9999px'; // Render off-screen
+        template.style.left = '-9999px';
         template.style.top = '0';
 
         const canvas = await html2canvas(template, {
@@ -1249,7 +1311,6 @@ window.shareResultImage = async function(rank, score) {
             useCORS: true
         });
         
-        // Hide it again
         template.hidden = true;
         template.style.position = '';
         template.style.left = '';
@@ -1290,7 +1351,7 @@ window.shareResultImage = async function(rank, score) {
 // --- ADMIN FLOW ---
 let adminDraft = null; let currentAdminTopicId = null; let currentAdminTopics = []; let activeLiveSession = null; let adminSessionSub = null; let adminCurrentQuestions = [];
 let adminLobbyPoll = null; let adminLeaderboardPoll = null;
-let allSubmissions = []; // Store for filtering
+let allSubmissions = [];
 
 on('#btnAdminOpen', 'click', async () => {
   showScreen('scrAdmin');
@@ -1371,7 +1432,6 @@ function openAdminTab(tab) {
   if (tab === 'live') loadQuestionsForSelection();
 }
 
-// NEW: Load questions specifically for the live session checkboxes
 async function loadQuestionsForSelection() {
   const box = $('#liveQuestionSelection');
   if (!currentAdminTopicId) { box.innerHTML = '<p class="hint" style="padding:10px;">Select a topic first.</p>'; return; }
@@ -1754,7 +1814,6 @@ function filterSubmissions() {
     wrap.innerHTML = `<div class="table-wrap"><table><thead><tr><th>Time</th><th>Name</th><th>Email</th><th>PF</th><th>Reg</th><th>Branch</th><th>Type</th><th>Score</th><th>Action</th></tr></thead><tbody>${rows}</tbody></table></div>`;
 }
 
-// NEW: Proper Submission Modal
 on('#adminSubs', 'click', async (e) => {
   const btn = e.target.closest('[data-view]'); if (!btn) return; const id = btn.dataset.view; btn.textContent = '...';
   const { data } = await supabaseClient.from('submissions').select('*').eq('id', id).single(); btn.textContent = 'View';

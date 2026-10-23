@@ -56,6 +56,19 @@ a{color:var(--yellow)}
 .info-card .val{font-size:1.35rem;font-weight:900;color:var(--yellow);letter-spacing:-.01em}
 .info-card .lbl{font-size:.76rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted-2);margin-top:4px}
 
+/* ACHIEVEMENT LEVELS (Restored) */
+.levels{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); margin: 40px auto; max-width: 1120px;}
+.level-card{position:relative;display:flex;flex-direction:column;gap:9px;background:linear-gradient(180deg,#101010,#080808);border:1px solid var(--line);border-radius:var(--radius);padding:24px 22px;transition:transform .28s var(--ease),border-color .28s,box-shadow .28s;}
+.level-card:hover{transform:translateY(-5px);border-color:rgba(255,198,0,.45);box-shadow:0 22px 46px -26px rgba(255,198,0,.75);}
+.level-card .medal{font-size:1.9rem;line-height:1}
+.level-card .lvl{font-size:.66rem;letter-spacing:.18em;text-transform:uppercase;color:var(--yellow);font-weight:800;}
+.level-card h3{margin:0;font-size:1.12rem;font-weight:800;letter-spacing:-.01em}
+.level-card .tagline{color:#d8d8d8;font-size:.9rem;font-style:italic;margin:0}
+.level-card .desc{color:var(--muted-2);font-size:.83rem;margin:0}
+.chip-pass{margin-top:auto;align-self:flex-start;background:rgba(255,198,0,.12);border:1px solid rgba(255,198,0,.42);color:var(--yellow);padding:5px 13px;border-radius:999px;font-size:.73rem;font-weight:800;letter-spacing:.03em;}
+.level-card.grand{border-color:rgba(255,198,0,.55);box-shadow:0 0 0 1px rgba(255,198,0,.18) inset,0 26px 60px -34px rgba(255,198,0,.9);}
+.level-card.grand::after{content:"TOP TIER";position:absolute;top:16px;right:16px;font-size:.58rem;letter-spacing:.16em;font-weight:900;background:var(--yellow);color:#000;padding:4px 9px;border-radius:999px;}
+
 /* BUTTONS & FORMS */
 .cta{text-align:center;padding:58px 0 12px}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;border:none;cursor:pointer;font-weight:800;border-radius:999px;transition:transform .18s var(--ease),background .18s,box-shadow .18s,color .18s,border-color .18s;text-decoration:none;-webkit-tap-highlight-color:transparent;}
@@ -176,6 +189,12 @@ tbody tr:hover{background:#0b0b0b}
 .dropdown-item{background:#141414;border:1px solid var(--line-strong);border-radius:8px;padding:8px 12px;display:flex;align-items:center;gap:10px;font-size:.85rem;}
 .dropdown-item button{background:none;border:none;color:var(--danger);cursor:pointer;font-weight:bold;font-size:1.1rem;line-height:1;}
 
+/* SEARCH BAR */
+.search-row { display: flex; gap: 8px; margin-bottom: 15px; flex-wrap: wrap; background: #111; padding: 10px; border-radius: 12px; border: 1px solid var(--line-strong); }
+.search-input { flex: 1; min-width: 120px; background: #000; color: #fff; border: 1px solid #333; border-radius: 6px; padding: 8px 12px; font-size: 0.8rem; }
+.search-input::placeholder { color: #666; }
+.search-input:focus { outline: none; border-color: var(--yellow); }
+
 /* MODAL & GATE & FOOTER */
 .modal{position:fixed;inset:0;z-index:200;display:grid;place-items:center;padding:20px;background:rgba(0,0,0,.82);backdrop-filter:blur(6px)}
 .modal-card{position:relative;width:100%;max-width:640px;max-height:86vh;overflow:auto;background:linear-gradient(180deg,#101010,#070707);border:1px solid var(--line-strong);border-radius:20px;padding:28px 24px;}
@@ -253,6 +272,20 @@ tbody tr:hover{background:#0b0b0b}
           <div class="info-card"><div class="ico">🏅</div><div class="val">5 Levels</div><div class="lbl">Achievement Tiers</div></div>
         </div>
       </div>
+
+      <!-- ACHIEVEMENT LEVELS (RESTORED) -->
+      <div class="section container">
+        <h2 class="section-title">Achievement Levels</h2>
+        <p class="section-sub">Five tiers — from your first step to the elite circle.</p>
+        <div class="levels">
+          <article class="level-card"><div class="medal">🥉</div><span class="lvl">Level 1</span><h3>M2E Newbie</h3><p class="tagline">“Your journey into digital cash management begins.”</p><p class="desc">Suitable for first-time learners.</p><span class="chip-pass">Pass score: 50%+</span></article>
+          <article class="level-card"><div class="medal">🥈</div><span class="lvl">Level 2</span><h3>M2E Navigator</h3><p class="tagline">“Confidently navigating payments and collections.”</p><p class="desc">Demonstrates working knowledge of M2E features.</p><span class="chip-pass">Pass score: 65%+</span></article>
+          <article class="level-card"><div class="medal">🥇</div><span class="lvl">Level 3</span><h3>M2E Specialist</h3><p class="tagline">“Mastering the core capabilities of M2E.”</p><p class="desc">Recognises strong product understanding.</p><span class="chip-pass">Pass score: 75%+</span></article>
+          <article class="level-card"><div class="medal">💎</div><span class="lvl">Level 4</span><h3>M2E Champion</h3><p class="tagline">“Driving excellence in customer servicing and digital adoption.”</p><p class="desc">Suitable for branch officers and sales teams with advanced knowledge.</p><span class="chip-pass">Pass score: 85%+</span></article>
+          <article class="level-card grand"><div class="medal">👑</div><span class="lvl">Level 5</span><h3>M2E Grandmaster</h3><p class="tagline">“Among the elite few who have mastered M2E Internet Banking.”</p><p class="desc">Highest and most prestigious badge.</p><span class="chip-pass">Pass score: 95%+</span></article>
+        </div>
+      </div>
+
       <div class="cta container" style="display:flex; flex-direction:column; gap:16px; align-items:center;">
         <button class="btn btn-primary" id="btnBegin" type="button" style="width:100%; max-width:400px;">Begin Standard Assessment</button>
         <button class="btn btn-ghost" id="btnJoinLive" type="button" style="width:100%; max-width:400px; border-color:var(--yellow); color:var(--yellow);">
@@ -465,6 +498,13 @@ tbody tr:hover{background:#0b0b0b}
             </div>
 
             <div id="standardSubsContainer">
+              <div class="search-row">
+                <input type="text" id="searchTime" class="search-input" placeholder="Search Time..." oninput="filterSubmissions()">
+                <input type="text" id="searchName" class="search-input" placeholder="Search Name..." oninput="filterSubmissions()">
+                <input type="text" id="searchEmail" class="search-input" placeholder="Search Email..." oninput="filterSubmissions()">
+                <input type="text" id="searchPF" class="search-input" placeholder="Search PF..." oninput="filterSubmissions()">
+                <input type="text" id="searchBranch" class="search-input" placeholder="Search Branch..." oninput="filterSubmissions()">
+              </div>
               <div id="adminSubs"></div>
               <div class="admin-actions">
                 <button class="btn btn-ghost btn-sm" type="button" id="btnExportCsv">Export CSV</button>
@@ -638,6 +678,9 @@ tbody tr:hover{background:#0b0b0b}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <!-- Include html2canvas for image generation -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<!-- Include jsPDF for certificate generation -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
 <script>
 const SUPABASE_URL = 'https://yxcfocpcdddmwpagkjcv.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_aZZt2F2GML9bf2Bp-ZJqjg_VMAcMdhr';
@@ -707,7 +750,7 @@ async function fetchDropdownOptions(category) { const { data } = await supabaseC
 const SCREENS = ['scrLanding', 'scrRegistration', 'scrJoinLive', 'scrLiveLobby', 'scrLiveQuiz', 'scrLiveResult', 'scrAssessment', 'scrResult', 'scrAdmin'];
 function showScreen(id) { SCREENS.forEach(s => { const el = document.getElementById(s); if (el) el.hidden = (s !== id); }); window.scrollTo(0, 0); }
 const state = { 
-  participant: null, mode: 'pre', topicId: null, questions: [], answers: [], current: 0, timeLeft: 300, timerId: null, startedAt: null, lastSubmission: null, 
+  participant: null, mode: 'pre', topicId: null, topicName: null, questions: [], answers: [], current: 0, timeLeft: 300, timerId: null, startedAt: null, lastSubmission: null, 
   liveSessionId: null, liveParticipantId: null, liveTimerId: null, liveCurrentQuestion: null, liveCurrentQIndex: null, liveSelectedText: null, liveAnswerSubmitted: false, isSubmitting: false
 };
 
@@ -742,11 +785,97 @@ function initGate() {
   });
 }
 
+// --- CERTIFICATE GENERATOR ---
+window.generateCertificate = function(name, score, topicName) {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF('p', 'mm', 'a4'); // Portrait A4
+    
+    // Background / Border
+    doc.setFillColor(10, 10, 10);
+    doc.rect(0, 0, 210, 297, 'F');
+    
+    // Gold Border
+    doc.setDrawColor(255, 198, 0);
+    doc.setLineWidth(2);
+    doc.rect(10, 10, 190, 277);
+    doc.setLineWidth(0.5);
+    doc.rect(14, 14, 182, 269);
+    
+    // Header Labels
+    doc.setTextColor(255, 198, 0);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(28);
+    doc.text("M2E ACADEMY", 105, 40, { align: "center" });
+    
+    doc.setTextColor(200, 200, 200);
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "normal");
+    doc.text("Issued by Transaction Banking", 105, 48, { align: "center" });
+    
+    // Certificate Title
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(22);
+    doc.setFont("helvetica", "bold");
+    doc.text("Certificate of Achievement", 105, 80, { align: "center" });
+    
+    // Body Text
+    doc.setFontSize(14);
+    doc.setFont("helvetica", "normal");
+    doc.text("This is to certify that", 105, 110, { align: "center" });
+    
+    // Name
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(32);
+    doc.setFont("helvetica", "bold");
+    doc.text(name.toUpperCase(), 105, 130, { align: "center" });
+    
+    // Topic
+    doc.setTextColor(200, 200, 200);
+    doc.setFontSize(14);
+    doc.setFont("helvetica", "normal");
+    doc.text(`has successfully completed the assessment for`, 105, 150, { align: "center" });
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(16);
+    doc.setFont("helvetica", "bold");
+    doc.text(topicName, 105, 160, { align: "center" });
+    
+    // Level
+    const level = getLevel(score);
+    const levelName = level ? `Level ${level.n} - ${level.name}` : "Keep Learning";
+    
+    doc.setTextColor(200, 200, 200);
+    doc.setFontSize(14);
+    doc.setFont("helvetica", "normal");
+    doc.text(`and achieved the mastery level of`, 105, 180, { align: "center" });
+    
+    doc.setTextColor(255, 198, 0);
+    doc.setFontSize(24);
+    doc.setFont("helvetica", "bold");
+    doc.text(levelName, 105, 195, { align: "center" });
+    
+    // Score & Date
+    doc.setTextColor(150, 150, 150);
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "normal");
+    doc.text(`Score: ${score}%`, 105, 220, { align: "center" });
+    doc.text(`Date Issued: ${new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}`, 105, 230, { align: "center" });
+    
+    // Footer
+    doc.setTextColor(255, 198, 0);
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "bold");
+    doc.text("TRANSACTION BANKING", 105, 260, { align: "center" });
+    
+    // Save
+    doc.save(`M2E_Certificate_${name.replace(/\s+/g, '_')}.pdf`);
+};
+
 // --- STANDARD ASSESSMENT ---
 on('#btnBegin', 'click', async () => {
   showScreen('scrRegistration'); setTimeout(() => $('#fullName').focus(), 150);
   const topicSelect = $('#topicSelect'); topicSelect.innerHTML = '<option value="">Loading...</option>';
-  const topics = await fetchActiveTopics(); topicSelect.innerHTML = '<option value="">— Select Topic —</option>' + topics.map(t => `<option value="${t.id}">${escapeHtml(t.name)}</option>`).join('');
+  const topics = await fetchActiveTopics(); 
+  topicSelect.innerHTML = '<option value="">— Select Topic —</option>' + topics.map(t => `<option value="${t.id}">${escapeHtml(t.name)}</option>`).join('');
   const regions = await fetchDropdownOptions('region'); $('#region').innerHTML = '<option value="">— Select —</option>' + regions.map(r => `<option value="${escapeHtml(r.value)}">${escapeHtml(r.value)}</option>`).join('');
   const units = await fetchDropdownOptions('unit'); $('#otherUnit').innerHTML = '<option value="">— Select —</option>' + units.map(u => `<option value="${escapeHtml(u.value)}">${escapeHtml(u.value)}</option>`).join('');
 });
@@ -760,15 +889,24 @@ on('#regForm', 'submit', async (e) => {
   const cat = $('#participantCategory').value; const tid = $('#topicSelect').value; const name = $('#fullName').value.trim();
   const reg = $('#region').value; const br = $('#branch').value.trim(); const unit = $('#otherUnit').value;
   const email = $('#email').value.trim(); const pf = $('#pf').value.trim();
-  if (!tid) { alert('Select topic.'); ok = false; } if (name.length < 3) { setFieldError('fullName', 'errFullName', 'Required'); ok = false; } else setFieldError('fullName', 'errFullName', '');
+  
+  if (!tid) { alert('Select topic.'); ok = false; } 
+  if (name.length < 3) { setFieldError('fullName', 'errFullName', 'Required'); ok = false; } else setFieldError('fullName', 'errFullName', '');
   if (cat === 'branch') { if (!reg) { setFieldError('region', 'errRegion', 'Required'); ok = false; } else setFieldError('region', 'errRegion', ''); if (br.length < 2) { setFieldError('branch', 'errBranch', 'Required'); ok = false; } else setFieldError('branch', 'errBranch', ''); }
   if (cat === 'tbc') { if (!reg) { setFieldError('region', 'errRegion', 'Required'); ok = false; } else setFieldError('region', 'errRegion', ''); }
   if (cat === 'other') { if (!unit) { setFieldError('otherUnit', 'errUnit', 'Required'); ok = false; } else setFieldError('otherUnit', 'errUnit', ''); }
   if (!EMAIL_RE.test(email)) { setFieldError('email', 'errEmail', 'Invalid'); ok = false; } else setFieldError('email', 'errEmail', '');
   if (!PF_RE.test(pf)) { setFieldError('pf', 'errPf', 'Invalid'); ok = false; } else setFieldError('pf', 'errPf', '');
   if (!ok) return;
+  
   let fReg = reg; let fBr = br; if (cat === 'tbc') fBr = 'TBC'; else if (cat === 'other') { fReg = 'N/A'; fBr = unit; }
-  state.topicId = tid; state.sessionId = null; state.mode = ($('input[name="mode"]:checked') || {}).value || 'pre'; state.participant = { fullName: name, region: fReg, branch: fBr, email, pfNumber: pf };
+  
+  const selectedTopic = topics.find(t => t.id === tid);
+  state.topicId = tid; 
+  state.topicName = selectedTopic ? selectedTopic.name : 'M2E Assessment';
+  state.mode = ($('input[name="mode"]:checked') || {}).value || 'pre'; 
+  state.participant = { fullName: name, region: fReg, branch: fBr, email, pfNumber: pf };
+  
   const btn = e.target.querySelector('button[type="submit"]'); btn.textContent = 'Loading...'; btn.disabled = true;
   await startAssessment(); btn.textContent = 'Start Assessment'; btn.disabled = false;
 });
@@ -811,7 +949,26 @@ async function submitAssessment(auto) {
 function renderResult(sub) {
   const level = getLevel(sub.score); const isPost = sub.mode === 'post';
   const levelBlock = level ? `<div class="level-badge"><span class="medal">${level.medal}</span><div><strong>Level ${level.n} – ${level.name}</strong><small>${escapeHtml(level.tagline)}</small></div></div>` : `<div class="level-badge none"><span class="medal">📘</span><div><strong>Keep Learning</strong><small>Need 50% to pass.</small></div></div>`;
-  $('#scrResult').innerHTML = `<div class="container result-wrap"><div class="result-card"><h1>Assessment Complete</h1><div class="score-ring" style="--p:${sub.score}%"><span>${sub.score}%</span></div><p class="result-score">${sub.correct_count} of ${sub.total} correct</p>${levelBlock}<div class="result-actions"><button class="btn btn-primary btn-sm" onclick="showScreen('scrLanding')">Home</button></div></div></div>`;
+  
+  const certBtn = isPost ? `
+      <button class="btn btn-primary btn-sm" onclick="generateCertificate('${escapeHtml(sub.full_name)}', ${sub.score}, '${escapeHtml(state.topicName)}')" style="margin-bottom: 10px; background: var(--yellow); color: #000;">
+          Download Certificate 📜
+      </button>
+  ` : '';
+
+  $('#scrResult').innerHTML = `
+    <div class="container result-wrap">
+        <div class="result-card">
+            <h1>Assessment Complete</h1>
+            <div class="score-ring" style="--p:${sub.score}%"><span>${sub.score}%</span></div>
+            <p class="result-score">${sub.correct_count} of ${sub.total} correct</p>
+            ${levelBlock}
+            <div class="result-actions" style="flex-direction: column;">
+                ${certBtn}
+                <button class="btn btn-ghost btn-sm" onclick="showScreen('scrLanding')">Home</button>
+            </div>
+        </div>
+    </div>`;
   showScreen('scrResult');
 }
 
@@ -1133,6 +1290,7 @@ window.shareResultImage = async function(rank, score) {
 // --- ADMIN FLOW ---
 let adminDraft = null; let currentAdminTopicId = null; let currentAdminTopics = []; let activeLiveSession = null; let adminSessionSub = null; let adminCurrentQuestions = [];
 let adminLobbyPoll = null; let adminLeaderboardPoll = null;
+let allSubmissions = []; // Store for filtering
 
 on('#btnAdminOpen', 'click', async () => {
   showScreen('scrAdmin');
@@ -1552,9 +1710,48 @@ on('#btnRestoreQuestions', 'click', async () => {
 async function renderSubmissions() {
   if (!currentAdminTopicId) return; const wrap = $('#adminSubs'); wrap.innerHTML = '<p class="hint">Loading...</p>';
   const { data } = await supabaseClient.from('submissions').select('*').eq('topic_id', currentAdminTopicId).order('submitted_at', { ascending: false });
-  if (!data || data.length === 0) return wrap.innerHTML = '<p class="hint">None.</p>';
-  const rows = data.map(s => `<tr><td>${escapeHtml(new Date(s.submitted_at).toLocaleString())}</td><td>${escapeHtml(s.full_name)}</td><td>${escapeHtml(s.email)}</td><td>${escapeHtml(s.pf_number)}</td><td>${escapeHtml(s.region)}</td><td>${escapeHtml(s.branch)}</td><td><span class="pill ${s.mode === 'pre' ? 'pre' : ''} ${s.mode === 'live' ? 'live' : ''}">${s.mode.toUpperCase()}</span></td><td>${s.score}%</td><td><button class="btn-mini" type="button" data-view="${escapeHtml(s.id)}">View</button></td></tr>`).join('');
-  wrap.innerHTML = `<div class="table-wrap"><table><thead><tr><th>Time</th><th>Name</th><th>Email</th><th>PF</th><th>Reg</th><th>Branch</th><th>Type</th><th>Score</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>`;
+  if (!data) return;
+  allSubmissions = data; // Store for filtering
+  filterSubmissions();
+}
+
+function filterSubmissions() {
+    const searchTime = $('#searchTime').value.toLowerCase();
+    const searchName = $('#searchName').value.toLowerCase();
+    const searchEmail = $('#searchEmail').value.toLowerCase();
+    const searchPF = $('#searchPF').value.toLowerCase();
+    const searchBranch = $('#searchBranch').value.toLowerCase();
+
+    const filtered = allSubmissions.filter(s => {
+        const dateStr = new Date(s.submitted_at).toLocaleString().toLowerCase();
+        return (!searchTime || dateStr.includes(searchTime)) &&
+               (!searchName || (s.full_name||'').toLowerCase().includes(searchName)) &&
+               (!searchEmail || (s.email||'').toLowerCase().includes(searchEmail)) &&
+               (!searchPF || (s.pf_number||'').toLowerCase().includes(searchPF)) &&
+               (!searchBranch || (s.branch||'').toLowerCase().includes(searchBranch));
+    });
+
+    const wrap = $('#adminSubs');
+    if (filtered.length === 0) { wrap.innerHTML = '<p class="hint">No records match your search.</p>'; return; }
+
+    const rows = filtered.map(s => `
+        <tr>
+            <td>${escapeHtml(new Date(s.submitted_at).toLocaleString())}</td>
+            <td>${escapeHtml(s.full_name)}</td>
+            <td>${escapeHtml(s.email)}</td>
+            <td>${escapeHtml(s.pf_number)}</td>
+            <td>${escapeHtml(s.region)}</td>
+            <td>${escapeHtml(s.branch)}</td>
+            <td><span class="pill ${s.mode === 'pre' ? 'pre' : 'live'}">${s.mode.toUpperCase()}</span></td>
+            <td>${s.score}%</td>
+            <td>
+                <button class="btn-mini" type="button" data-view="${escapeHtml(s.id)}">View</button>
+                <button class="btn-mini" type="button" onclick="generateCertificate('${escapeHtml(s.full_name)}', ${s.score}, '${escapeHtml(currentAdminTopics.find(t => t.id === currentAdminTopicId)?.name || 'M2E Assessment')}')" style="margin-left:4px;">Cert</button>
+            </td>
+        </tr>
+    `).join('');
+    
+    wrap.innerHTML = `<div class="table-wrap"><table><thead><tr><th>Time</th><th>Name</th><th>Email</th><th>PF</th><th>Reg</th><th>Branch</th><th>Type</th><th>Score</th><th>Action</th></tr></thead><tbody>${rows}</tbody></table></div>`;
 }
 
 // NEW: Proper Submission Modal
@@ -1589,10 +1786,6 @@ on('#adminSubs', 'click', async (e) => {
   }
 });
 
-function openSubmissionModal(sub) {
-  $('#modalBody').innerHTML = `<h2>${escapeHtml(sub.full_name)}</h2><p class="hint">${escapeHtml(sub.email)} · ${sub.score}%</p>`;
-  $('#modal').hidden = false;
-}
 on('#modalClose', 'click', () => { $('#modal').hidden = true; });
 
 on('#btnExportCsv', 'click', async () => {

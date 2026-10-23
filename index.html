@@ -517,6 +517,7 @@ tbody tr:hover{background:#0b0b0b}
             <button type="button" data-tab="live" class="active">Host Live Session</button>
             <button type="button" data-tab="dropdowns">Dropdowns</button>
             <button type="button" data-tab="settings">Settings</button>
+            <button type="button" data-tab="team">👥 Team Access</button>
             <button type="button" id="btnAdminLogout" style="margin-left:auto; color:var(--danger)">Logout</button>
           </div>
 
@@ -594,6 +595,29 @@ tbody tr:hover{background:#0b0b0b}
                 <div class="field"><label for="setCount">Questions Served Per Assessment</label><input id="setCount" type="number" min="1" max="100" /></div>
                 <button class="btn btn-primary btn-sm" type="submit">Save Settings</button>
               </form>
+            </div>
+          </div>
+
+          <!-- NEW TEAM ACCESS TAB -->
+          <div id="tabTeam" hidden>
+            <div class="form-card" style="margin:0; max-width:100%;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                <h2 style="font-size:1.1rem; margin:0;">Manage Admins for: <span id="teamTopicName" style="color:var(--yellow);">...</span></h2>
+                <span class="pill" id="teamAdminCount" style="font-size:0.9rem; padding:6px 14px;">0 / 5</span>
+              </div>
+
+              <div id="currentAdminsList" style="display:flex; flex-direction:column; gap:10px; margin-bottom:30px;">
+                <!-- Admin items injected here -->
+              </div>
+
+              <div style="border-top: 1px solid var(--line); padding-top: 24px;">
+                <label style="font-size:.76rem; font-weight:800; letter-spacing:.09em; text-transform:uppercase; color:#c9c9c9; margin-bottom:10px; display:block;">Add New Admin</label>
+                <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                  <input type="email" id="newAdminEmail" placeholder="admin.email@maybank.com" style="flex:1; min-width:200px; background:#080808; color:#fff; border:1px solid var(--line-strong); border-radius:var(--radius-sm); padding:14px 15px; font-size:1rem;" />
+                  <button class="btn btn-primary btn-sm" id="btnAddTeamAdmin" type="button" style="padding:0 24px;">+ Add Admin</button>
+                </div>
+                <p class="err" id="teamErr" style="margin-top:8px;"></p>
+              </div>
             </div>
           </div>
 
@@ -857,8 +881,6 @@ const state = {
   liveSessionId: null, liveParticipantId: null, liveTimerId: null, liveCurrentQuestion: null, liveCurrentQIndex: null, liveSelectedText: null, liveAnswerSubmitted: false, isSubmitting: false
 };
 
-/* Module-scoped cache of topics loaded during registration. MUST be shared between
-   the #btnBegin click handler and the #regForm submit handler. */
 let registrationTopics = [];
 
 const GATE_SESSION_KEY = 'm2e.unlocked';
@@ -1139,7 +1161,6 @@ function renderResult(sub) {
     ? `<div class="level-badge"><span class="medal">${level.medal}</span><div><strong>Level ${level.n} – ${level.name}</strong><small>${escapeHtml(level.tagline)}</small></div></div>` 
     : `<div class="level-badge none"><span class="medal">📘</span><div><strong>Keep Learning</strong><small>Need 50% to pass.</small></div></div>`;
   
-  // Escape-safe certificate button using data-* attributes (no quote-in-quote issues)
   const certBtn = isPost ? `
       <button class="btn btn-primary btn-sm" data-cert data-cert-name="${escapeHtml(sub.full_name)}" data-cert-score="${sub.score}" data-cert-topic="${escapeHtml(state.topicName)}" style="margin-bottom: 10px; background: var(--yellow); color: #000;">
           Download Certificate 📜
@@ -1162,7 +1183,6 @@ function renderResult(sub) {
   showScreen('scrResult');
 }
 
-/* Delegated listener for the certificate button (avoids inline JS string escaping issues) */
 on('#scrResult', 'click', (e) => {
   const btn = e.target.closest('[data-cert]');
   if (!btn) return;
@@ -1423,7 +1443,6 @@ async function processAnswerSubmission(isAuto = false) {
 
 on('#btnLiveSubmit', 'click', () => processAnswerSubmission(false));
 
-/* Delegated listener for Share Result button */
 on('#scrLiveResult', 'click', (e) => {
   const btn = e.target.closest('[data-share]');
   if (!btn) return;
@@ -1621,13 +1640,111 @@ function openAdminTab(tab) {
   $('#tabLive').hidden = tab !== 'live'; 
   $('#tabDropdowns').hidden = tab !== 'dropdowns'; 
   $('#tabSettings').hidden = tab !== 'settings';
+  $('#tabTeam').hidden = tab !== 'team';
+  
   if (tab === 'questions') loadAdminQuestions(); 
   if (tab === 'submissions') renderSubmissions(); 
   if (tab === 'dropdowns') loadDropdownManager(); 
   if (tab === 'settings') fillSettingsForm();
   if (tab === 'live') loadQuestionsForSelection();
+  if (tab === 'team') loadTeamAccess();
 }
 
+/* ---------------- TEAM ACCESS LOGIC ---------------- */
+async function loadTeamAccess() {
+    const topic = currentAdminTopics.find(t => t.id === currentAdminTopicId);
+    if (!topic) return;
+    
+    $('#teamTopicName').textContent = topic.name;
+    $('#teamErr').textContent = '';
+    $('#newAdminEmail').value = '';
+    
+    const { data, error } = await supabaseClient.rpc('get_topic_admins', { p_topic_id: currentAdminTopicId });
+    
+    if (error) {
+        $('#currentAdminsList').innerHTML = `<p class="err">Error loading admins: ${error.message}</p>`;
+        return;
+    }
+    
+    const admins = data || [];
+    
+    // Count excludes the original owner (so limit is up to 5 additional)
+    const extraAdminsCount = admins.filter(a => !a.is_owner).length;
+    $('#teamAdminCount').textContent = `${extraAdminsCount} / 5 Added`;
+    
+    $('#currentAdminsList').innerHTML = admins.map(a => `
+        <div style="display:flex; justify-content:space-between; align-items:center; background:#141414; border:1px solid var(--line-strong); padding:14px 20px; border-radius:12px;">
+            <div style="display:flex; align-items:center; gap:12px;">
+                <span style="font-size:1.2rem;">👤</span>
+                <div>
+                    <div style="font-weight:800; font-size:0.95rem;">${escapeHtml(a.email)}</div>
+                    ${a.is_owner ? `<span class="badge" style="background:rgba(255,198,0,.2); border-color:var(--yellow); color:var(--yellow); font-size:0.6rem; margin-top:4px;">Owner / Creator</span>` : ''}
+                </div>
+            </div>
+            ${!a.is_owner ? `<button class="btn-mini danger" data-remove-admin="${a.user_id}">Remove</button>` : ''}
+        </div>
+    `).join('');
+}
+
+on('#currentAdminsList', 'click', async (e) => {
+    const btn = e.target.closest('[data-remove-admin]');
+    if (!btn) return;
+    
+    if (!confirm('Are you sure you want to remove this admin from this topic?')) return;
+    
+    const userId = btn.dataset.removeAdmin;
+    btn.textContent = '...';
+    
+    const { error } = await supabaseClient.from('topic_admins')
+        .delete()
+        .eq('topic_id', currentAdminTopicId)
+        .eq('user_id', userId);
+        
+    if (error) {
+        alert('Error removing admin: ' + error.message);
+        btn.textContent = 'Remove';
+    } else {
+        await loadTeamAccess();
+    }
+});
+
+on('#btnAddTeamAdmin', 'click', async () => {
+    const email = $('#newAdminEmail').value.trim();
+    const errEl = $('#teamErr');
+    errEl.textContent = '';
+    
+    if (!email) {
+        errEl.textContent = 'Please enter an email address.';
+        return;
+    }
+    
+    const btn = $('#btnAddTeamAdmin');
+    btn.textContent = 'Adding...';
+    btn.disabled = true;
+    
+    try {
+        const { data, error } = await supabaseClient.rpc('add_topic_admin', { 
+            p_topic_id: currentAdminTopicId, 
+            p_email: email 
+        });
+        
+        if (error) {
+            errEl.textContent = 'Error: ' + error.message;
+        } else if (data && data.success) {
+            $('#newAdminEmail').value = '';
+            await loadTeamAccess();
+        } else if (data && !data.success) {
+            errEl.textContent = data.message;
+        }
+    } catch (err) {
+        errEl.textContent = 'Unexpected error: ' + err.message;
+    } finally {
+        btn.textContent = '+ Add Admin';
+        btn.disabled = false;
+    }
+});
+
+/* ---------------- OTHER ADMIN LOGIC ---------------- */
 async function loadQuestionsForSelection() {
   const box = $('#liveQuestionSelection');
   if (!currentAdminTopicId) { box.innerHTML = '<p class="hint" style="padding:10px;">Select a topic first.</p>'; return; }
@@ -2119,13 +2236,11 @@ window.filterSubmissions = function() {
 };
 
 on('#adminSubs', 'click', async (e) => {
-  // Handle certificate button first
   const certBtn = e.target.closest('[data-cert]');
   if (certBtn) {
     generateCertificate(certBtn.dataset.certName, Number(certBtn.dataset.certScore), certBtn.dataset.certTopic);
     return;
   }
-  // Then View button
   const btn = e.target.closest('[data-view]'); 
   if (!btn) return; 
   const id = btn.dataset.view; 

@@ -780,23 +780,28 @@ tbody tr:hover{background:#0b0b0b}
         <div id="certCourse" style="font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: 19pt; color: #1A1A1A; margin-top: 2mm;">M2E Overview</div>
     </div>
 
-    <div style="position: absolute; top: 212mm; left: 20mm; right: 20mm; display: flex; gap: 5mm; z-index: 3;">
-        <div style="flex: 1; border: 0.8pt solid #E2E2E2; border-top: 2mm solid #FFC600; padding: 3mm 3mm; border-radius: 1.5mm; background: #FFFBEA;">
-            <span style="display: block; font-family: 'Montserrat', sans-serif; font-weight: 600; font-size: 7pt; letter-spacing: 2px; color: #888888; text-transform: uppercase;">MASTERY LEVEL</span>
-            <b id="certLevel" style="display: block; font-family: 'Playfair Display', serif; font-weight: 700; font-size: 22pt; color: #1A1A1A; margin-top: 2mm;">Level 5</b>
-            <i id="certLevelTitle" style="display: block; font-family: 'Lato', sans-serif; font-style: italic; font-size: 10pt; color: #666666;">M2E Grandmaster</i>
-        </div>
-        <div style="flex: 1; border: 0.8pt solid #E2E2E2; border-top: 2mm solid #1A1A1A; padding: 3mm 3mm; border-radius: 1.5mm; background: #FFFDF7;">
-            <span style="display: block; font-family: 'Montserrat', sans-serif; font-weight: 600; font-size: 7pt; letter-spacing: 2px; color: #888888; text-transform: uppercase;">SCORE</span>
-            <b id="certScore" style="display: block; font-family: 'Playfair Display', serif; font-weight: 700; font-size: 22pt; color: #1A1A1A; margin-top: 2mm;">100%</b>
-            <i style="display: block; font-family: 'Lato', sans-serif; font-style: italic; font-size: 10pt; color: #666666;">Assessment result</i>
-        </div>
-        <div style="flex: 1; border: 0.8pt solid #E2E2E2; border-top: 2mm solid #1A1A1A; padding: 3mm 3mm; border-radius: 1.5mm; background: #FFFDF7;">
-            <span style="display: block; font-family: 'Montserrat', sans-serif; font-weight: 600; font-size: 7pt; letter-spacing: 2px; color: #888888; text-transform: uppercase;">DATE ISSUED</span>
-            <b id="certDate" style="display: block; font-family: 'Playfair Display', serif; font-weight: 700; font-size: 22pt; color: #1A1A1A; margin-top: 2mm;">23 Oct</b>
-            <i id="certYear" style="display: block; font-family: 'Lato', sans-serif; font-style: italic; font-size: 10pt; color: #666666;">2026</i>
-        </div>
-    </div>
+     <div style="position: absolute; top: 212mm; left: 25mm; right: 25mm; display: flex; gap: 2mm; z-index: 3;">
+         <!-- Mastery Level Card -->
+         <div style="flex: 1; border: 0.8pt solid #E2E2E2; border-top: 2mm solid #FFC600; padding: 4mm 3mm 3mm 3mm; border-radius: 1.5mm; background: #FFFBEA; text-align: center;">
+             <span style="display: block; font-family: 'Montserrat', sans-serif; font-weight: 600; font-size: 7pt; letter-spacing: 2px; color: #888888; text-transform: uppercase;">MASTERY LEVEL</span>
+             <b id="certLevel" style="display: block; font-family: 'Playfair Display', serif; font-weight: 700; font-size: 22pt; color: #1A1A1A; margin-top: 0.5mm; line-height: 1;">Level 5</b>
+             <i id="certLevelTitle" style="display: block; font-family: 'Lato', sans-serif; font-style: italic; font-size: 10pt; color: #666666; margin-top: 1.5mm;">M2E Grandmaster</i>
+         </div>
+         
+         <!-- Score Card -->
+         <div style="flex: 1; border: 0.8pt solid #E2E2E2; border-top: 2mm solid #1A1A1A; padding: 4mm 3mm 3mm 3mm; border-radius: 1.5mm; background: #FFFDF7; text-align: center;">
+             <span style="display: block; font-family: 'Montserrat', sans-serif; font-weight: 600; font-size: 7pt; letter-spacing: 2px; color: #888888; text-transform: uppercase;">SCORE</span>
+             <b id="certScore" style="display: block; font-family: 'Playfair Display', serif; font-weight: 700; font-size: 22pt; color: #1A1A1A; margin-top: 0.5mm; line-height: 1;">100%</b>
+             <i style="display: block; font-family: 'Lato', sans-serif; font-style: italic; font-size: 10pt; color: #666666; margin-top: 1.5mm;">Assessment result</i>
+         </div>
+         
+         <!-- Date Issued Card -->
+         <div style="flex: 1; border: 0.8pt solid #E2E2E2; border-top: 2mm solid #1A1A1A; padding: 4mm 3mm 3mm 3mm; border-radius: 1.5mm; background: #FFFDF7; text-align: center;">
+             <span style="display: block; font-family: 'Montserrat', sans-serif; font-weight: 600; font-size: 7pt; letter-spacing: 2px; color: #888888; text-transform: uppercase;">DATE ISSUED</span>
+             <b id="certDate" style="display: block; font-family: 'Playfair Display', serif; font-weight: 700; font-size: 22pt; color: #1A1A1A; margin-top: 0.5mm; line-height: 1;">24 Oct</b>
+             <i id="certYear" style="display: block; font-family: 'Lato', sans-serif; font-style: italic; font-size: 10pt; color: #666666; margin-top: 1.5mm;">2026</i>
+         </div>
+     </div>
 
     <div style="position: absolute; bottom: 0; left: 0; right: 0; height: 22mm; background: #1A1A1A; display: flex; align-items: center; justify-content: space-between; padding: 0 20mm; z-index: 6;">
         <b style="font-family: 'Cinzel', serif; font-weight: 700; font-size: 14pt; color: #FFC600; letter-spacing: 3px;">M2E</b>

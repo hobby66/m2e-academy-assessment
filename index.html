@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <meta name="theme-color" content="#000000" />
 <title>M2E Academy — Learning Assessment</title>
-<!-- Google Fonts for Certificate -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Cormorant+Garamond:wght@700&family=EB+Garamond:ital@1&family=Lato:ital,wght@0,400;1,400&family=Montserrat:wght@500;600;700&family=Playfair+Display:wght@700&family=Poppins:wght@700&family=Satisfy&display=swap" rel="stylesheet">
@@ -606,15 +605,16 @@ tbody tr:hover{background:#0b0b0b}
                 <span class="pill" id="teamAdminCount" style="font-size:0.9rem; padding:6px 14px;">0 / 5</span>
               </div>
 
+              <!-- Current Admins List -->
               <div id="currentAdminsList" style="display:flex; flex-direction:column; gap:10px; margin-bottom:30px;">
                 <!-- Admin items injected here -->
               </div>
 
+              <!-- Add New Admin Section -->
               <div style="border-top: 1px solid var(--line); padding-top: 24px;">
-                <label style="font-size:.76rem; font-weight:800; letter-spacing:.09em; text-transform:uppercase; color:#c9c9c9; margin-bottom:10px; display:block;">Add New Admin</label>
-                <div style="display:flex; gap:10px; flex-wrap:wrap;">
-                  <input type="email" id="newAdminEmail" placeholder="admin.email@maybank.com" style="flex:1; min-width:200px; background:#080808; color:#fff; border:1px solid var(--line-strong); border-radius:var(--radius-sm); padding:14px 15px; font-size:1rem;" />
-                  <button class="btn btn-primary btn-sm" id="btnAddTeamAdmin" type="button" style="padding:0 24px;">+ Add Admin</button>
+                <label style="font-size:.76rem; font-weight:800; letter-spacing:.09em; text-transform:uppercase; color:#c9c9c9; margin-bottom:10px; display:block;">Available Admins (Click to Add)</label>
+                <div id="availableAdminsList" style="display:flex; flex-wrap:wrap; gap:10px;">
+                  <!-- Available admins injected here -->
                 </div>
                 <p class="err" id="teamErr" style="margin-top:8px;"></p>
               </div>
@@ -1657,90 +1657,127 @@ async function loadTeamAccess() {
     
     $('#teamTopicName').textContent = topic.name;
     $('#teamErr').textContent = '';
-    $('#newAdminEmail').value = '';
     
-    const { data, error } = await supabaseClient.rpc('get_topic_admins', { p_topic_id: currentAdminTopicId });
+    const [currentAdminsRes, availableAdminsRes] = await Promise.all([
+        supabaseClient.rpc('get_topic_admins', { p_topic_id: currentAdminTopicId }),
+        supabaseClient.rpc('get_available_admins', { p_topic_id: currentAdminTopicId })
+    ]);
     
-    if (error) {
-        $('#currentAdminsList').innerHTML = `<p class="err">Error loading admins: ${error.message}</p>`;
+    if (currentAdminsRes.error || availableAdminsRes.error) {
+        $('#currentAdminsList').innerHTML = `<p class="err">Error loading admins: ${currentAdminsRes.error?.message || availableAdminsRes.error?.message}</p>`;
         return;
     }
     
-    const admins = data || [];
+    const admins = currentAdminsRes.data || [];
+    const available = availableAdminsRes.data || [];
     
     // Count excludes the original owner (so limit is up to 5 additional)
     const extraAdminsCount = admins.filter(a => !a.is_owner).length;
     $('#teamAdminCount').textContent = `${extraAdminsCount} / 5 Added`;
     
-    $('#currentAdminsList').innerHTML = admins.map(a => `
-        <div style="display:flex; justify-content:space-between; align-items:center; background:#141414; border:1px solid var(--line-strong); padding:14px 20px; border-radius:12px;">
-            <div style="display:flex; align-items:center; gap:12px;">
-                <span style="font-size:1.2rem;">👤</span>
-                <div>
-                    <div style="font-weight:800; font-size:0.95rem;">${escapeHtml(a.email)}</div>
-                    ${a.is_owner ? `<span class="badge" style="background:rgba(255,198,0,.2); border-color:var(--yellow); color:var(--yellow); font-size:0.6rem; margin-top:4px;">Owner / Creator</span>` : ''}
+    // Render Current Admins
+    if (admins.length === 0) {
+        $('#currentAdminsList').innerHTML = '<p class="hint">No admins assigned yet.</p>';
+    } else {
+        $('#currentAdminsList').innerHTML = admins.map(a => `
+            <div style="display:flex; justify-content:space-between; align-items:center; background:#141414; border:1px solid var(--line-strong); padding:14px 20px; border-radius:12px; margin-bottom: 8px;">
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <span style="font-size:1.2rem;">👤</span>
+                    <div>
+                        <div style="font-weight:800; font-size:0.95rem;">${escapeHtml(a.email)}</div>
+                        ${a.is_owner ? `<span class="badge" style="background:rgba(255,198,0,.2); border-color:var(--yellow); color:var(--yellow); font-size:0.6rem; margin-top:4px;">Owner / Creator</span>` : ''}
+                    </div>
+                </div>
+                <div style="display:flex; gap:8px;">
+                    ${!a.is_owner ? `
+                        <button class="btn-mini" data-promote-admin="${a.user_id}" data-email="${escapeHtml(a.email)}" style="border-color:var(--success); color:var(--success);">Make Owner</button>
+                        <button class="btn-mini danger" data-remove-admin="${a.user_id}">Remove</button>
+                    ` : ''}
                 </div>
             </div>
-            ${!a.is_owner ? `<button class="btn-mini danger" data-remove-admin="${a.user_id}">Remove</button>` : ''}
-        </div>
-    `).join('');
+        `).join('');
+    }
+    
+    // Render Available Admins
+    if (available.length === 0) {
+        $('#availableAdminsList').innerHTML = '<p class="hint">No other users available to add. (Create users in Supabase Auth first).</p>';
+    } else {
+        $('#availableAdminsList').innerHTML = available.map(a => `
+            <button class="btn-mini" data-add-email="${escapeHtml(a.email)}" style="padding:10px 16px; font-size:0.85rem; border-radius:999px;">
+                + ${escapeHtml(a.email)}
+            </button>
+        `).join('');
+    }
 }
 
+// Handle Remove & Promote
 on('#currentAdminsList', 'click', async (e) => {
-    const btn = e.target.closest('[data-remove-admin]');
-    if (!btn) return;
-    
-    if (!confirm('Are you sure you want to remove this admin from this topic?')) return;
-    
-    const userId = btn.dataset.removeAdmin;
-    btn.textContent = '...';
-    
-    const { error } = await supabaseClient.from('topic_admins')
-        .delete()
-        .eq('topic_id', currentAdminTopicId)
-        .eq('user_id', userId);
+    // Promote Owner
+    const promoteBtn = e.target.closest('[data-promote-admin]');
+    if (promoteBtn) {
+        const newOwnerId = promoteBtn.dataset.promoteAdmin;
+        const email = promoteBtn.dataset.email;
         
-    if (error) {
-        alert('Error removing admin: ' + error.message);
-        btn.textContent = 'Remove';
-    } else {
-        await loadTeamAccess();
-    }
-});
-
-on('#btnAddTeamAdmin', 'click', async () => {
-    const email = $('#newAdminEmail').value.trim();
-    const errEl = $('#teamErr');
-    errEl.textContent = '';
-    
-    if (!email) {
-        errEl.textContent = 'Please enter an email address.';
+        if (!confirm(`Are you sure you want to transfer ownership of this topic to ${email}? You will lose your Owner status.`)) return;
+        
+        promoteBtn.textContent = '...';
+        const { data, error } = await supabaseClient.rpc('promote_topic_admin', {
+            p_topic_id: currentAdminTopicId,
+            p_new_owner_id: newOwnerId
+        });
+        
+        if (error || !data.success) {
+            alert('Error transferring ownership: ' + (error ? error.message : data.message));
+            promoteBtn.textContent = 'Make Owner';
+        } else {
+            await loadAdminTopics(); 
+            await loadTeamAccess();
+        }
         return;
     }
     
-    const btn = $('#btnAddTeamAdmin');
-    btn.textContent = 'Adding...';
-    btn.disabled = true;
-    
-    try {
-        const { data, error } = await supabaseClient.rpc('add_topic_admin', { 
-            p_topic_id: currentAdminTopicId, 
-            p_email: email 
-        });
+    // Remove Admin
+    const removeBtn = e.target.closest('[data-remove-admin]');
+    if (removeBtn) {
+        if (!confirm('Are you sure you want to remove this admin from this topic?')) return;
         
+        const userId = removeBtn.dataset.removeAdmin;
+        removeBtn.textContent = '...';
+        
+        const { error } = await supabaseClient.from('topic_admins')
+            .delete()
+            .eq('topic_id', currentAdminTopicId)
+            .eq('user_id', userId);
+            
         if (error) {
-            errEl.textContent = 'Error: ' + error.message;
-        } else if (data && data.success) {
-            $('#newAdminEmail').value = '';
+            alert('Error removing admin: ' + error.message);
+            removeBtn.textContent = 'Remove';
+        } else {
             await loadTeamAccess();
-        } else if (data && !data.success) {
-            errEl.textContent = data.message;
         }
-    } catch (err) {
-        errEl.textContent = 'Unexpected error: ' + err.message;
-    } finally {
-        btn.textContent = '+ Add Admin';
-        btn.disabled = false;
+    }
+});
+
+// Handle Add (One Click)
+on('#availableAdminsList', 'click', async (e) => {
+    const addBtn = e.target.closest('[data-add-email]');
+    if (!addBtn) return;
+    
+    const email = addBtn.dataset.addEmail;
+    addBtn.textContent = 'Adding...';
+    addBtn.disabled = true;
+    
+    const { data, error } = await supabaseClient.rpc('add_topic_admin', { 
+        p_topic_id: currentAdminTopicId, 
+        p_email: email 
+    });
+    
+    if (error || !data.success) {
+        alert('Error adding admin: ' + (error ? error.message : data.message));
+        addBtn.textContent = '+ ' + email; 
+        addBtn.disabled = false;
+    } else {
+        await loadTeamAccess();
     }
 });
 

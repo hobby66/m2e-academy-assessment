@@ -1689,7 +1689,7 @@ async function loadTeamAccess() {
     
     // Count excludes the original owner (so limit is up to 5 additional)
     const extraAdminsCount = admins.filter(a => !a.is_owner).length;
-    $('#teamAdminCount').textContent = `${extraAdminsCount} / 5 Added`;
+    $('#teamAdminCount').textContent = `${extraAdminsCount} / 15 Added`;
     
     // Render Current Admins
     if (admins.length === 0) {

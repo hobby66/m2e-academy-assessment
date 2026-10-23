@@ -237,23 +237,23 @@ tbody tr:hover{background:#0b0b0b}
    CERTIFICATE TEMPLATE (Prestige v2)
    ============================================================ */
 #certificateTemplate {
-    width: 210mm; height: 297mm; position: relative; overflow: hidden; background: #FFFDF7; color: #1A1A1A; text-align: center;
+    width: 210mm; height: 297mm; position: fixed; top: 0; left: -9999px; overflow: hidden; background: #FFFDF7; color: #1A1A1A; text-align: center;
     /* Ensure fonts load */
     font-family: 'Lato', sans-serif; 
+    z-index: -999;
 }
 #certificateTemplate * { margin:0; padding:0; box-sizing:border-box; }
-#certificateTemplate::after { content:''; position:absolute; inset:7mm 7mm 29mm 7mm; border:.6pt solid #C9A227; z-index:5; }
+#certificateTemplate::after { content:''; position:absolute; inset:7mm 7mm 29mm 7mm; border:.6pt solid #C9A227; z-index:5; pointer-events: none; }
 #certificateTemplate .c { position:absolute; left:0; right:0; }
-#certificateTemplate .edge { position:absolute; top:0; left:0; right:0; height:122.5mm; background:#FFC600; clip-path:polygon(0 0,100% 0,100% 84%,50% 100%,0 84%); }
-#certificateTemplate .hdr { position:absolute; top:0; left:0; right:0; height:120mm; background:linear-gradient(160deg,#151515,#262626); color:#fff; clip-path:polygon(0 0,100% 0,100% 84%,50% 100%,0 84%); }
+#certificateTemplate .hdr-wrapper { position: absolute; top: 0; left: 0; width: 100%; height: 122.5mm; z-index: 1; }
 #certificateTemplate .brand { font:700 28pt 'Poppins'; letter-spacing:5px; color:#FFC600; }
 #certificateTemplate .sub { font:500 10pt 'Montserrat'; letter-spacing:5px; color:#CFCFCF; margin-top:3mm; text-transform: uppercase;}
 #certificateTemplate .t1 { font:700 34pt 'Cormorant Garamond'; letter-spacing:.5px; color:#fff; }
 #certificateTemplate .lead { font:italic 15pt 'EB Garamond'; color:#D8D8D8; }
 #certificateTemplate .nm { font:400 62pt 'Satisfy', cursive; line-height:1.2; display:inline-block; border-bottom:2pt solid #FFC600; padding:0 10mm 2mm; color: #1A1A1A;}
 #certificateTemplate .body { font:400 11.5pt 'Lato'; color:#555; }
-#certificateTemplate .crs { font:700 19pt 'Montserrat'; margin-top:2mm; }
-#certificateTemplate .cards { position:absolute; top:212mm; left:20mm; right:20mm; display:flex; gap:5mm; }
+#certificateTemplate .crs { font:700 19pt 'Montserrat'; margin-top:2mm; color: #1A1A1A;}
+#certificateTemplate .cards { position:absolute; top:212mm; left:20mm; right:20mm; display:flex; gap:5mm; z-index: 2;}
 #certificateTemplate .card { flex:1; border:.8pt solid #E2E2E2; border-top:2mm solid #1A1A1A; padding:5mm 3mm; border-radius:1.5mm; background: #FFFDF7;}
 #certificateTemplate .card.hi { border-top-color:#FFC600; background:#FFFBEA; }
 #certificateTemplate .card span { display:block; font:600 7pt 'Montserrat'; letter-spacing:2px; color:#888; }
@@ -712,47 +712,67 @@ tbody tr:hover{background:#0b0b0b}
 
 <!-- HIDDEN TEMPLATE FOR CERTIFICATE -->
 <div id="certificateTemplate" hidden>
-    <div class="edge"></div>
-    <div class="hdr">
-        <div class="c" style="top:22mm">
-            <div class="brand">M2E ACADEMY</div>
-            <div class="sub">TRANSACTION BANKING</div>
+    <!-- Yellow Chevron SVG -->
+    <svg viewBox="0 0 100 100" preserveAspectRatio="none" style="position: absolute; top: 0; left: 0; width: 100%; height: 122.5mm; z-index: 1;">
+        <polygon points="0,0 100,0 100,84 50,100 0,84" fill="#FFC600" />
+    </svg>
+    <!-- Dark Chevron SVG -->
+    <svg viewBox="0 0 100 100" preserveAspectRatio="none" style="position: absolute; top: 0; left: 0; width: 100%; height: 120mm; z-index: 2;">
+        <defs>
+            <linearGradient id="hdrGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#151515" />
+                <stop offset="100%" stop-color="#262626" />
+            </linearGradient>
+        </defs>
+        <polygon points="0,0 100,0 100,84 50,100 0,84" fill="url(#hdrGrad)" />
+    </svg>
+
+    <!-- Header Text -->
+    <div style="position: absolute; top: 22mm; left: 0; right: 0; text-align: center; color: #FFC600; font-family: 'Poppins', sans-serif; font-weight: 700; font-size: 28pt; letter-spacing: 5px; z-index: 3;">M2E ACADEMY</div>
+    <div style="position: absolute; top: 32mm; left: 0; right: 0; text-align: center; color: #CFCFCF; font-family: 'Montserrat', sans-serif; font-weight: 500; font-size: 10pt; letter-spacing: 5px; z-index: 3;">TRANSACTION BANKING</div>
+    
+    <!-- Title -->
+    <div style="position: absolute; top: 62mm; left: 0; right: 0; text-align: center; color: #FFFFFF; font-family: 'Cormorant Garamond', serif; font-weight: 700; font-size: 34pt; letter-spacing: 0.5px; z-index: 3;">Certificate of Achievement</div>
+    <div style="position: absolute; top: 86mm; left: 0; right: 0; text-align: center; color: #D8D8D8; font-family: 'EB Garamond', serif; font-style: italic; font-size: 15pt; z-index: 3;">This is to certify that</div>
+
+    <!-- Name -->
+    <div style="position: absolute; top: 138mm; left: 0; right: 0; text-align: center; z-index: 3;">
+        <div id="certName" style="font-family: 'Satisfy', cursive; font-weight: 400; font-size: 62pt; line-height: 1.2; color: #1A1A1A; display: inline-block; border-bottom: 2pt solid #FFC600; padding: 0 10mm 2mm;">Jane Oo</div>
+    </div>
+
+    <!-- Body -->
+    <div style="position: absolute; top: 176mm; left: 0; right: 0; text-align: center; z-index: 3;">
+        <div style="font-family: 'Lato', sans-serif; font-weight: 400; font-size: 11.5pt; color: #555555;">has successfully completed the assessment for</div>
+        <div id="certCourse" style="font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: 19pt; color: #1A1A1A; margin-top: 2mm;">M2E Overview</div>
+    </div>
+
+    <!-- Cards -->
+    <div style="position: absolute; top: 212mm; left: 20mm; right: 20mm; display: flex; gap: 5mm; z-index: 3;">
+        <div style="flex: 1; border: 0.8pt solid #E2E2E2; border-top: 2mm solid #FFC600; padding: 5mm 3mm; border-radius: 1.5mm; background: #FFFBEA;">
+            <span style="display: block; font-family: 'Montserrat', sans-serif; font-weight: 600; font-size: 7pt; letter-spacing: 2px; color: #888888; text-transform: uppercase;">MASTERY LEVEL</span>
+            <b id="certLevel" style="display: block; font-family: 'Playfair Display', serif; font-weight: 700; font-size: 22pt; color: #1A1A1A; margin-top: 2mm;">Level 5</b>
+            <i id="certLevelTitle" style="display: block; font-family: 'Lato', sans-serif; font-style: italic; font-size: 10pt; color: #666666;">M2E Grandmaster</i>
         </div>
-        <div class="c" style="top:62mm">
-            <div class="t1">Certificate of Achievement</div>
+        <div style="flex: 1; border: 0.8pt solid #E2E2E2; border-top: 2mm solid #1A1A1A; padding: 5mm 3mm; border-radius: 1.5mm; background: #FFFDF7;">
+            <span style="display: block; font-family: 'Montserrat', sans-serif; font-weight: 600; font-size: 7pt; letter-spacing: 2px; color: #888888; text-transform: uppercase;">SCORE</span>
+            <b id="certScore" style="display: block; font-family: 'Playfair Display', serif; font-weight: 700; font-size: 22pt; color: #1A1A1A; margin-top: 2mm;">100%</b>
+            <i style="display: block; font-family: 'Lato', sans-serif; font-style: italic; font-size: 10pt; color: #666666;">Assessment result</i>
         </div>
-        <div class="c" style="top:86mm">
-            <div class="lead">This is to certify that</div>
+        <div style="flex: 1; border: 0.8pt solid #E2E2E2; border-top: 2mm solid #1A1A1A; padding: 5mm 3mm; border-radius: 1.5mm; background: #FFFDF7;">
+            <span style="display: block; font-family: 'Montserrat', sans-serif; font-weight: 600; font-size: 7pt; letter-spacing: 2px; color: #888888; text-transform: uppercase;">DATE ISSUED</span>
+            <b id="certDate" style="display: block; font-family: 'Playfair Display', serif; font-weight: 700; font-size: 22pt; color: #1A1A1A; margin-top: 2mm;">23 Oct</b>
+            <i id="certYear" style="display: block; font-family: 'Lato', sans-serif; font-style: italic; font-size: 10pt; color: #666666;">2026</i>
         </div>
     </div>
-    <div class="c" style="top:138mm">
-        <div class="nm" id="certName">Jane Oo</div>
+
+    <!-- Footer -->
+    <div style="position: absolute; bottom: 0; left: 0; right: 0; height: 22mm; background: #1A1A1A; display: flex; align-items: center; justify-content: space-between; padding: 0 20mm; z-index: 6;">
+        <b style="font-family: 'Cinzel', serif; font-weight: 700; font-size: 14pt; color: #FFC600; letter-spacing: 3px;">M2E</b>
+        <span style="font-family: 'Montserrat', sans-serif; font-weight: 600; font-size: 7.5pt; letter-spacing: 3px; color: #CCCCCC; text-transform: uppercase;">ISSUED BY TRANSACTION BANKING</span>
     </div>
-    <div class="c" style="top:176mm">
-        <div class="body">has successfully completed the assessment for</div>
-        <div class="crs" id="certCourse">M2E Overview</div>
-    </div>
-    <div class="cards">
-        <div class="card hi">
-            <span>MASTERY LEVEL</span>
-            <b id="certLevel">Level 5</b>
-            <i id="certLevelTitle">M2E Grandmaster</i>
-        </div>
-        <div class="card">
-            <span>SCORE</span>
-            <b id="certScore">100%</b>
-            <i>Assessment result</i>
-        </div>
-        <div class="card">
-            <span>DATE ISSUED</span>
-            <b id="certDate">23 Oct</b>
-            <i id="certYear">2026</i>
-        </div>
-    </div>
-    <div class="foot">
-        <b>M2E</b>
-        <span>ISSUED BY TRANSACTION BANKING</span>
-    </div>
+
+    <!-- Gold Frame -->
+    <div style="position: absolute; inset: 7mm 7mm 29mm 7mm; border: 0.6pt solid #C9A227; z-index: 10; pointer-events: none;"></div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -895,12 +915,9 @@ window.generateCertificate = async function(name, score, topicName) {
     $('#certDate').textContent = dayMonth;
     $('#certYear').textContent = year;
 
-    // 2. Temporarily show the template off-screen for html2canvas
+    // 2. Temporarily show the template for html2canvas
     const template = $('#certificateTemplate');
     template.hidden = false;
-    template.style.position = 'fixed';
-    template.style.left = '-9999px';
-    template.style.top = '0';
 
     try {
         // 3. Wait for fonts to be fully loaded before capturing
@@ -928,9 +945,6 @@ window.generateCertificate = async function(name, score, topicName) {
     } finally {
         // 6. Hide template again
         template.hidden = true;
-        template.style.position = '';
-        template.style.left = '';
-        template.style.top = '';
     }
 };
 

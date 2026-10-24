@@ -1,32 +1,3 @@
-Here is how the Three-Dots Action Menu (Option 2) will look and function on mobile.
-
-How it looks on Mobile:
-
-On mobile screens, the layout naturally wraps. The Topic dropdown takes up the full width, and the action buttons (Toggle Status, New Topic, and the ⋮ menu) wrap into a neat row below it.
-
-Because the ⋮ button is on the right, the dropdown menu anchors to the right edge so it never gets cut off by the screen.
-
-```text
-[Mobile View]
-
-┌──────────────────────────────────────────┐
-│ TOPIC                                    │
-│ ┌──────────────────────────────────────┐ │
-│ │ M2E overview (Active)              ▼ │ │
-│ └──────────────────────────────────────┘ │
-│ [Toggle] [+ New Topic]  [ ⋮ ]            │
-│                          ┌─────────────┐ │
-│                          │ ✏️ Rename   │ │
-│                          │ 🗑️ Delete   │ │
-│                          └─────────────┘ │
-└──────────────────────────────────────────┘
-```
-
-The Updated HTML
-
-I have added the Three-Dots menu, the Rename Modal (so it doesn't use the ugly browser prompt), and the Delete logic (with a safety confirmation). All other functionality remains exactly intact.
-
-```html
 <!DOCTYPE html>
 <html lang="en">
 <head>

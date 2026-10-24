@@ -299,7 +299,7 @@ tbody tr:hover { background: #111; }
 .share-score { font-size: 1.5rem; font-weight: 800; color: #fff; margin-top: 20px; }
 
 /* ============================================================
-   CERTIFICATE TEMPLATE (Keep isolated styles intact)
+   CERTIFICATE TEMPLATE
    ============================================================ */
 #certificateTemplate {
     width: 210mm; height: 297mm; position: fixed; top: 0; left: -9999px; overflow: hidden; background: #FFFDF7; color: #1A1A1A; text-align: center;
@@ -990,14 +990,20 @@ tbody tr:hover { background: #111; }
 
     <div class="field">
       <label>Action</label>
-      <div style="display:flex; gap:16px; margin-top:8px;">
-        <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
-          <input type="radio" name="cloneAction" value="append" checked style="accent-color:var(--gold);">
-          <span style="font-size:14px; font-weight:normal;">Append to current questions</span>
+      <div class="clone-options" style="display: flex; flex-direction: column; gap: 12px; margin-top: 8px;">
+        <label style="display: flex; align-items: flex-start; gap: 12px; cursor: pointer; background: #000; border: 1px solid var(--line); padding: 16px; border-radius: 12px;">
+            <input type="radio" name="cloneAction" value="append" checked style="accent-color: var(--gold); margin-top: 4px; width: 18px; height: 18px;">
+            <div>
+                <div style="font-weight: 700; font-size: 14px;">Append to current questions</div>
+                <div style="font-size: 12px; color: var(--muted); margin-top: 4px;">Keep existing questions and add the cloned ones to the bottom.</div>
+            </div>
         </label>
-        <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
-          <input type="radio" name="cloneAction" value="overwrite" style="accent-color:var(--gold);">
-          <span style="font-size:14px; font-weight:normal; color:var(--danger);">Overwrite (Delete current)</span>
+        <label style="display: flex; align-items: flex-start; gap: 12px; cursor: pointer; background: #000; border: 1px solid var(--line); padding: 16px; border-radius: 12px;">
+            <input type="radio" name="cloneAction" value="overwrite" style="accent-color: var(--danger); margin-top: 4px; width: 18px; height: 18px;">
+            <div>
+                <div style="font-weight: 700; font-size: 14px; color: var(--danger);">Overwrite (Delete current)</div>
+                <div style="font-size: 12px; color: var(--muted); margin-top: 4px;">Delete all existing questions in this topic before cloning.</div>
+            </div>
         </label>
       </div>
     </div>

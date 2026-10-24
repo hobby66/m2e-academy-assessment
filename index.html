@@ -325,6 +325,32 @@ tbody tr:hover { background: #111; }
 #certificateTemplate .foot { position:absolute; bottom:0; left:0; right:0; height:22mm; background:#1A1A1A; display:flex; align-items:center; justify-content:space-between; padding:0 20mm; z-index: 6;}
 #certificateTemplate .foot b { font:700 14pt 'Cinzel'; color:#FFC600; letter-spacing:3px; }
 #certificateTemplate .foot span { font:600 7.5pt 'Montserrat'; letter-spacing:3px; color:#CCC; }
+
+/* Custom Clone Radio Cards */
+.clone-card {
+    display: flex; align-items: flex-start; gap: 16px; cursor: pointer;
+    background: #000; border: 1px solid var(--line); padding: 16px; border-radius: 12px;
+    transition: all 0.2s ease;
+}
+.clone-card:hover { border-color: rgba(255,199,0,0.4); }
+.clone-card.active { border-color: var(--gold); background: rgba(255,199,0,0.05); }
+.clone-card.active.danger { border-color: var(--danger); background: rgba(255,90,90,0.05); }
+
+.custom-radio {
+    position: relative;
+    width: 22px; height: 22px; flex: none; margin-top: 2px;
+    border: 2px solid var(--line); border-radius: 50%;
+    transition: all 0.2s ease;
+}
+.clone-card input[type="radio"] { display: none; }
+.clone-card input[type="radio"]:checked + .custom-radio { border-color: var(--gold); }
+.clone-card input[type="radio"]:checked + .custom-radio::after {
+    content: "✓"; position: absolute; top: 50%; left: 50%;
+    transform: translate(-50%, -50%); color: var(--gold);
+    font-size: 14px; font-weight: 900;
+}
+.clone-card input[type="radio"].danger-radio:checked + .custom-radio { border-color: var(--danger); }
+.clone-card input[type="radio"].danger-radio:checked + .custom-radio::after { color: var(--danger); }
 </style>
 </head>
 <body>
@@ -976,7 +1002,7 @@ tbody tr:hover { background: #111; }
   </div>
 </div>
 
-<!-- NEW Modal for Cloning Questions -->
+<!-- NEW Modal for Cloning Questions (UPDATED DESIGN) -->
 <div class="modal" id="cloneModal" hidden>
   <div class="modal-card">
     <button class="modal-close" onclick="document.getElementById('cloneModal').hidden = true">&times;</button>
@@ -990,18 +1016,23 @@ tbody tr:hover { background: #111; }
 
     <div class="field">
       <label>Action</label>
-      <div class="clone-options" style="display: flex; flex-direction: column; gap: 12px; margin-top: 8px;">
-        <label style="display: flex; align-items: flex-start; gap: 12px; cursor: pointer; background: #000; border: 1px solid var(--line); padding: 16px; border-radius: 12px;">
-            <input type="radio" name="cloneAction" value="append" checked style="accent-color: var(--gold); margin-top: 4px; width: 18px; height: 18px;">
+      <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 8px;">
+        <!-- Option 1: Append -->
+        <label class="clone-card" id="label-append">
+            <input type="radio" name="cloneAction" value="append" checked onchange="updateCloneCardStyles()">
+            <div class="custom-radio"></div>
             <div>
-                <div style="font-weight: 700; font-size: 14px;">Append to current questions</div>
+                <div style="font-weight: 700; font-size: 14px;">APPEND TO CURRENT QUESTIONS</div>
                 <div style="font-size: 12px; color: var(--muted); margin-top: 4px;">Keep existing questions and add the cloned ones to the bottom.</div>
             </div>
         </label>
-        <label style="display: flex; align-items: flex-start; gap: 12px; cursor: pointer; background: #000; border: 1px solid var(--line); padding: 16px; border-radius: 12px;">
-            <input type="radio" name="cloneAction" value="overwrite" style="accent-color: var(--danger); margin-top: 4px; width: 18px; height: 18px;">
+        
+        <!-- Option 2: Overwrite -->
+        <label class="clone-card" id="label-overwrite">
+            <input type="radio" name="cloneAction" value="overwrite" class="danger-radio" onchange="updateCloneCardStyles()">
+            <div class="custom-radio"></div>
             <div>
-                <div style="font-weight: 700; font-size: 14px; color: var(--danger);">Overwrite (Delete current)</div>
+                <div style="font-weight: 700; font-size: 14px; color: var(--danger);">OVERWRITE (DELETE CURRENT)</div>
                 <div style="font-size: 12px; color: var(--muted); margin-top: 4px;">Delete all existing questions in this topic before cloning.</div>
             </div>
         </label>
@@ -2166,7 +2197,23 @@ on('#btnCloneQuestions', 'click', () => {
     const select = $('#cloneSourceTopic');
     select.innerHTML = '<option value="">— Select a topic to copy from —</option>' + 
         currentAdminTopics.filter(t => t.id !== currentAdminTopicId).map(t => `<option value="${t.id}">${escapeHtml(t.name)}</option>`).join('');
+    if(window.updateCloneCardStyles) window.updateCloneCardStyles();
 });
+
+window.updateCloneCardStyles = function() {
+    const appendRadio = document.querySelector('input[name="cloneAction"][value="append"]');
+    const overwriteRadio = document.querySelector('input[name="cloneAction"][value="overwrite"]');
+    const labelAppend = document.getElementById('label-append');
+    const labelOverwrite = document.getElementById('label-overwrite');
+    
+    if (appendRadio.checked) {
+        labelAppend.classList.add('active');
+        labelOverwrite.classList.remove('active', 'danger');
+    } else {
+        labelAppend.classList.remove('active');
+        labelOverwrite.classList.add('active', 'danger');
+    }
+}
 
 on('#btnConfirmClone', 'click', async () => {
     const sourceId = $('#cloneSourceTopic').value;

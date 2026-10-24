@@ -1727,8 +1727,37 @@ on('#adminTopicSelect', 'change', (e) => {
 });
 
 on('#btnCreateTopic', 'click', async () => {
-  const name = prompt('Name:'); if (!name) return; const { data: { user } } = await supabaseClient.auth.getUser();
-  await supabaseClient.from('topics').insert([{ name, is_active: false, admin_id: user.id }]); await loadAdminTopics();
+  const name = prompt('Name:'); 
+  if (!name) return; 
+  
+  const btn = $('#btnCreateTopic');
+  const originalText = btn.textContent;
+  btn.textContent = 'Creating...'; 
+  btn.disabled = true;
+
+  try {
+      const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
+      if (authError || !user) {
+          throw new Error('User session expired. Please log out and log in again.');
+      }
+
+      const { error } = await supabaseClient.from('topics').insert([{ 
+          name: name, 
+          is_active: false, 
+          admin_id: user.id 
+      }]);
+      
+      if (error) throw error;
+
+      await loadAdminTopics(); 
+      
+  } catch (err) {
+      console.error('[M2E] Create Topic Error:', err);
+      alert('Failed to create topic: ' + err.message);
+  } finally {
+      btn.textContent = originalText; 
+      btn.disabled = false;
+  }
 });
 
 $$('.admin-tabs [data-tab]').forEach(btn => { btn.addEventListener('click', () => openAdminTab(btn.dataset.tab)); });
@@ -2079,14 +2108,13 @@ on('#csvFileInput', 'change', (e) => {
         
         for (let i = 1; i < rows.length; i++) {
             const row = rows[i];
-            if (row.length < 6) continue; // Skip empty/invalid rows
+            if (row.length < 6) continue;
             const qText = row[0].replace(/^"|"$/g, '').replace(/""/g, '"').trim();
             const optA = row[1].trim(); const optB = row[2].trim(); const optC = row[3].trim(); const optD = row[4].trim();
             const ans = row[5].trim().toUpperCase();
             
             if (!qText) continue;
 
-            // Map correct answer (A, B, C, D) to index
             let correctIdx = 0;
             if (ans === 'B') correctIdx = 1; else if (ans === 'C') correctIdx = 2; else if (ans === 'D') correctIdx = 3;
 

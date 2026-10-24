@@ -1,3 +1,32 @@
+Here is how the Three-Dots Action Menu (Option 2) will look and function on mobile.
+
+How it looks on Mobile:
+
+On mobile screens, the layout naturally wraps. The Topic dropdown takes up the full width, and the action buttons (Toggle Status, New Topic, and the ⋮ menu) wrap into a neat row below it.
+
+Because the ⋮ button is on the right, the dropdown menu anchors to the right edge so it never gets cut off by the screen.
+
+```text
+[Mobile View]
+
+┌──────────────────────────────────────────┐
+│ TOPIC                                    │
+│ ┌──────────────────────────────────────┐ │
+│ │ M2E overview (Active)              ▼ │ │
+│ └──────────────────────────────────────┘ │
+│ [Toggle] [+ New Topic]  [ ⋮ ]            │
+│                          ┌─────────────┐ │
+│                          │ ✏️ Rename   │ │
+│                          │ 🗑️ Delete   │ │
+│                          └─────────────┘ │
+└──────────────────────────────────────────┘
+```
+
+The Updated HTML
+
+I have added the Three-Dots menu, the Rename Modal (so it doesn't use the ugly browser prompt), and the Delete logic (with a safety confirmation). All other functionality remains exactly intact.
+
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -17,6 +46,7 @@
   --gold: #FFC700;
   --card: #0F0F0F;
   --line: #2A2A2A;
+  --line-strong: rgba(255,255,255,0.18);
   --muted: #A1A1AA;
   --text-soft: #E4E4E7;
   --bg: #000;
@@ -351,6 +381,32 @@ tbody tr:hover { background: #111; }
 }
 .clone-card input[type="radio"].danger-radio:checked + .custom-radio { border-color: var(--danger); }
 .clone-card input[type="radio"].danger-radio:checked + .custom-radio::after { color: var(--danger); }
+
+/* Custom Dropdown Menu for Topics */
+.menu-wrapper { position: relative; display: inline-block; }
+.menu-btn {
+  background: transparent; border: 1px solid var(--line); color: #fff;
+  border-radius: 50%; width: 48px; height: 48px;
+  display: grid; place-items: center; cursor: pointer; transition: 0.2s;
+  font-size: 20px; font-weight: bold; line-height: 1;
+}
+.menu-btn:hover { border-color: var(--gold); color: var(--gold); }
+.dropdown-menu {
+  position: absolute; right: 0; top: calc(100% + 8px);
+  background: var(--card); border: 1px solid var(--line-strong);
+  border-radius: 12px; padding: 8px; min-width: 160px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.6); z-index: 100;
+  display: flex; flex-direction: column; gap: 4px;
+}
+.dropdown-item {
+  display: flex; align-items: center; gap: 12px; padding: 12px 16px;
+  border-radius: 8px; font-size: 14px; font-weight: 600; color: #fff;
+  cursor: pointer; transition: 0.2s; border: none; background: transparent;
+  text-align: left; width: 100%;
+}
+.dropdown-item:hover { background: #111; color: var(--gold); }
+.dropdown-item.danger { color: var(--danger); }
+.dropdown-item.danger:hover { background: rgba(255,90,90,0.1); color: var(--danger); }
 </style>
 </head>
 <body>
@@ -811,14 +867,30 @@ tbody tr:hover { background: #111; }
             <button type="button" id="btnAdminLogout" style="margin-left:auto; color:var(--danger); border-color:transparent;">Logout</button>
           </div>
 
+          <!-- Topic Selector Row -->
           <div class="admin-panel" style="display:flex; gap:16px; align-items:flex-end; flex-wrap:wrap; margin-bottom:24px;">
             <div class="field" style="margin:0; flex:1; min-width:200px;">
               <label for="adminTopicSelect">Topic</label>
               <select id="adminTopicSelect"></select>
             </div>
-            <div style="display:flex; gap:8px;">
+            <div style="display:flex; gap:8px; align-items:center;">
               <button class="btn btn-outline btn-sm" id="btnToggleTopicStatus" type="button" style="height:48px;">Toggle Status</button>
               <button class="btn btn-ghost btn-sm" id="btnCreateTopic" type="button" style="height:48px;">+ New Topic</button>
+              
+              <!-- Three dots Menu -->
+              <div class="menu-wrapper">
+                <button class="menu-btn" id="btnTopicMenu" type="button" aria-label="Topic Actions">⋮</button>
+                <div class="dropdown-menu" id="topicMenuDropdown" hidden>
+                  <button class="dropdown-item" id="btnRenameTopic">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+                    Rename
+                  </button>
+                  <button class="dropdown-item danger" id="btnDeleteTopic">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                    Delete
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -972,6 +1044,26 @@ tbody tr:hover { background: #111; }
   </div>
 </div>
 
+<!-- NEW Modal for Renaming Topic -->
+<div class="modal" id="renameTopicModal" hidden>
+  <div class="modal-card" style="max-width: 400px;">
+    <button class="modal-close" onclick="document.getElementById('renameTopicModal').hidden = true">&times;</button>
+    <h2 style="font-size:24px; margin-bottom:8px;">Rename Topic</h2>
+    <p style="color:var(--muted); font-size:14px; margin-bottom:24px;">Enter a new name for this assessment topic.</p>
+
+    <div class="field">
+      <label>New Topic Name</label>
+      <input type="text" id="renameTopicInput" placeholder="e.g. M2E Advanced Cash Management" />
+      <p class="err" id="renameTopicErr"></p>
+    </div>
+
+    <div style="display:flex; gap:12px; margin-top:24px;">
+      <button class="btn btn-ghost btn-block" onclick="document.getElementById('renameTopicModal').hidden = true">Cancel</button>
+      <button class="btn btn-primary btn-block" id="btnSaveTopicName">Save Changes</button>
+    </div>
+  </div>
+</div>
+
 <!-- NEW Modal for Bulk Upload -->
 <div class="modal" id="bulkUploadModal" hidden>
   <div class="modal-card">
@@ -1002,7 +1094,7 @@ tbody tr:hover { background: #111; }
   </div>
 </div>
 
-<!-- NEW Modal for Cloning Questions (UPDATED DESIGN) -->
+<!-- NEW Modal for Cloning Questions -->
 <div class="modal" id="cloneModal" hidden>
   <div class="modal-card">
     <button class="modal-close" onclick="document.getElementById('cloneModal').hidden = true">&times;</button>
@@ -1017,7 +1109,6 @@ tbody tr:hover { background: #111; }
     <div class="field">
       <label>Action</label>
       <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 8px;">
-        <!-- Option 1: Append -->
         <label class="clone-card" id="label-append">
             <input type="radio" name="cloneAction" value="append" checked onchange="updateCloneCardStyles()">
             <div class="custom-radio"></div>
@@ -1026,8 +1117,6 @@ tbody tr:hover { background: #111; }
                 <div style="font-size: 12px; color: var(--muted); margin-top: 4px;">Keep existing questions and add the cloned ones to the bottom.</div>
             </div>
         </label>
-        
-        <!-- Option 2: Overwrite -->
         <label class="clone-card" id="label-overwrite">
             <input type="radio" name="cloneAction" value="overwrite" class="danger-radio" onchange="updateCloneCardStyles()">
             <div class="custom-radio"></div>
@@ -1797,6 +1886,74 @@ on('#btnCreateTopic', 'click', async () => {
   }
 });
 
+/* ---------------- TOPIC MENU LOGIC ---------------- */
+on('#btnTopicMenu', 'click', (e) => {
+    e.stopPropagation(); // prevent document click from immediately closing it
+    const dropdown = $('#topicMenuDropdown');
+    dropdown.hidden = !dropdown.hidden;
+});
+
+document.addEventListener('click', (e) => {
+    const dropdown = $('#topicMenuDropdown');
+    if (dropdown && !dropdown.hidden) {
+        if (!e.target.closest('.menu-wrapper')) {
+            dropdown.hidden = true;
+        }
+    }
+});
+
+on('#btnRenameTopic', 'click', () => {
+    $('#topicMenuDropdown').hidden = true;
+    if (!currentAdminTopicId) return;
+    const topic = currentAdminTopics.find(t => t.id === currentAdminTopicId);
+    if (!topic) return;
+    
+    $('#renameTopicInput').value = topic.name;
+    $('#renameTopicErr').textContent = '';
+    $('#renameTopicModal').hidden = false;
+    setTimeout(() => $('#renameTopicInput').focus(), 100);
+});
+
+on('#btnSaveTopicName', 'click', async () => {
+    const newName = $('#renameTopicInput').value.trim();
+    if (!newName) { $('#renameTopicErr').textContent = 'Topic name cannot be empty.'; return; }
+    
+    const btn = $('#btnSaveTopicName'); btn.textContent = 'Saving...'; btn.disabled = true;
+    $('#renameTopicErr').textContent = '';
+    
+    try {
+        const { error } = await supabaseClient.from('topics').update({ name: newName }).eq('id', currentAdminTopicId);
+        if (error) throw error;
+        
+        $('#renameTopicModal').hidden = true;
+        await loadAdminTopics();
+    } catch (err) {
+        $('#renameTopicErr').textContent = err.message;
+    } finally {
+        btn.textContent = 'Save Changes'; btn.disabled = false;
+    }
+});
+
+on('#btnDeleteTopic', 'click', async () => {
+    $('#topicMenuDropdown').hidden = true;
+    if (!currentAdminTopicId) return;
+    const topic = currentAdminTopics.find(t => t.id === currentAdminTopicId);
+    if (!topic) return;
+    
+    if (!confirm(`WARNING: Are you sure you want to delete "${topic.name}"?\n\nThis will permanently delete all its questions, submissions, and live sessions. This cannot be undone.`)) return;
+    
+    try {
+        // The database is set up with ON DELETE CASCADE, so deleting the topic will clean up everything else.
+        const { error } = await supabaseClient.from('topics').delete().eq('id', currentAdminTopicId);
+        if (error) throw error;
+        
+        currentAdminTopicId = null; // reset selection
+        await loadAdminTopics();
+    } catch (err) {
+        alert('Error deleting topic: ' + err.message);
+    }
+});
+
 $$('.admin-tabs [data-tab]').forEach(btn => { btn.addEventListener('click', () => openAdminTab(btn.dataset.tab)); });
 function openAdminTab(tab) {
   $$('.admin-tabs [data-tab]').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
@@ -2341,3 +2498,4 @@ on('#settingsForm', 'submit', (e) => { e.preventDefault(); saveSettings({ durati
 </script>
 </body>
 </html>
+```

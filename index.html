@@ -1482,11 +1482,12 @@ const getLevel = (score) => LEVELS.find(l => score >= l.min) || null;
    ============================================================ */
 const DEFAULT_CERT_CRITERIA = { min_topics: 3, min_score: 80 };
 const DEFAULT_SCORE_BANDS = [
-  { name: 'A+', min: 96, color: '#FFC700' },
-  { name: 'A', min: 86, color: '#FFE27A' },
-  { name: 'B', min: 76, color: '#C0C0C0' },
-  { name: 'C', min: 51, color: '#CD7F32' },
-  { name: 'D', min: 0, color: '#ff5a5a' }
+  { name: 'L5 Grandmaster', min: 95, color: '#FFC700' },
+  { name: 'L4 Champion', min: 85, color: '#4FC3F7' },
+  { name: 'L3 Specialist', min: 75, color: '#F5B301' },
+  { name: 'L2 Navigator', min: 65, color: '#C0C0C0' },
+  { name: 'L1 Newbie', min: 50, color: '#CD7F32' },
+  { name: 'Below Pass', min: 0, color: '#ff5a5a' }
 ];
 
 const DEFAULT_THANK_YOU_RULES = [
@@ -3057,6 +3058,40 @@ on('#btnAddRegion', 'click', async () => { const v = $('#newRegionInput').value.
 on('#btnAddUnit', 'click', async () => { const v = $('#newUnitInput').value.trim(); if(!v) return; $('#newUnitInput').value=''; await supabaseClient.from('dropdown_options').insert([{category:'unit', value:v}]); loadDropdownManager(); });
 
 /* ---------------- SETTINGS (updated) ---------------- */
+let currentBandsDraft = [];
+
+function renderBandsEditor() {
+  const editor = $('#scoreBandsEditor');
+  if (!editor) return;
+  
+  if (!Array.isArray(currentBandsDraft)) currentBandsDraft = [];
+
+  editor.innerHTML = currentBandsDraft.map((b, i) => `
+    <div class="band-row">
+      <input type="text" value="${escapeHtml(b.name)}" placeholder="Group Name (e.g. A+)" data-band-name="${i}" onchange="updateBandDraft(${i}, 'name', this.value)">
+      <input type="number" value="${b.min}" placeholder="Min %" min="0" max="100" data-band-min="${i}" onchange="updateBandDraft(${i}, 'min', this.value)">
+      <input type="color" value="${b.color}" data-band-color="${i}" onchange="updateBandDraft(${i}, 'color', this.value)" style="padding:2px; height:38px; cursor:pointer;">
+      <button class="btn-mini danger" onclick="removeBand(${i})" type="button">&times;</button>
+    </div>
+  `).join('');
+}
+
+window.updateBandDraft = function(index, field, value) {
+  currentBandsDraft[index][field] = field === 'min' ? Number(value) : value;
+}
+
+window.removeBand = function(index) {
+  currentBandsDraft.splice(index, 1);
+  renderBandsEditor();
+}
+
+on('#btnAddBand', 'click', (e) => {
+  e.preventDefault();
+  if (!Array.isArray(currentBandsDraft)) currentBandsDraft = [];
+  currentBandsDraft.push({ name: 'New Band', min: 0, color: '#ffffff' });
+  renderBandsEditor();
+});
+
 async function fillSettingsForm() {
   const s = loadSettings();
   $('#setDuration').value = s.durationMinutes;
@@ -3066,7 +3101,11 @@ async function fillSettingsForm() {
   $('#setCertMinTopics').value = crit.min_topics;
   $('#setCertMinScore').value = crit.min_score;
   
-  currentBandsDraft = await fetchAppSetting('score_bands', DEFAULT_SCORE_BANDS);
+  let fetchedBands = await fetchAppSetting('score_bands', DEFAULT_SCORE_BANDS);
+  if (!Array.isArray(fetchedBands) || fetchedBands.length === 0) {
+    fetchedBands = DEFAULT_SCORE_BANDS;
+  }
+  currentBandsDraft = fetchedBands;
   renderBandsEditor();
 }
 
@@ -3089,7 +3128,9 @@ on('#settingsForm', 'submit', async (e) => {
   await saveAppSetting('cert_criteria', crit);
 
   // 3. Save Score Bands
-  await saveAppSetting('score_bands', currentBandsDraft);
+  if (Array.isArray(currentBandsDraft) && currentBandsDraft.length > 0) {
+    await saveAppSetting('score_bands', currentBandsDraft);
+  }
   
   alert('Settings saved.');
   loadLandingStats();

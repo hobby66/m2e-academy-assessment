@@ -378,6 +378,36 @@ tbody tr:hover { background: #111; }
 .dropdown-item:hover { background: #111; color: var(--gold); }
 .dropdown-item.danger { color: var(--danger); }
 .dropdown-item.danger:hover { background: rgba(255,90,90,0.1); color: var(--danger); }
+
+/* ============================================================
+   NEW — Avatar Manager
+   ============================================================ */
+.avatar-slot {
+  display:flex; flex-direction:column; align-items:center; gap:12px;
+  background:#000; border:1px solid var(--line); border-radius:16px; padding:20px; text-align:center;
+}
+.avatar-slot .preview {
+  width:128px; height:128px; border-radius:50%; object-fit:cover;
+  border:3px solid var(--line); background:#111; display:grid; place-items:center; overflow:hidden;
+}
+.avatar-slot.level-5 .preview { width:140px; height:140px; border-color:var(--gold); }
+.avatar-slot .lvl-tag { font-size:11px; font-weight:800; letter-spacing:.14em; color:var(--gold); }
+.avatar-slot .file-input { display:none; }
+.avatar-slot label.btn { width:100%; }
+
+/* NEW — Thank-you message banner */
+.thankyou {
+  background:rgba(255,199,0,.08); border:1px solid rgba(255,199,0,.35);
+  border-radius:14px; padding:16px 20px; margin:20px 0; text-align:center;
+  font-size:14px; line-height:1.5; color:var(--text-soft); font-style:italic;
+}
+
+/* NEW — Certificate progress hint */
+.cert-progress {
+  background:#000; border:1px dashed var(--line); border-radius:12px;
+  padding:14px 18px; margin-bottom:16px; font-size:13px; color:var(--muted);
+}
+.cert-progress strong { color:var(--gold); }
 </style>
 </head>
 <body>
@@ -835,6 +865,8 @@ tbody tr:hover { background: #111; }
             <button type="button" data-tab="dropdowns">Dropdowns</button>
             <button type="button" data-tab="settings">Settings</button>
             <button type="button" data-tab="team">👥 Team Access</button>
+            <button type="button" data-tab="avatars">🖼️ Avatars</button>
+            <button type="button" data-tab="messages">💬 Messages</button>
             <button type="button" id="btnAdminLogout" style="margin-left:auto; color:var(--danger); border-color:transparent;">Logout</button>
           </div>
 
@@ -918,6 +950,13 @@ tbody tr:hover { background: #111; }
             <form id="settingsForm" style="max-width:400px;">
               <div class="field"><label for="setDuration">Assessment Duration (minutes)</label><input id="setDuration" type="number" min="1" max="60" /></div>
               <div class="field"><label for="setCount">Questions Served</label><input id="setCount" type="number" min="1" max="100" /></div>
+
+              <div style="margin-top:24px; padding-top:24px; border-top:1px solid var(--line);">
+                <h3 style="font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--text-soft); margin-bottom:14px;">Certificate Criteria</h3>
+                <div class="field"><label for="setCertMinTopics">Minimum topics completed</label><input id="setCertMinTopics" type="number" min="1" max="50" value="3" /></div>
+                <div class="field"><label for="setCertMinScore">Minimum score per topic (%)</label><input id="setCertMinScore" type="number" min="0" max="100" value="80" /></div>
+              </div>
+
               <button class="btn btn-primary btn-sm" type="submit" style="margin-top:12px;">Save Settings</button>
             </form>
           </div>
@@ -933,6 +972,32 @@ tbody tr:hover { background: #111; }
               <div id="availableAdminsList" style="display:flex; flex-wrap:wrap; gap:10px;"></div>
               <p class="err" id="teamErr" style="margin-top:12px;"></p>
             </div>
+          </div>
+
+          <!-- NEW: Avatars tab -->
+          <div id="tabAvatars" hidden class="admin-panel">
+            <h2 style="font-size:18px; margin-bottom:8px;">Custom Level Avatars</h2>
+            <p style="color:var(--muted); font-size:14px; margin-bottom:24px;">
+              Upload an image for each level badge. Suggested spec:
+              <strong>128 × 128 px</strong> (Level 5: <strong>140 × 140 px</strong>), circular crop, JPG/SVG, max 500 KB.
+              If not set, the default SVG art is used.
+            </p>
+            <div id="avatarGrid" style="display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:20px;"></div>
+            <div style="display:flex; gap:12px; margin-top:24px;">
+              <button class="btn btn-ghost btn-sm" id="btnResetAvatars" type="button">Reset to Default SVGs</button>
+            </div>
+          </div>
+
+          <!-- NEW: Messages tab -->
+          <div id="tabMessages" hidden class="admin-panel">
+            <h2 style="font-size:18px; margin-bottom:8px;">Thank‑You Messages</h2>
+            <p style="color:var(--muted); font-size:14px; margin-bottom:24px;">
+              Configure the message shown to participants after each assessment, per score band.
+              Messages are saved <strong>per topic</strong> (currently:
+              <span id="messagesTopicLabel" style="color:var(--gold);">—</span>).
+            </p>
+            <div id="messagesEditor"></div>
+            <button class="btn btn-primary btn-sm" id="btnSaveMessages" type="button" style="margin-top:24px;">Save Messages</button>
           </div>
 
           <div id="tabLive" hidden class="admin-panel">
@@ -1131,7 +1196,7 @@ tbody tr:hover { background: #111; }
         <div id="certName" style="font-family: 'Satisfy', cursive; font-weight: 400; font-size: 62pt; line-height: 1.1; color: #1A1A1A; display: inline-block; border-bottom: 2pt solid #FFC600; padding: 0 10mm 6mm;">Jane Oo</div>
     </div>
     <div style="position: absolute; top: 176mm; left: 0; right: 0; text-align: center; z-index: 3;">
-        <div style="font-family: 'Lato', sans-serif; font-weight: 400; font-size: 11.5pt; color: #555555;">has successfully completed the assessment for</div>
+        <div id="certLead" style="font-family: 'Lato', sans-serif; font-weight: 400; font-size: 11.5pt; color: #555555;">has successfully completed the assessment for</div>
         <div id="certCourse" style="font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: 19pt; color: #1A1A1A; margin-top: 2mm;">M2E Overview</div>
     </div>
     <div style="position: absolute; top: 212mm; left: 25mm; right: 25mm; display: flex; gap: 2mm; z-index: 3;">
@@ -1286,6 +1351,60 @@ const LEVELS = [
 ];
 const getLevel = (score) => LEVELS.find(l => score >= l.min) || null;
 
+/* ============================================================
+   NEW: Settings / Thank-you / Cert helpers
+   ============================================================ */
+const DEFAULT_CERT_CRITERIA = { min_topics: 3, min_score: 80 };
+const DEFAULT_THANK_YOU = [
+  "Keep exploring — every expert was once a beginner. Review the material and try again.",
+  "Good effort! You're building the foundation. Focus on the basics and try again.",
+  "You're halfway there! Review your weaker areas and give it another go.",
+  "Well done — you have solid knowledge. A little more practice and you'll master it.",
+  "Excellent work! You're close to mastery — just a few refinements to go.",
+  "Outstanding! You've mastered this topic — you're a true M2E expert!"
+];
+
+async function fetchAppSetting(key, fallback) {
+  try {
+    const { data } = await supabaseClient.from('app_settings').select('value').eq('key', key).maybeSingle();
+    return data && data.value ? data.value : fallback;
+  } catch (e) { return fallback; }
+}
+async function saveAppSetting(key, value) {
+  const { error } = await supabaseClient.from('app_settings')
+    .upsert({ key, value, updated_at: new Date().toISOString() }, { onConflict: 'key' });
+  return !error;
+}
+async function fetchTopicMessages(topicId) {
+  const { data } = await supabaseClient.from('topics').select('thank_you_messages').eq('id', topicId).maybeSingle();
+  const arr = (data && data.thank_you_messages) || [];
+  return Array.from({ length: 6 }, (_, i) => (arr[i] || '').trim() || DEFAULT_THANK_YOU[i]);
+}
+function getScoreBand(score) {
+  if (score < 20) return 0;
+  if (score < 40) return 1;
+  if (score < 60) return 2;
+  if (score < 80) return 3;
+  if (score < 95) return 4;
+  return 5;
+}
+async function checkCertEligibility(pfNumber) {
+  const { data, error } = await supabaseClient.rpc('check_cert_eligibility', { p_pf_number: pfNumber });
+  if (error || !data) {
+    return { eligible: false, qualifyingCount: 0, requiredCount: 3, minScore: 80, averageScore: 0 };
+  }
+  return {
+    eligible: data.eligible,
+    qualifyingCount: data.qualifying_count,
+    requiredCount: data.required_count,
+    minScore: data.min_score,
+    averageScore: data.average_score
+  };
+}
+
+/* ============================================================
+   ORIGINAL DATA FETCHERS
+   ============================================================ */
 async function fetchActiveTopics() { const { data } = await supabaseClient.from('topics').select('*').eq('is_active', true); return data || []; }
 async function fetchAdminTopics() { 
   const { data, error } = await supabaseClient.from('topics').select('*').order('name'); 
@@ -1308,7 +1427,13 @@ const state = {
 let registrationTopics = [];
 
 const GATE_SESSION_KEY = 'm2e.unlocked';
-function unlockApp() { sessionStorage.setItem(GATE_SESSION_KEY, '1'); $('#scrGate').hidden = true; $('#app').hidden = false; showScreen('scrLanding'); }
+function unlockApp() {
+  sessionStorage.setItem(GATE_SESSION_KEY, '1');
+  $('#scrGate').hidden = true;
+  $('#app').hidden = false;
+  showScreen('scrLanding');
+  loadAndApplyAvatars();
+}
 function initGate() {
   const urlParams = new URLSearchParams(window.location.search);
   const joinCode = urlParams.get('join');
@@ -1337,38 +1462,67 @@ function initGate() {
   });
 }
 
-window.generateCertificate = async function(name, score, topicName) {
-    $('#certName').textContent = name;
-    if (name.length > 25) $('#certName').style.fontSize = '48pt';
-    else if (name.length > 18) $('#certName').style.fontSize = '52pt';
-    else $('#certName').style.fontSize = '62pt';
-    
-    $('#certCourse').textContent = topicName;
-    const level = getLevel(score);
-    $('#certLevel').textContent = level ? `Level ${level.n}` : 'N/A';
-    $('#certLevelTitle').textContent = level ? level.name : 'Keep Learning';
-    $('#certScore').textContent = `${score}%`;
-    
-    const today = new Date();
-    $('#certDate').textContent = today.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
-    $('#certYear').textContent = today.getFullYear().toString();
+/* ============================================================
+   NEW: Apply custom avatars
+   ============================================================ */
+async function loadAndApplyAvatars() {
+  const avatars = await fetchAppSetting('avatars', null);
+  if (!avatars) return;
+  $$('#deck .card-lvl').forEach((card, idx) => {
+    const lvl = idx + 1;
+    const url = avatars[String(lvl)];
+    if (!url) return;
+    const div = card.querySelector('.avatar');
+    if (!div) return;
+    const size = lvl === 5 ? 140 : 128;
+    div.innerHTML = `<img src="${url}" alt="Level ${lvl} avatar"
+      style="width:${size}px;height:${size}px;border-radius:50%;object-fit:cover;" />`;
+  });
+}
 
-    const template = $('#certificateTemplate');
-    template.hidden = false;
+/* ============================================================
+   CERTIFICATE GENERATOR (master + per-topic)
+   ============================================================ */
+window.generateCertificate = async function (opts) {
+  const isMaster = !!opts.topicCount;
 
-    try {
-        await document.fonts.ready;
-        const canvas = await html2canvas(template, { scale: 2, useCORS: true, backgroundColor: '#FFFDF7' });
-        const { jsPDF } = window.jspdf;
-        const pdf = new jsPDF('p', 'mm', 'a4');
-        pdf.addImage(canvas.toDataURL('image/jpeg', 1.0), 'JPEG', 0, 0, 210, 297);
-        pdf.save(`M2E_Certificate_${name.replace(/\s+/g, '_')}.pdf`);
-    } catch (err) {
-        console.error('Error generating certificate:', err);
-        alert('Could not generate PDF certificate. Please try again.');
-    } finally {
-        template.hidden = true;
-    }
+  $('#certName').textContent = opts.name;
+  const n = opts.name.length;
+  $('#certName').style.fontSize = n > 25 ? '48pt' : n > 18 ? '52pt' : '62pt';
+
+  const leadEl = $('#certLead');
+  if (leadEl) leadEl.textContent = isMaster
+    ? 'has successfully completed assessments in'
+    : 'has successfully completed the assessment for';
+
+  $('#certCourse').textContent = isMaster
+    ? `${opts.topicCount} M2E Academy Topic${opts.topicCount === 1 ? '' : 's'}`
+    : (opts.topicName || 'M2E Assessment');
+
+  const level = getLevel(opts.score);
+  $('#certLevel').textContent = level ? `Level ${level.n}` : 'N/A';
+  $('#certLevelTitle').textContent = level ? level.name : 'Keep Learning';
+  $('#certScore').textContent = `${opts.score}%`;
+
+  const today = new Date();
+  $('#certDate').textContent = today.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+  $('#certYear').textContent = today.getFullYear().toString();
+
+  const template = $('#certificateTemplate');
+  template.hidden = false;
+  try {
+    await document.fonts.ready;
+    const canvas = await html2canvas(template, { scale: 2, useCORS: true, backgroundColor: '#FFFDF7' });
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF('p', 'mm', 'a4');
+    pdf.addImage(canvas.toDataURL('image/jpeg', 1.0), 'JPEG', 0, 0, 210, 297);
+    pdf.save(`M2E_Certificate_${opts.name.replace(/\s+/g, '_')}.pdf`);
+  } catch (err) {
+    console.error('Error generating certificate:', err);
+    alert('Could not generate PDF certificate. Please try again.');
+  } finally {
+    template.hidden = true;
+  }
 };
 
 /* ---------------- STANDARD ASSESSMENT ---------------- */
@@ -1516,7 +1670,19 @@ async function submitAssessment(auto) {
       alert('Error saving result: ' + (error && error.message ? error.message : 'Unknown error')); showScreen('scrLanding'); return; 
     }
     const level = getLevel(data.score);
-    state.lastSubmission = { ...data, full_name: state.participant.fullName, mode: state.mode, levelNumber: level ? level.n : null, levelName: level ? level.name : null };
+    state.lastSubmission = { 
+      ...data, 
+      full_name: state.participant.fullName, 
+      mode: state.mode, 
+      levelNumber: level ? level.n : null, 
+      levelName: level ? level.name : null 
+    };
+
+    // NEW: Load thank-you message + certificate eligibility
+    const messages = await fetchTopicMessages(state.topicId);
+    state.lastSubmission.thankYou = messages[getScoreBand(data.score)];
+    state.lastSubmission.cert = await checkCertEligibility(state.participant.pfNumber);
+
     renderResult(state.lastSubmission);
   } catch (err) {
     console.error('[M2E] Unexpected submit error:', err); alert('Unexpected error.'); showScreen('scrLanding');
@@ -1524,11 +1690,31 @@ async function submitAssessment(auto) {
 }
 
 function renderResult(sub) {
-  const level = getLevel(sub.score); const isPost = sub.mode === 'post';
+  const level = getLevel(sub.score); 
   const levelBlock = level 
     ? `<div class="level-badge"><span class="medal">${level.medal}</span><div><strong>Level ${level.n} – ${level.name}</strong><small>${escapeHtml(level.tagline)}</small></div></div>` 
     : `<div class="level-badge none"><span class="medal">📘</span><div><strong>Keep Learning</strong><small>Need 50% to pass.</small></div></div>`;
-  const certBtn = isPost ? `<button class="btn btn-primary btn-sm" data-cert data-cert-name="${escapeHtml(sub.full_name)}" data-cert-score="${sub.score}" data-cert-topic="${escapeHtml(state.topicName)}" style="margin-bottom: 16px;">Download Certificate 📜</button>` : '';
+
+  const thankYou = sub.thankYou
+    ? `<div class="thankyou">“${escapeHtml(sub.thankYou)}”</div>` : '';
+
+  let certBlock = '';
+  const cert = sub.cert || {};
+  if (cert.eligible) {
+    certBlock = `
+      <button class="btn btn-primary btn-sm" id="btnDownloadCert"
+        data-cert-name="${escapeHtml(sub.full_name)}"
+        data-cert-score="${cert.averageScore}"
+        data-cert-count="${cert.qualifyingCount}"
+        style="margin-bottom:12px;">🎓 Download Master Certificate</button>`;
+  } else if (cert.requiredCount) {
+    const remaining = Math.max(0, cert.requiredCount - cert.qualifyingCount);
+    certBlock = `
+      <div class="cert-progress">
+        Certificate progress: <strong>${cert.qualifyingCount} / ${cert.requiredCount}</strong> topics with
+        ≥&nbsp;${cert.minScore}%. Complete <strong>${remaining}</strong> more topic(s) to unlock your certificate.
+      </div>`;
+  }
 
   $('#scrResult').innerHTML = `
     <div class="container result-wrap">
@@ -1537,8 +1723,9 @@ function renderResult(sub) {
             <div class="score-ring" style="--p:${sub.score}%"><span>${sub.score}%</span></div>
             <p class="result-score">${sub.correct_count} of ${sub.total} correct</p>
             ${levelBlock}
+            ${thankYou}
             <div style="display:flex; flex-direction:column; gap:12px;">
-                ${certBtn}
+                ${certBlock}
                 <button class="btn btn-ghost btn-block" onclick="showScreen('scrLanding')">Home</button>
             </div>
         </div>
@@ -1547,9 +1734,13 @@ function renderResult(sub) {
 }
 
 on('#scrResult', 'click', (e) => {
-  const btn = e.target.closest('[data-cert]');
+  const btn = e.target.closest('#btnDownloadCert');
   if (!btn) return;
-  generateCertificate(btn.dataset.certName, Number(btn.dataset.certScore), btn.dataset.certTopic);
+  generateCertificate({
+    name: btn.dataset.certName,
+    score: Number(btn.dataset.certScore),
+    topicCount: Number(btn.dataset.certCount)
+  });
 });
 
 /* ---------------- LIVE PARTICIPANT FLOW ---------------- */
@@ -1859,7 +2050,7 @@ on('#btnCreateTopic', 'click', async () => {
 
 /* ---------------- TOPIC MENU LOGIC ---------------- */
 on('#btnTopicMenu', 'click', (e) => {
-    e.stopPropagation(); // prevent document click from immediately closing it
+    e.stopPropagation();
     const dropdown = $('#topicMenuDropdown');
     dropdown.hidden = !dropdown.hidden;
 });
@@ -1914,11 +2105,10 @@ on('#btnDeleteTopic', 'click', async () => {
     if (!confirm(`WARNING: Are you sure you want to delete "${topic.name}"?\n\nThis will permanently delete all its questions, submissions, and live sessions. This cannot be undone.`)) return;
     
     try {
-        // The database is set up with ON DELETE CASCADE, so deleting the topic will clean up everything else.
         const { error } = await supabaseClient.from('topics').delete().eq('id', currentAdminTopicId);
         if (error) throw error;
         
-        currentAdminTopicId = null; // reset selection
+        currentAdminTopicId = null;
         await loadAdminTopics();
     } catch (err) {
         alert('Error deleting topic: ' + err.message);
@@ -1928,10 +2118,12 @@ on('#btnDeleteTopic', 'click', async () => {
 $$('.admin-tabs [data-tab]').forEach(btn => { btn.addEventListener('click', () => openAdminTab(btn.dataset.tab)); });
 function openAdminTab(tab) {
   $$('.admin-tabs [data-tab]').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
-  ['Questions', 'Submissions', 'Live', 'Dropdowns', 'Settings', 'Team'].forEach(t => { $(`#tab${t}`).hidden = tab !== t.toLowerCase(); });
+  ['Questions', 'Submissions', 'Live', 'Dropdowns', 'Settings', 'Team', 'Avatars', 'Messages'].forEach(t => { $(`#tab${t}`).hidden = tab !== t.toLowerCase(); });
   if (tab === 'questions') loadAdminQuestions(); if (tab === 'submissions') renderSubmissions();
   if (tab === 'dropdowns') loadDropdownManager(); if (tab === 'settings') fillSettingsForm();
   if (tab === 'live') loadQuestionsForSelection(); if (tab === 'team') loadTeamAccess();
+  if (tab === 'avatars') loadAvatarManager();
+  if (tab === 'messages') loadMessagesManager();
 }
 
 async function loadTeamAccess() {
@@ -2000,6 +2192,113 @@ on('#availableAdminsList', 'click', async (e) => {
     else { await loadTeamAccess(); }
 });
 
+/* ============================================================
+   NEW: Avatar Manager
+   ============================================================ */
+const AVATAR_LEVELS = [1, 2, 3, 4, 5];
+
+async function loadAvatarManager() {
+  const grid = $('#avatarGrid');
+  const avatars = (await fetchAppSetting('avatars', {})) || {};
+  grid.innerHTML = AVATAR_LEVELS.map(lvl => {
+    const url = avatars[String(lvl)];
+    return `
+      <div class="avatar-slot ${lvl === 5 ? 'level-5' : ''}">
+        <div class="lvl-tag">LEVEL ${lvl}</div>
+        <div class="preview" data-preview="${lvl}">
+          ${url ? `<img src="${url}" style="width:100%;height:100%;object-fit:cover;" />` : `<span style="color:#555;font-size:12px;">Default SVG</span>`}
+        </div>
+        <label class="btn btn-outline btn-sm" style="cursor:pointer;">
+          Upload
+          <input type="file" class="file-input" accept=".jpg,.jpeg,.png,.svg,image/jpeg,image/png,image/svg+xml"
+                 data-upload-lvl="${lvl}" />
+        </label>
+        <button class="btn-mini danger" data-remove-lvl="${lvl}">Remove</button>
+      </div>`;
+  }).join('');
+
+  $$('#avatarGrid input[type=file]').forEach(inp => {
+    inp.addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      if (file.size > 500 * 1024) { alert('File too large (max 500 KB).'); e.target.value = ''; return; }
+      const lvl = inp.dataset.uploadLvl;
+      const reader = new FileReader();
+      reader.onload = async (ev) => {
+        const dataUrl = ev.target.result;
+        const current = (await fetchAppSetting('avatars', {})) || {};
+        current[String(lvl)] = dataUrl;
+        const ok = await saveAppSetting('avatars', current);
+        if (!ok) return alert('Failed to save avatar.');
+        await loadAvatarManager();
+        await loadAndApplyAvatars();
+      };
+      reader.readAsDataURL(file);
+    });
+  });
+
+  $$('#avatarGrid [data-remove-lvl]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const lvl = btn.dataset.removeLvl;
+      const current = (await fetchAppSetting('avatars', {})) || {};
+      delete current[String(lvl)];
+      await saveAppSetting('avatars', current);
+      await loadAvatarManager();
+      location.reload();
+    });
+  });
+}
+
+on('#btnResetAvatars', 'click', async () => {
+  if (!confirm('Remove all custom avatars and restore default SVGs?')) return;
+  await saveAppSetting('avatars', {});
+  location.reload();
+});
+
+/* ============================================================
+   NEW: Messages Manager (per topic)
+   ============================================================ */
+const MESSAGE_BANDS = [
+  { label: 'Score below 20%',      key: 0 },
+  { label: 'Score 20 – 39%',       key: 1 },
+  { label: 'Score 40 – 59%',       key: 2 },
+  { label: 'Score 60 – 79%',       key: 3 },
+  { label: 'Score 80 – 94%',       key: 4 },
+  { label: 'Score 95% and above',  key: 5 }
+];
+
+async function loadMessagesManager() {
+  const label = $('#messagesTopicLabel');
+  const editor = $('#messagesEditor');
+  if (!currentAdminTopicId) {
+    if (label) label.textContent = 'no topic selected';
+    editor.innerHTML = '<p style="color:var(--muted);">Select a topic above first.</p>';
+    return;
+  }
+  const topic = currentAdminTopics.find(t => t.id === currentAdminTopicId);
+  if (label) label.textContent = topic ? topic.name : currentAdminTopicId;
+
+  const msgs = await fetchTopicMessages(currentAdminTopicId);
+  editor.innerHTML = MESSAGE_BANDS.map((b, i) => `
+    <div class="field">
+      <label>${b.label}</label>
+      <textarea data-msg-idx="${i}" rows="2"
+        style="width:100%;background:#000;border:1px solid var(--line);color:#fff;border-radius:10px;padding:12px;font-family:inherit;resize:vertical;">${escapeHtml(msgs[i])}</textarea>
+    </div>`).join('');
+}
+
+on('#btnSaveMessages', 'click', async () => {
+  if (!currentAdminTopicId) return;
+  const msgs = $$('#messagesEditor textarea').map(t => t.value.trim());
+  const btn = $('#btnSaveMessages');
+  btn.textContent = 'Saving...'; btn.disabled = true;
+  const { error } = await supabaseClient.from('topics')
+    .update({ thank_you_messages: msgs }).eq('id', currentAdminTopicId);
+  btn.textContent = 'Save Messages'; btn.disabled = false;
+  if (error) alert('Error: ' + error.message); else alert('Saved.');
+});
+
+/* ---------------- LIVE SESSION MANAGEMENT ---------------- */
 async function loadQuestionsForSelection() {
   const box = $('#liveQuestionSelection');
   if (!currentAdminTopicId) { box.innerHTML = '<p style="padding:16px; color:var(--muted);">Select a topic first.</p>'; return; }
@@ -2223,9 +2522,7 @@ on('#btnRestoreQuestions', 'click', async () => {
   await supabaseClient.from('questions').insert(seeds); btn.textContent = 'Restore Defaults'; btn.disabled = false; alert('Restored.'); loadAdminQuestions(); loadQuestionsForSelection();
 });
 
-/* ---------------- NEW: BULK UPLOAD & CLONE ---------------- */
-
-// 1. CSV Template Download
+/* ---------------- BULK UPLOAD & CLONE ---------------- */
 on('#btnBulkUpload', 'click', () => {
     $('#bulkUploadModal').hidden = false;
     $('#csvFileInput').value = '';
@@ -2240,7 +2537,6 @@ on('#btnDownloadTemplate', 'click', () => {
     download('m2e_questions_template.csv', csvContent);
 });
 
-// 2. CSV Parser
 function parseCSV(text) {
     const result = []; let row = []; let inQuotes = false; let val = '';
     for (let i = 0; i < text.length; i++) {
@@ -2319,7 +2615,6 @@ on('#btnConfirmUpload', 'click', async () => {
     }
 });
 
-// 3. Clone Logic
 on('#btnCloneQuestions', 'click', () => {
     $('#cloneModal').hidden = false;
     const select = $('#cloneSourceTopic');
@@ -2376,7 +2671,7 @@ on('#btnConfirmClone', 'click', async () => {
     }
 });
 
-/* ---------------- OTHER ADMIN ---------------- */
+/* ---------------- SUBMISSIONS ---------------- */
 async function renderSubmissions() {
   const wrap = $('#adminSubs'); wrap.innerHTML = '<p style="color:var(--muted);">Loading...</p>';
   const { data, error } = await supabaseClient.from('submissions').select('*').order('submitted_at', { ascending: false });
@@ -2414,7 +2709,14 @@ window.filterSubmissions = function() {
 
 on('#adminSubs', 'click', async (e) => {
   const certBtn = e.target.closest('[data-cert]');
-  if (certBtn) { generateCertificate(certBtn.dataset.certName, Number(certBtn.dataset.certScore), certBtn.dataset.certTopic); return; }
+  if (certBtn) {
+    generateCertificate({
+      name: certBtn.dataset.certName,
+      score: Number(certBtn.dataset.certScore),
+      topicName: certBtn.dataset.certTopic
+    });
+    return;
+  }
   const btn = e.target.closest('[data-view]'); if (!btn) return;
   const id = btn.dataset.view; btn.textContent = '...';
   const { data } = await supabaseClient.from('submissions').select('*').eq('id', id).single(); btn.textContent = 'View';
@@ -2462,11 +2764,31 @@ on('#unitList', 'click', async (e) => { const btn = e.target.closest('[data-drop
 on('#btnAddRegion', 'click', async () => { const v = $('#newRegionInput').value.trim(); if(!v) return; $('#newRegionInput').value=''; await supabaseClient.from('dropdown_options').insert([{category:'region', value:v}]); loadDropdownManager(); });
 on('#btnAddUnit', 'click', async () => { const v = $('#newUnitInput').value.trim(); if(!v) return; $('#newUnitInput').value=''; await supabaseClient.from('dropdown_options').insert([{category:'unit', value:v}]); loadDropdownManager(); });
 
-function fillSettingsForm() { const s = loadSettings(); $('#setDuration').value = s.durationMinutes; $('#setCount').value = s.questionsPerAssessment; }
-on('#settingsForm', 'submit', (e) => { e.preventDefault(); saveSettings({ durationMinutes: Number($('#setDuration').value), questionsPerAssessment: Number($('#setCount').value) }); alert('Saved.'); });
+/* ---------------- SETTINGS (updated) ---------------- */
+async function fillSettingsForm() {
+  const s = loadSettings();
+  $('#setDuration').value = s.durationMinutes;
+  $('#setCount').value = s.questionsPerAssessment;
+  const crit = await fetchAppSetting('cert_criteria', DEFAULT_CERT_CRITERIA);
+  $('#setCertMinTopics').value = crit.min_topics;
+  $('#setCertMinScore').value = crit.min_score;
+}
+
+on('#settingsForm', 'submit', async (e) => {
+  e.preventDefault();
+  saveSettings({
+    durationMinutes: Number($('#setDuration').value),
+    questionsPerAssessment: Number($('#setCount').value)
+  });
+  const crit = {
+    min_topics: Math.max(1, Number($('#setCertMinTopics').value) || 1),
+    min_score: Math.max(0, Math.min(100, Number($('#setCertMinScore').value) || 0))
+  };
+  const ok = await saveAppSetting('cert_criteria', crit);
+  alert(ok ? 'Settings saved.' : 'Local settings saved; certificate criteria could not be saved.');
+});
 
 (function init() { initGate(); })();
 </script>
 </body>
 </html>
-```

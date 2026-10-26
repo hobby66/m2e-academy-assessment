@@ -487,18 +487,19 @@ tbody tr:hover { background: #111; }
         </div>
       </div>
 
+      <!-- DYNAMIC STATS BOXES -->
       <div class="container stats">
         <div class="stat">
           <span class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 9 V13 L15 15"/><path d="M9.5 2.5 H14.5"/></svg></span>
-          <div><span class="stat-value">5 Minutes</span><span class="stat-label">TIME LIMIT</span></div>
+          <div><span class="stat-value" id="statTime">5 Minutes</span><span class="stat-label">TIME LIMIT</span></div>
         </div>
         <div class="stat">
           <span class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8 H16 M8 12 H16 M8 16 H13"/></svg></span>
-          <div><span class="stat-value">20 Questions</span><span class="stat-label">MULTIPLE CHOICE</span></div>
+          <div><span class="stat-value" id="statQuestions">20 Questions</span><span class="stat-label">MULTIPLE CHOICE</span></div>
         </div>
         <div class="stat">
-          <span class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="9" r="5"/><path d="M8.5 13.5 L7 21 L12 18.5 L17 21 L15.5 13.5"/></svg></span>
-          <div><span class="stat-value">5 Levels</span><span class="stat-label">ACHIEVEMENT TIERS</span></div>
+          <span class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15l-2 5l2-1l2 1z"/><path d="M12 2a7 7 0 0 1 7 7c0 2.38-1.19 4.47-3 5.74V15H8v-.26C6.19 13.47 5 11.38 5 9a7 7 0 0 1 7-7z"/></svg></span>
+          <div><span class="stat-value">Master Certificate</span><span class="stat-label" id="statCertCriteria">COMPLETE 12 TOPICS · 80% MIN SCORE</span></div>
         </div>
       </div>
 
@@ -1438,6 +1439,7 @@ function unlockApp() {
   $('#app').hidden = false;
   showScreen('scrLanding');
   loadAndApplyAvatars();
+  loadLandingStats(); // <-- NEW: Call dynamic stats loader
 }
 function initGate() {
   const urlParams = new URLSearchParams(window.location.search);
@@ -1465,6 +1467,24 @@ function initGate() {
     if (isMatch === true) { errEl.textContent = ''; $('#gatePwd').value = ''; unlockApp(); }
     else { errEl.textContent = 'Incorrect password.'; $('#gatePwd').select(); }
   });
+}
+
+/* ============================================================
+   NEW: Load Dynamic Landing Stats
+   ============================================================ */
+async function loadLandingStats() {
+  // 1. Load assessment settings (sync from DB, fallback to local)
+  const localSettings = loadSettings();
+  const dbSettings = await fetchAppSetting('assessment_settings', localSettings);
+  
+  if ($('#statTime')) $('#statTime').textContent = `${dbSettings.durationMinutes} Minutes`;
+  if ($('#statQuestions')) $('#statQuestions').textContent = `${dbSettings.questionsPerAssessment} Questions`;
+
+  // 2. Load Certificate Criteria
+  const crit = await fetchAppSetting('cert_criteria', DEFAULT_CERT_CRITERIA);
+  if ($('#statCertCriteria') && crit) {
+    $('#statCertCriteria').textContent = `COMPLETE ${crit.min_topics} TOPICS · ${crit.min_score}% MIN SCORE`;
+  }
 }
 
 /* ============================================================
@@ -1636,7 +1656,10 @@ on('#regForm', 'submit', async (e) => {
 });
 
 async function startAssessment() {
-  const settings = loadSettings(); 
+  // Fetch global settings from DB, fallback to local
+  const localSettings = loadSettings(); 
+  const settings = await fetchAppSetting('assessment_settings', localSettings);
+
   const bank = await fetchQuestionsFromDB(state.topicId, false);
   if (!bank || bank.length === 0) { alert('No questions available for this topic.'); showScreen('scrLanding'); return; }
   state.questions = shuffle(bank).slice(0, Math.min(Number(settings.questionsPerAssessment), bank.length)).map(q => ({ id: q.id, text: q.text, options: shuffle(q.options) }));
@@ -2834,10 +2857,16 @@ async function fillSettingsForm() {
 
 on('#settingsForm', 'submit', async (e) => {
   e.preventDefault();
-  saveSettings({
+  
+  // Save Assessment Settings locally AND globally
+  const newSettings = {
     durationMinutes: Number($('#setDuration').value),
     questionsPerAssessment: Number($('#setCount').value)
-  });
+  };
+  saveSettings(newSettings);
+  await saveAppSetting('assessment_settings', newSettings);
+  
+  // Save Certificate Criteria globally
   const crit = {
     min_topics: Math.max(1, Number($('#setCertMinTopics').value) || 1),
     min_score: Math.max(0, Math.min(100, Number($('#setCertMinScore').value) || 0))
@@ -2847,7 +2876,8 @@ on('#settingsForm', 'submit', async (e) => {
   if (result.error) {
     alert('Error saving criteria: ' + result.error);
   } else {
-    alert('Settings saved.');
+    alert('Settings saved. Landing page stats updated.');
+    loadLandingStats(); // <-- Refresh the boxes immediately
   }
 });
 

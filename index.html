@@ -978,11 +978,10 @@ tbody tr:hover { background: #111; }
           <div id="tabAvatars" hidden class="admin-panel">
             <h2 style="font-size:18px; margin-bottom:8px;">Custom Level Avatars</h2>
             <p style="color:var(--muted); font-size:14px; margin-bottom:24px;">
-              Upload an image for each level badge. Suggested spec:
-              <strong>128 × 128 px</strong> (Level 5: <strong>140 × 140 px</strong>), circular crop, JPG/SVG, max 500 KB.
-              If not set, the default SVG art is used.
+              Upload an image or paste a direct URL. 
+              <strong>Important:</strong> For Level 5 (which shows as the large Hero image), use a high-resolution image (e.g., <strong>512 × 512 px</strong> or larger) to prevent blurriness.
             </p>
-            <div id="avatarGrid" style="display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:20px;"></div>
+            <div id="avatarGrid" style="display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:20px;"></div>
             <div style="display:flex; gap:12px; margin-top:24px;">
               <button class="btn btn-ghost btn-sm" id="btnResetAvatars" type="button">Reset to Default SVGs</button>
             </div>
@@ -1501,6 +1500,8 @@ async function loadAndApplyAvatars() {
       img.style.height = 'auto';
       img.style.borderRadius = '50%';
       img.style.objectFit = 'cover';
+      // Use high-quality image rendering
+      img.style.imageRendering = '-webkit-optimize-contrast'; 
       heroSvg.replaceWith(img);
     }
   }
@@ -2228,18 +2229,25 @@ async function loadAvatarManager() {
   const avatars = (await fetchAppSetting('avatars', {})) || {};
   grid.innerHTML = AVATAR_LEVELS.map(lvl => {
     const url = avatars[String(lvl)];
+    const isUrl = url && url.startsWith('http');
     return `
-      <div class="avatar-slot ${lvl === 5 ? 'level-5' : ''}">
+      <div class="avatar-slot ${lvl === 5 ? 'level-5' : ''}" style="min-width: 200px;">
         <div class="lvl-tag">LEVEL ${lvl}</div>
-        <div class="preview" data-preview="${lvl}">
+        <div class="preview" data-preview="${lvl}" style="width:100px;height:100px;">
           ${url ? `<img src="${url}" style="width:100%;height:100%;object-fit:cover;" />` : `<span style="color:#555;font-size:12px;">Default SVG</span>`}
         </div>
-        <label class="btn btn-outline btn-sm" style="cursor:pointer;">
-          Upload
-          <input type="file" class="file-input" accept=".jpg,.jpeg,.png,.svg,image/jpeg,image/png,image/svg+xml"
-                 data-upload-lvl="${lvl}" />
-        </label>
-        <button class="btn-mini danger" data-remove-lvl="${lvl}">Remove</button>
+        <div style="display:flex; flex-direction:column; gap:8px; width:100%;">
+          <label class="btn btn-outline btn-sm" style="cursor:pointer; width:100%;">
+            Upload File
+            <input type="file" class="file-input" accept=".jpg,.jpeg,.png,.svg,image/jpeg,image/png,image/svg+xml"
+                   data-upload-lvl="${lvl}" style="display:none;" />
+          </label>
+          <div style="display:flex; gap:4px;">
+            <input type="text" id="url-input-${lvl}" placeholder="Or paste URL..." value="${isUrl ? url : ''}" style="flex:1; padding:6px; border-radius:6px; border:1px solid var(--line); background:#000; color:#fff; font-size:12px;" />
+            <button class="btn-mini" data-url-lvl="${lvl}">Set</button>
+          </div>
+          <button class="btn-mini danger" data-remove-lvl="${lvl}" style="width:100%;">Remove</button>
+        </div>
       </div>`;
   }).join('');
 
@@ -2247,7 +2255,7 @@ async function loadAvatarManager() {
     inp.addEventListener('change', async (e) => {
       const file = e.target.files[0];
       if (!file) return;
-      if (file.size > 500 * 1024) { alert('File too large (max 500 KB).'); e.target.value = ''; return; }
+      if (file.size > 2 * 1024 * 1024) { alert('File too large (max 2 MB).'); e.target.value = ''; return; }
       const lvl = inp.dataset.uploadLvl;
       const reader = new FileReader();
       reader.onload = async (ev) => {
@@ -2266,6 +2274,23 @@ async function loadAvatarManager() {
         await loadAndApplyAvatars();
       };
       reader.readAsDataURL(file);
+    });
+  });
+
+  $$('#avatarGrid [data-url-lvl]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const lvl = btn.dataset.urlLvl;
+      const val = $('#url-input-' + lvl).value.trim();
+      const current = (await fetchAppSetting('avatars', {})) || {};
+      if (val) {
+        current[String(lvl)] = val;
+      } else {
+        delete current[String(lvl)];
+      }
+      const result = await saveAppSetting('avatars', current);
+      if (result.error) return alert('Error: ' + result.error);
+      await loadAvatarManager();
+      await loadAndApplyAvatars();
     });
   });
 

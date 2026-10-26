@@ -995,16 +995,56 @@ tbody tr:hover { background: #111; }
                   <!-- Rendered via JS -->
                 </div>
               </div>
-              <div class="chart-container">
+              
+              <!-- UPDATED: Pre vs Post Section -->
+              <div class="chart-container" style="display:flex; flex-direction:column;">
                 <div class="chart-title">Pre vs Post Improvement (Grouped by PF)</div>
-                <div style="max-height:200px; overflow-y:auto; font-size:13px;">
+                
+                <!-- Option 1: KPI Cards -->
+                <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 16px;">
+                  <div style="background:#111; padding:8px; border-radius:8px; text-align:center;">
+                    <div style="font-size:9px; color:var(--muted); text-transform:uppercase; margin-bottom:2px;">Paired</div>
+                    <div id="ppPairedCount" style="font-size:16px; font-weight:800; color:#fff;">0</div>
+                  </div>
+                  <div style="background:#111; padding:8px; border-radius:8px; text-align:center;">
+                    <div style="font-size:9px; color:var(--muted); text-transform:uppercase; margin-bottom:2px;">Avg Pre</div>
+                    <div id="ppAvgPre" style="font-size:16px; font-weight:800; color:#C0C0C0;">0%</div>
+                  </div>
+                  <div style="background:#111; padding:8px; border-radius:8px; text-align:center;">
+                    <div style="font-size:9px; color:var(--muted); text-transform:uppercase; margin-bottom:2px;">Avg Post</div>
+                    <div id="ppAvgPost" style="font-size:16px; font-weight:800; color:var(--gold);">0%</div>
+                  </div>
+                  <div style="background:#111; padding:8px; border-radius:8px; text-align:center; border:1px solid rgba(61,220,132,0.3);">
+                    <div style="font-size:9px; color:var(--muted); text-transform:uppercase; margin-bottom:2px;">Avg Diff</div>
+                    <div id="ppAvgDiff" style="font-size:16px; font-weight:800; color:var(--success);">+0</div>
+                  </div>
+                </div>
+
+                <!-- Option 3: Visual Shift Bar -->
+                <div style="background:#111; border-radius:8px; padding:16px; margin-bottom:16px;">
+                  <div style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:8px; font-weight:700;">
+                    <span style="color:#C0C0C0;">Pre: <span id="shiftPreLabel">0%</span></span>
+                    <span style="color:var(--gold);">Post: <span id="shiftPostLabel">0%</span></span>
+                  </div>
+                  <div style="height:12px; background:#222; border-radius:6px; width:100%; position:relative; overflow:hidden;">
+                    <!-- Pre score area -->
+                    <div id="shiftPreBar" style="position:absolute; left:0; top:0; bottom:0; width:0%; background:#555; transition:0.3s;"></div>
+                    <!-- Improvement area -->
+                    <div id="shiftDiffBar" style="position:absolute; left:0%; top:0; bottom:0; width:0%; background:var(--success); transition:0.3s;"></div>
+                  </div>
+                </div>
+
+                <!-- Option 4: Smart Table Summary -->
+                <div style="flex:1; max-height:200px; overflow-y:auto; font-size:13px;">
                   <table style="width:100%; min-width:0;">
-                    <thead style="position:sticky; top:0; background:#000;">
+                    <thead style="position:sticky; top:0; background:#000; z-index:1;">
                       <tr><th>PF</th><th>Pre</th><th>Post</th><th>Diff</th></tr>
                     </thead>
                     <tbody id="prePostTable"></tbody>
+                    <tfoot id="prePostTableFooter" style="position:sticky; bottom:0; background:#000; border-top:2px solid var(--line); font-weight:800;"></tfoot>
                   </table>
                 </div>
+
               </div>
             </div>
           </div>
@@ -3004,7 +3044,7 @@ on('#btnAddRegion', 'click', async () => { const v = $('#newRegionInput').value.
 on('#btnAddUnit', 'click', async () => { const v = $('#newUnitInput').value.trim(); if(!v) return; $('#newUnitInput').value=''; await supabaseClient.from('dropdown_options').insert([{category:'unit', value:v}]); loadDropdownManager(); });
 
 /* ============================================================
-   NEW: ANALYTICS DASHBOARD (FIXED)
+   NEW: ANALYTICS DASHBOARD
    ============================================================ */
 window.clearDashFilters = function() {
   $('#filterStartDate').value = '';
@@ -3184,7 +3224,7 @@ window.renderAnalytics = async function() {
       `;
     }).join('');
 
-    // 7. Pre vs Post Comparison
+    // 7. Pre vs Post Comparison (Grouped by PF)
     const pfMap = {};
     filtered.forEach(s => {
       if (!s.pf_number) return;
@@ -3193,19 +3233,64 @@ window.renderAnalytics = async function() {
       if (s.mode === 'post') pfMap[s.pf_number].post = Number(s.score);
     });
 
-    const ppRows = Object.keys(pfMap).map(pf => {
+    let pairedCount = 0;
+    let sumPre = 0;
+    let sumPost = 0;
+    let rowsHtml = '';
+
+    Object.keys(pfMap).forEach(pf => {
       const p = pfMap[pf];
-      if (p.pre === null || p.post === null) return ''; 
+      if (p.pre === null || p.post === null) return; // Only show those with both
+      
+      pairedCount++;
+      sumPre += p.pre;
+      sumPost += p.post;
+      
       const diff = p.post - p.pre;
       const diffCol = diff > 0 ? 'var(--success)' : diff < 0 ? 'var(--danger)' : 'var(--muted)';
       const diffStr = diff > 0 ? `+${diff}` : diff;
-      return `<tr><td style="padding:8px;">${pf}</td><td>${p.pre}%</td><td>${p.post}%</td><td style="color:${diffCol}; font-weight:700;">${diffStr}</td></tr>`;
-    }).join('');
+      rowsHtml += `<tr><td style="padding:8px;">${pf}</td><td>${p.pre}%</td><td>${p.post}%</td><td style="color:${diffCol}; font-weight:700;">${diffStr}</td></tr>`;
+    });
 
-    if (!ppRows) {
-      $('#prePostTable').innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--muted); padding:16px;">No Pre/Post pairs found for these filters.</td></tr>';
+    // Calculate Aggregates
+    const avgPre = pairedCount > 0 ? Math.round(sumPre / pairedCount) : 0;
+    const avgPost = pairedCount > 0 ? Math.round(sumPost / pairedCount) : 0;
+    const avgDiff = avgPost - avgPre;
+
+    // Option 1: Update KPI Cards
+    $('#ppPairedCount').textContent = pairedCount;
+    $('#ppAvgPre').textContent = avgPre + '%';
+    $('#ppAvgPost').textContent = avgPost + '%';
+    $('#ppAvgDiff').textContent = (avgDiff > 0 ? '+' : '') + avgDiff;
+    $('#ppAvgDiff').style.color = avgDiff > 0 ? 'var(--success)' : avgDiff < 0 ? 'var(--danger)' : 'var(--muted)';
+
+    // Option 3: Update Visual Shift Bar
+    $('#shiftPreLabel').textContent = avgPre + '%';
+    $('#shiftPostLabel').textContent = avgPost + '%';
+    $('#shiftPreBar').style.width = avgPre + '%';
+    
+    // Only show the green bar if there is positive improvement
+    if (avgDiff > 0) {
+      $('#shiftDiffBar').style.left = avgPre + '%';
+      $('#shiftDiffBar').style.width = avgDiff + '%';
     } else {
-      $('#prePostTable').innerHTML = ppRows;
+      $('#shiftDiffBar').style.width = '0%';
+    }
+
+    // Option 4: Update Table Body & Footer
+    if (pairedCount === 0) {
+      $('#prePostTable').innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--muted); padding:16px;">No Pre/Post pairs found for these filters.</td></tr>';
+      $('#prePostTableFooter').innerHTML = '';
+    } else {
+      $('#prePostTable').innerHTML = rowsHtml;
+      $('#prePostTableFooter').innerHTML = `
+        <tr>
+          <td style="padding:8px; color:var(--gold);">AVERAGE (${pairedCount})</td>
+          <td style="color:var(--text-soft);">${avgPre}%</td>
+          <td style="color:var(--text-soft);">${avgPost}%</td>
+          <td style="color:${avgDiff > 0 ? 'var(--success)' : avgDiff < 0 ? 'var(--danger)' : 'var(--muted)'};">${avgDiff > 0 ? '+' : ''}${avgDiff}</td>
+        </tr>
+      `;
     }
 
   } catch (err) {

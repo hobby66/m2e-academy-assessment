@@ -427,10 +427,14 @@ tbody tr:hover { background: #111; }
 .chart-title { font-size: 16px; font-weight: 700; margin-bottom: 20px; color: #fff; }
 .bar-chart { display: flex; align-items: flex-end; gap: 12px; height: 200px; padding-bottom: 10px; border-bottom: 1px solid var(--line); }
 .bar-group { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px; height: 100%; justify-content: flex-end; }
-.bar { width: 100%; max-width: 60px; background: var(--gold); border-radius: 4px 4px 0 0; transition: height 0.5s ease; position: relative; min-height: 2px; }
+.bar { width: 100%; max-width: 60px; border-radius: 4px 4px 0 0; transition: height 0.5s ease; position: relative; min-height: 2px; }
 .bar:hover { filter: brightness(1.2); }
 .bar-label { font-size: 11px; color: var(--muted); text-align: center; line-height: 1.2; white-space: nowrap; }
 .bar-value { font-size: 12px; font-weight: 800; color: #fff; position: absolute; top: -20px; left: 50%; transform: translateX(-50%); }
+
+/* Dynamic Band Editor */
+.band-row { display: grid; grid-template-columns: 2fr 1fr 1fr auto; gap: 8px; align-items: center; background: #000; padding: 8px; border-radius: 8px; border: 1px solid var(--line); }
+.band-row input { padding: 8px 12px !important; font-size: 13px !important; }
 </style>
 </head>
 <body>
@@ -938,12 +942,19 @@ tbody tr:hover { background: #111; }
                 <select id="filterTopic" onchange="renderAnalytics()"><option value="">All Topics</option></select>
               </div>
               <div>
+                <label style="font-size:10px; color:var(--muted); display:block; margin-bottom:4px;">MODE</label>
+                <select id="filterMode" onchange="renderAnalytics()">
+                  <option value="">All Modes</option>
+                  <option value="pre">Pre-Training</option>
+                  <option value="post">Post-Training</option>
+                </select>
+              </div>
+              <div>
                 <label style="font-size:10px; color:var(--muted); display:block; margin-bottom:4px;">CATEGORY</label>
                 <select id="filterCategory" onchange="renderAnalytics()">
                   <option value="">All Categories</option>
                   <option value="Branch">Branch Staff</option>
                   <option value="TBC">TBC Participant</option>
-                  <option value="Other">Other Units</option>
                 </select>
               </div>
               <div style="margin-left:auto; align-self:flex-end;">
@@ -971,7 +982,7 @@ tbody tr:hover { background: #111; }
             </div>
 
             <div class="chart-container">
-              <div class="chart-title">Score Band Distribution (Groups)</div>
+              <div class="chart-title" id="chartTitle">Score Band Distribution</div>
               <div class="bar-chart" id="scoreBandChart">
                 <!-- Rendered via JS -->
               </div>
@@ -1037,18 +1048,18 @@ tbody tr:hover { background: #111; }
             <div class="field">
               <label>Region Options</label>
               <div style="display:flex; gap:8px;"><input type="text" id="newRegionInput" placeholder="e.g. GM" style="flex:1;" /><button class="btn btn-primary btn-sm" id="btnAddRegion" type="button">Add</button></div>
-              <div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:12px;" id="regionList"></div>
+              <div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; min-height:32px;" id="regionList"></div>
             </div>
             <div class="field" style="margin-top:24px;">
               <label>Other Unit Options</label>
               <div style="display:flex; gap:8px;"><input type="text" id="newUnitInput" placeholder="e.g. Finance" style="flex:1;" /><button class="btn btn-primary btn-sm" id="btnAddUnit" type="button">Add</button></div>
-              <div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:12px;" id="unitList"></div>
+              <div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; min-height:32px;" id="unitList"></div>
             </div>
           </div>
 
           <div id="tabSettings" hidden class="admin-panel">
             <h2 style="font-size:18px; margin-bottom:20px;">Application Settings</h2>
-            <form id="settingsForm" style="max-width:400px;">
+            <form id="settingsForm" style="max-width:500px;">
               <div class="field"><label for="setDuration">Assessment Duration (minutes)</label><input id="setDuration" type="number" min="1" max="60" /></div>
               <div class="field"><label for="setCount">Questions Served</label><input id="setCount" type="number" min="1" max="100" /></div>
 
@@ -1061,14 +1072,11 @@ tbody tr:hover { background: #111; }
               <!-- NEW: Parameterized Score Groups for Analytics -->
               <div style="margin-top:24px; padding-top:24px; border-top:1px solid var(--line);">
                 <h3 style="font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--text-soft); margin-bottom:14px;">Analytics Score Bands</h3>
-                <div class="field"><label for="setBandAplus">Group A+ (Min %)</label><input id="setBandAplus" type="number" min="1" max="100" value="96" /></div>
-                <div class="field"><label for="setBandA">Group A (Min %)</label><input id="setBandA" type="number" min="1" max="100" value="86" /></div>
-                <div class="field"><label for="setBandB">Group B (Min %)</label><input id="setBandB" type="number" min="1" max="100" value="76" /></div>
-                <div class="field"><label for="setBandC">Group C (Min %)</label><input id="setBandC" type="number" min="1" max="100" value="51" /></div>
-                <p style="font-size:12px; color:var(--muted); margin-top:4px;">Scores below Group C will be Group D.</p>
+                <div id="scoreBandsEditor" style="display:flex; flex-direction:column; gap:8px; margin-bottom:12px;"></div>
+                <button type="button" class="btn btn-outline btn-sm" id="btnAddBand" style="width:100%;">+ Add Score Band</button>
               </div>
 
-              <button class="btn btn-primary btn-sm" type="submit" style="margin-top:12px;">Save Settings</button>
+              <button class="btn btn-primary btn-sm" type="submit" style="margin-top:24px; width:100%;">Save Settings</button>
             </form>
           </div>
 
@@ -1465,7 +1473,13 @@ const getLevel = (score) => LEVELS.find(l => score >= l.min) || null;
    NEW: Settings / Thank-you / Cert / Analytics helpers
    ============================================================ */
 const DEFAULT_CERT_CRITERIA = { min_topics: 3, min_score: 80 };
-const DEFAULT_SCORE_BANDS = { aplus: 96, a: 86, b: 76, c: 51 };
+const DEFAULT_SCORE_BANDS = [
+  { name: 'A+', min: 96, color: '#FFC700' },
+  { name: 'A', min: 86, color: '#FFE27A' },
+  { name: 'B', min: 76, color: '#C0C0C0' },
+  { name: 'C', min: 51, color: '#CD7F32' },
+  { name: 'D', min: 0, color: '#ff5a5a' }
+];
 const DEFAULT_THANK_YOU = [
   "Keep exploring — every expert was once a beginner. Review the material and try again.",
   "Good effort! You're building the foundation. Focus on the basics and try again.",
@@ -2287,7 +2301,7 @@ function openAdminTab(tab) {
   ['Questions', 'Submissions', 'Analytics', 'Live', 'Dropdowns', 'Settings', 'Team', 'Avatars', 'Messages'].forEach(t => { $(`#tab${t}`).hidden = tab !== t.toLowerCase(); });
   if (tab === 'questions') loadAdminQuestions(); 
   if (tab === 'submissions') renderSubmissions();
-  if (tab === 'analytics') renderAnalytics();
+  if (tab === 'analytics') { loadAnalyticsDropdowns(); renderAnalytics(); }
   if (tab === 'dropdowns') loadDropdownManager(); 
   if (tab === 'settings') fillSettingsForm();
   if (tab === 'live') loadQuestionsForSelection(); 
@@ -2884,10 +2898,6 @@ window.filterSubmissions = function() {
     const searchTime = $('#searchTime').value.toLowerCase(); const searchName = $('#searchName').value.toLowerCase();
     const searchEmail = $('#searchEmail').value.toLowerCase(); const searchPF = $('#searchPF').value.toLowerCase(); const searchBranch = $('#searchBranch').value.toLowerCase();
     
-    // Ensure we have topic names loaded
-    const topicsMap = {};
-    if (currentAdminTopics) currentAdminTopics.forEach(t => topicsMap[t.id] = t.name);
-
     const filtered = allSubmissions.filter(s => {
         const dateStr = new Date(s.submitted_at).toLocaleString().toLowerCase();
         return (!searchTime || dateStr.includes(searchTime)) && (!searchName || (s.full_name||'').toLowerCase().includes(searchName)) && (!searchEmail || (s.email||'').toLowerCase().includes(searchEmail)) && (!searchPF || (s.pf_number||'').toLowerCase().includes(searchPF)) && (!searchBranch || (s.branch||'').toLowerCase().includes(searchBranch));
@@ -2897,8 +2907,7 @@ window.filterSubmissions = function() {
     const topicName = (currentAdminTopics.find(t => t.id === currentAdminTopicId) || {}).name || 'M2E Assessment';
     
     const rows = filtered.map(s => {
-        // FIX: Pull the topic name directly from the row data using the map
-        const rowTopicName = topicsMap[s.topic_id] || 'Unknown Topic';
+        const rowTopicName = allAdminTopicsMap[s.topic_id] || 'Unknown Topic';
         return `
         <tr>
             <td>${escapeHtml(new Date(s.submitted_at).toLocaleString())}</td>
@@ -2975,11 +2984,35 @@ window.clearDashFilters = function() {
   $('#filterEndDate').value = '';
   $('#filterTopic').value = '';
   $('#filterCategory').value = '';
+  $('#filterMode').value = '';
   renderAnalytics();
 }
 
+async function loadAnalyticsDropdowns() {
+  const filterCat = $('#filterCategory');
+  if (!filterCat) return;
+  
+  // Save current selection
+  const curVal = filterCat.value;
+  
+  filterCat.innerHTML = '<option value="">All Categories</option><option value="Branch">Branch Staff</option><option value="TBC">TBC Participant</option>';
+  
+  try {
+    const units = await fetchDropdownOptions('unit');
+    if (units.length > 0) {
+      filterCat.innerHTML += '<optgroup label="Other Units">' + units.map(u => `<option value="${escapeHtml(u.value)}">${escapeHtml(u.value)}</option>`).join('') + '</optgroup>';
+    }
+    
+    const regions = await fetchDropdownOptions('region');
+    if (regions.length > 0) {
+      filterCat.innerHTML += '<optgroup label="Regions">' + regions.map(r => `<option value="${escapeHtml(r.value)}">${escapeHtml(r.value)}</option>`).join('') + '</optgroup>';
+    }
+  } catch(e) { console.error('Failed to load dropdowns for analytics', e); }
+  
+  filterCat.value = curVal;
+}
+
 window.renderAnalytics = async function() {
-  const wrap = $('#tabAnalytics');
   const totalEl = $('#dashTotalSubs');
   totalEl.textContent = '...';
   
@@ -2997,17 +3030,23 @@ window.renderAnalytics = async function() {
   const startDate = $('#filterStartDate').value ? new Date($('#filterStartDate').value).getTime() : 0;
   const endDate = $('#filterEndDate').value ? new Date($('#filterEndDate').value).getTime() + 86400000 : Infinity; // End of day
   const filterTopic = $('#filterTopic').value;
+  const filterMode = $('#filterMode').value;
   const filterCategory = $('#filterCategory').value;
 
   const filtered = subs.filter(s => {
     const dateMs = new Date(s.submitted_at).getTime();
+    
+    const modeMatch = !filterMode || s.mode === filterMode;
+    
     const catMatch = !filterCategory || 
       (filterCategory === 'Branch' && s.branch !== 'TBC' && s.region !== 'N/A') ||
       (filterCategory === 'TBC' && s.branch === 'TBC') ||
-      (filterCategory === 'Other' && s.region === 'N/A');
+      (s.region === 'N/A' && s.branch === filterCategory) || // Specific Other Unit
+      (s.region === filterCategory); // Specific Region
     
     return dateMs >= startDate && dateMs <= endDate &&
            (!filterTopic || s.topic_id === filterTopic) &&
+           modeMatch &&
            catMatch;
   });
 
@@ -3028,32 +3067,32 @@ window.renderAnalytics = async function() {
   $('#dashTopScore').textContent = maxScore + '%';
 
   // 5. Chart: Score Bands
-  const bandCounts = { Aplus: 0, A: 0, B: 0, C: 0, D: 0 };
+  const bandCounts = {};
+  bands.forEach(b => bandCounts[b.name] = 0);
+  
+  // Sort bands descending by min to easily bucket
+  const sortedBands = bands.slice().sort((a,b) => b.min - a.min);
+
   filtered.forEach(s => {
-    if (s.score >= bands.aplus) bandCounts.Aplus++;
-    else if (s.score >= bands.a) bandCounts.A++;
-    else if (s.score >= bands.b) bandCounts.B++;
-    else if (s.score >= bands.c) bandCounts.C++;
-    else bandCounts.D++;
+    for (let i = 0; i < sortedBands.length; i++) {
+      if (s.score >= sortedBands[i].min) {
+        bandCounts[sortedBands[i].name]++;
+        break;
+      }
+    }
   });
 
-  const maxBandCount = Math.max(bandCounts.Aplus, bandCounts.A, bandCounts.B, bandCounts.C, bandCounts.D, 1);
+  const maxBandCount = Math.max(...Object.values(bandCounts), 1);
   
-  const chartHtml = [
-    { label: 'A+', val: bandCounts.Aplus, min: bands.aplus },
-    { label: 'A', val: bandCounts.A, min: bands.a },
-    { label: 'B', val: bandCounts.B, min: bands.b },
-    { label: 'C', val: bandCounts.C, min: bands.c },
-    { label: 'D', val: bandCounts.D, min: 0 }
-  ].map(b => {
-    const heightPct = Math.max((b.val / maxBandCount) * 100, 2);
-    const color = b.label === 'A+' ? 'var(--gold)' : b.label === 'A' ? '#FFE27A' : b.label === 'B' ? '#A1A1AA' : b.label === 'C' ? '#CD7F32' : 'var(--danger)';
+  const chartHtml = sortedBands.map(b => {
+    const val = bandCounts[b.name];
+    const heightPct = Math.max((val / maxBandCount) * 100, 2);
     return `
       <div class="bar-group">
-        <div class="bar" style="height: ${heightPct}%; background: ${color};">
-          <div class="bar-value">${b.val}</div>
+        <div class="bar" style="height: ${heightPct}%; background: ${b.color};">
+          <div class="bar-value">${val}</div>
         </div>
-        <div class="bar-label">${b.label}<br><span style="font-size:9px; opacity:0.7;">${b.label==='D' ? '<'+bands.c : '≥'+b.min}%</span></div>
+        <div class="bar-label">${escapeHtml(b.name)}<br><span style="font-size:9px; opacity:0.7;">≥${b.min}%</span></div>
       </div>
     `;
   }).join('');
@@ -3117,6 +3156,37 @@ window.renderAnalytics = async function() {
   }
 }
 
+/* ============================================================
+   NEW: Dynamic Score Bands Editor
+   ============================================================ */
+let currentBandsDraft = [];
+
+function renderBandsEditor() {
+  const editor = $('#scoreBandsEditor');
+  editor.innerHTML = currentBandsDraft.map((b, i) => `
+    <div class="band-row">
+      <input type="text" value="${escapeHtml(b.name)}" placeholder="Group Name (e.g. A+)" data-band-name="${i}" onchange="updateBandDraft(${i}, 'name', this.value)">
+      <input type="number" value="${b.min}" placeholder="Min %" min="0" max="100" data-band-min="${i}" onchange="updateBandDraft(${i}, 'min', this.value)">
+      <input type="color" value="${b.color}" data-band-color="${i}" onchange="updateBandDraft(${i}, 'color', this.value)" style="padding:2px; height:38px; cursor:pointer;">
+      <button class="btn-mini danger" onclick="removeBand(${i})" type="button">&times;</button>
+    </div>
+  `).join('');
+}
+
+window.updateBandDraft = function(index, field, value) {
+  currentBandsDraft[index][field] = field === 'min' ? Number(value) : value;
+}
+
+window.removeBand = function(index) {
+  currentBandsDraft.splice(index, 1);
+  renderBandsEditor();
+}
+
+on('#btnAddBand', 'click', () => {
+  currentBandsDraft.push({ name: 'New', min: 0, color: '#ffffff' });
+  renderBandsEditor();
+});
+
 /* ---------------- SETTINGS (updated) ---------------- */
 async function fillSettingsForm() {
   const s = loadSettings();
@@ -3127,11 +3197,8 @@ async function fillSettingsForm() {
   $('#setCertMinTopics').value = crit.min_topics;
   $('#setCertMinScore').value = crit.min_score;
   
-  const bands = await fetchAppSetting('score_bands', DEFAULT_SCORE_BANDS);
-  $('#setBandAplus').value = bands.aplus;
-  $('#setBandA').value = bands.a;
-  $('#setBandB').value = bands.b;
-  $('#setBandC').value = bands.c;
+  currentBandsDraft = await fetchAppSetting('score_bands', DEFAULT_SCORE_BANDS);
+  renderBandsEditor();
 }
 
 on('#settingsForm', 'submit', async (e) => {
@@ -3153,17 +3220,39 @@ on('#settingsForm', 'submit', async (e) => {
   await saveAppSetting('cert_criteria', crit);
 
   // 3. Save Score Bands
-  const bands = {
-    aplus: Math.min(100, Number($('#setBandAplus').value) || 96),
-    a: Math.min(100, Number($('#setBandA').value) || 86),
-    b: Math.min(100, Number($('#setBandB').value) || 76),
-    c: Math.min(100, Number($('#setBandC').value) || 51)
-  };
-  await saveAppSetting('score_bands', bands);
+  await saveAppSetting('score_bands', currentBandsDraft);
   
   alert('Settings saved.');
   loadLandingStats();
 });
+
+/* ---------------- DROPDOWN MANAGER ---------------- */
+async function loadDropdownManager() {
+  const rWrap = $('#regionList'); const uWrap = $('#unitList');
+  rWrap.innerHTML = '<span style="color:var(--muted); font-size:12px;">Loading...</span>';
+  uWrap.innerHTML = '<span style="color:var(--muted); font-size:12px;">Loading...</span>';
+  
+  try {
+    const { data: r } = await supabaseClient.from('dropdown_options').select('*').eq('category', 'region');
+    const { data: u } = await supabaseClient.from('dropdown_options').select('*').eq('category', 'unit');
+    
+    rWrap.innerHTML = (r && r.length > 0) 
+      ? r.map(x => `<div class="chip" style="display:flex; gap:8px; align-items:center; background:rgba(255,199,0,0.1); color:#fff; border-color:var(--line);">${escapeHtml(x.value)} <button data-dropdown-del="${x.id}" style="background:none; border:none; color:var(--danger); cursor:pointer; font-size:16px; line-height:1;">&times;</button></div>`).join('')
+      : '<span style="color:var(--muted); font-size:12px;">No regions added yet.</span>';
+      
+    uWrap.innerHTML = (u && u.length > 0) 
+      ? u.map(x => `<div class="chip" style="display:flex; gap:8px; align-items:center; background:rgba(255,199,0,0.1); color:#fff; border-color:var(--line);">${escapeHtml(x.value)} <button data-dropdown-del="${x.id}" style="background:none; border:none; color:var(--danger); cursor:pointer; font-size:16px; line-height:1;">&times;</button></div>`).join('')
+      : '<span style="color:var(--muted); font-size:12px;">No units added yet.</span>';
+  } catch(e) {
+    rWrap.innerHTML = '<span style="color:var(--danger); font-size:12px;">Error loading.</span>';
+    uWrap.innerHTML = '<span style="color:var(--danger); font-size:12px;">Error loading.</span>';
+  }
+}
+
+on('#regionList', 'click', async (e) => { const btn = e.target.closest('[data-dropdown-del]'); if (!btn) return; await supabaseClient.from('dropdown_options').delete().eq('id', btn.dataset.dropdownDel); loadDropdownManager(); });
+on('#unitList', 'click', async (e) => { const btn = e.target.closest('[data-dropdown-del]'); if (!btn) return; await supabaseClient.from('dropdown_options').delete().eq('id', btn.dataset.dropdownDel); loadDropdownManager(); });
+on('#btnAddRegion', 'click', async () => { const v = $('#newRegionInput').value.trim(); if(!v) return; $('#newRegionInput').value=''; await supabaseClient.from('dropdown_options').insert([{category:'region', value:v}]); loadDropdownManager(); });
+on('#btnAddUnit', 'click', async () => { const v = $('#newUnitInput').value.trim(); if(!v) return; $('#newUnitInput').value=''; await supabaseClient.from('dropdown_options').insert([{category:'unit', value:v}]); loadDropdownManager(); });
 
 (function init() { initGate(); })();
 </script>

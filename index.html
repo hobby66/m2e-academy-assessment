@@ -432,10 +432,9 @@ tbody tr:hover { background: #111; }
 .bar-label { font-size: 11px; color: var(--muted); text-align: center; line-height: 1.2; white-space: nowrap; }
 .bar-value { font-size: 12px; font-weight: 800; color: #fff; position: absolute; top: -20px; left: 50%; transform: translateX(-50%); }
 
-/* Dynamic Band Editor & Message Editor */
-.band-row { display: grid; grid-template-columns: 100px 1fr auto; gap: 8px; align-items: flex-start; background: #000; padding: 12px; border-radius: 8px; border: 1px solid var(--line); margin-bottom: 8px; }
+/* Dynamic Band Editor */
+.band-row { display: grid; grid-template-columns: 2fr 1fr 1fr auto; gap: 8px; align-items: center; background: #000; padding: 8px; border-radius: 8px; border: 1px solid var(--line); }
 .band-row input { padding: 8px 12px !important; font-size: 13px !important; }
-.band-row textarea { padding: 8px 12px !important; font-size: 13px !important; min-height: 60px; }
 </style>
 </head>
 <body>
@@ -1111,19 +1110,12 @@ tbody tr:hover { background: #111; }
           <div id="tabMessages" hidden class="admin-panel">
             <h2 style="font-size:18px; margin-bottom:8px;">Thank‑You Messages</h2>
             <p style="color:var(--muted); font-size:14px; margin-bottom:24px;">
-              Configure the message shown to participants after each assessment. 
-              Set the <strong>Minimum Score (%)</strong> threshold. If a participant scores 85%, they get the message for the highest threshold they met (e.g., 85% if the next band is 95%).
-              Messages are saved <strong>per topic</strong> (currently: <span id="messagesTopicLabel" style="color:var(--gold);">—</span>).
+              Configure the message shown to participants after each assessment, per score band.
+              Messages are saved <strong>per topic</strong> (currently:
+              <span id="messagesTopicLabel" style="color:var(--gold);">—</span>).
             </p>
-            
-            <div id="messagesEditor" style="display:flex; flex-direction:column; gap:8px; margin-bottom:16px;">
-              <!-- Dynamic Editor will render here -->
-            </div>
-            
-            <div style="display:flex; gap:12px;">
-              <button class="btn btn-outline btn-sm" id="btnAddMessageRule" type="button" style="flex:1;">+ Add Rule</button>
-              <button class="btn btn-primary btn-sm" id="btnSaveMessages" type="button" style="flex:2;">Save Messages</button>
-            </div>
+            <div id="messagesEditor"></div>
+            <button class="btn btn-primary btn-sm" id="btnSaveMessages" type="button" style="margin-top:24px;">Save Messages</button>
           </div>
 
           <div id="tabLive" hidden class="admin-panel">
@@ -1482,21 +1474,19 @@ const getLevel = (score) => LEVELS.find(l => score >= l.min) || null;
    ============================================================ */
 const DEFAULT_CERT_CRITERIA = { min_topics: 3, min_score: 80 };
 const DEFAULT_SCORE_BANDS = [
-  { name: 'L5 Grandmaster', min: 95, color: '#FFC700' },
-  { name: 'L4 Champion', min: 85, color: '#4FC3F7' },
-  { name: 'L3 Specialist', min: 75, color: '#F5B301' },
-  { name: 'L2 Navigator', min: 65, color: '#C0C0C0' },
-  { name: 'L1 Newbie', min: 50, color: '#CD7F32' },
-  { name: 'Below Pass', min: 0, color: '#ff5a5a' }
+  { name: 'A+', min: 96, color: '#FFC700' },
+  { name: 'A', min: 86, color: '#FFE27A' },
+  { name: 'B', min: 76, color: '#C0C0C0' },
+  { name: 'C', min: 51, color: '#CD7F32' },
+  { name: 'D', min: 0, color: '#ff5a5a' }
 ];
-
-const DEFAULT_THANK_YOU_RULES = [
-  { min_score: 95, message: "Outstanding! You've mastered this topic — you're a true M2E expert!" },
-  { min_score: 85, message: "Excellent work! You're close to mastery — just a few refinements to go." },
-  { min_score: 75, message: "Well done — you have solid knowledge. A little more practice and you'll master it." },
-  { min_score: 65, message: "You're halfway there! Review your weaker areas and give it another go." },
-  { min_score: 50, message: "Good effort! You're building the foundation. Focus on the basics and try again." },
-  { min_score: 0, message: "Keep exploring — every expert was once a beginner. Review the material and try again." }
+const DEFAULT_THANK_YOU = [
+  "Keep exploring — every expert was once a beginner. Review the material and try again.",
+  "Good effort! You're building the foundation. Focus on the basics and try again.",
+  "You're halfway there! Review your weaker areas and give it another go.",
+  "Well done — you have solid knowledge. A little more practice and you'll master it.",
+  "Excellent work! You're close to mastery — just a few refinements to go.",
+  "Outstanding! You've mastered this topic — you're a true M2E expert!"
 ];
 
 async function fetchAppSetting(key, fallback) {
@@ -1518,32 +1508,17 @@ async function saveAppSetting(key, value) {
 
 async function fetchTopicMessages(topicId) {
   const { data } = await supabaseClient.from('topics').select('thank_you_messages').eq('id', topicId).maybeSingle();
-  const raw = data && data.thank_you_messages;
-  
-  if (!raw || !Array.isArray(raw) || raw.length === 0) return DEFAULT_THANK_YOU_RULES;
-  
-  // Backwards compatibility: convert old array of strings to new format
-  if (typeof raw[0] === 'string') {
-    const oldThresholds = [0, 20, 40, 60, 80, 95]; // Old default logic
-    return oldThresholds.map((min, i) => ({
-      min_score: min,
-      message: raw[i] || DEFAULT_THANK_YOU_RULES.find(r => r.min_score === min)?.message || ""
-    })).sort((a,b) => b.min_score - a.min_score);
-  }
-  
-  // Return new format, sorted descending
-  return raw.sort((a,b) => b.min_score - a.min_score);
+  const arr = (data && data.thank_you_messages) || [];
+  return Array.from({ length: 6 }, (_, i) => (arr[i] || '').trim() || DEFAULT_THANK_YOU[i]);
 }
-
-function getThankYouMessage(score, rules) {
-  if (!rules || !Array.isArray(rules) || rules.length === 0) return "";
-  const sorted = rules.slice().sort((a,b) => b.min_score - a.min_score);
-  for (let rule of sorted) {
-    if (score >= rule.min_score) return rule.message;
-  }
-  return "";
+function getScoreBand(score) {
+  if (score < 20) return 0;
+  if (score < 40) return 1;
+  if (score < 60) return 2;
+  if (score < 80) return 3;
+  if (score < 95) return 4;
+  return 5;
 }
-
 async function checkCertEligibility(pfNumber) {
   const { data, error } = await supabaseClient.rpc('check_cert_eligibility', { p_pf_number: pfNumber });
   if (error || !data) {
@@ -1873,10 +1848,8 @@ async function submitAssessment(auto) {
       levelName: level ? level.name : null 
     };
 
-    // Load and compute Thank You Message using Rules
-    const messageRules = await fetchTopicMessages(state.topicId);
-    state.lastSubmission.thankYou = getThankYouMessage(data.score, messageRules);
-    
+    const messages = await fetchTopicMessages(state.topicId);
+    state.lastSubmission.thankYou = messages[getScoreBand(data.score)];
     state.lastSubmission.cert = await checkCertEligibility(state.participant.pfNumber);
 
     renderResult(state.lastSubmission);
@@ -2498,73 +2471,46 @@ on('#btnResetAvatars', 'click', async () => {
 });
 
 /* ============================================================
-   NEW: Dynamic Messages Manager (per topic)
+   NEW: Messages Manager (per topic)
    ============================================================ */
-let currentMessagesDraft = [];
-
-function renderMessagesEditor() {
-  const editor = $('#messagesEditor');
-  // Sort descending by min_score so the highest band is at the top
-  currentMessagesDraft.sort((a,b) => b.min_score - a.min_score);
-  
-  editor.innerHTML = currentMessagesDraft.map((r, i) => `
-    <div class="band-row" style="grid-template-columns: 100px 1fr auto;">
-      <div style="display:flex; flex-direction:column;">
-        <label style="font-size:10px; color:var(--muted); margin-bottom:4px;">Min Score (%)</label>
-        <input type="number" value="${r.min_score}" min="0" max="100" onchange="updateMsgDraft(${i}, 'min_score', this.value)" style="padding:8px; border-radius:6px; border:1px solid var(--line); background:#000; color:#fff;">
-      </div>
-      <div style="display:flex; flex-direction:column;">
-        <label style="font-size:10px; color:var(--muted); margin-bottom:4px;">Message</label>
-        <textarea rows="2" onchange="updateMsgDraft(${i}, 'message', this.value)" style="padding:8px; border-radius:6px; border:1px solid var(--line); background:#000; color:#fff; font-family:inherit; resize:vertical;">${escapeHtml(r.message)}</textarea>
-      </div>
-      <button class="btn-mini danger" onclick="removeMsgRule(${i})" type="button" style="align-self:flex-end; margin-bottom:2px;">&times;</button>
-    </div>
-  `).join('');
-}
-
-window.updateMsgDraft = function(index, field, value) {
-  currentMessagesDraft[index][field] = field === 'min_score' ? Number(value) : value;
-}
-
-window.removeMsgRule = function(index) {
-  currentMessagesDraft.splice(index, 1);
-  renderMessagesEditor();
-}
-
-on('#btnAddMessageRule', 'click', () => {
-  currentMessagesDraft.push({ min_score: 0, message: 'Enter message...' });
-  renderMessagesEditor();
-});
+const MESSAGE_BANDS = [
+  { label: 'Score below 20%',      key: 0 },
+  { label: 'Score 20 – 39%',       key: 1 },
+  { label: 'Score 40 – 59%',       key: 2 },
+  { label: 'Score 60 – 79%',       key: 3 },
+  { label: 'Score 80 – 94%',       key: 4 },
+  { label: 'Score 95% and above',  key: 5 }
+];
 
 async function loadMessagesManager() {
   const label = $('#messagesTopicLabel');
+  const editor = $('#messagesEditor');
   if (!currentAdminTopicId) {
     if (label) label.textContent = 'no topic selected';
-    $('#messagesEditor').innerHTML = '<p style="color:var(--muted);">Select a topic above first.</p>';
+    editor.innerHTML = '<p style="color:var(--muted);">Select a topic above first.</p>';
     return;
   }
   const topic = currentAdminTopics.find(t => t.id === currentAdminTopicId);
   if (label) label.textContent = topic ? topic.name : currentAdminTopicId;
 
-  currentMessagesDraft = await fetchTopicMessages(currentAdminTopicId);
-  renderMessagesEditor();
+  const msgs = await fetchTopicMessages(currentAdminTopicId);
+  editor.innerHTML = MESSAGE_BANDS.map((b, i) => `
+    <div class="field">
+      <label>${b.label}</label>
+      <textarea data-msg-idx="${i}" rows="2"
+        style="width:100%;background:#000;border:1px solid var(--line);color:#fff;border-radius:10px;padding:12px;font-family:inherit;resize:vertical;">${escapeHtml(msgs[i])}</textarea>
+    </div>`).join('');
 }
 
 on('#btnSaveMessages', 'click', async () => {
   if (!currentAdminTopicId) return;
-  
-  // Clean up empty messages and sort descending
-  const cleanMsgs = currentMessagesDraft
-    .filter(r => r.message.trim() !== '')
-    .sort((a,b) => b.min_score - a.min_score);
-
+  const msgs = $$('#messagesEditor textarea').map(t => t.value.trim());
   const btn = $('#btnSaveMessages');
   btn.textContent = 'Saving...'; btn.disabled = true;
   const { error } = await supabaseClient.from('topics')
-    .update({ thank_you_messages: cleanMsgs }).eq('id', currentAdminTopicId);
-    
+    .update({ thank_you_messages: msgs }).eq('id', currentAdminTopicId);
   btn.textContent = 'Save Messages'; btn.disabled = false;
-  if (error) alert('Error: ' + error.message); else alert('Messages saved.');
+  if (error) alert('Error: ' + error.message); else alert('Saved.');
 });
 
 /* ---------------- LIVE SESSION MANAGEMENT ---------------- */
@@ -3057,7 +3003,221 @@ on('#unitList', 'click', async (e) => { const btn = e.target.closest('[data-drop
 on('#btnAddRegion', 'click', async () => { const v = $('#newRegionInput').value.trim(); if(!v) return; $('#newRegionInput').value=''; await supabaseClient.from('dropdown_options').insert([{category:'region', value:v}]); loadDropdownManager(); });
 on('#btnAddUnit', 'click', async () => { const v = $('#newUnitInput').value.trim(); if(!v) return; $('#newUnitInput').value=''; await supabaseClient.from('dropdown_options').insert([{category:'unit', value:v}]); loadDropdownManager(); });
 
-/* ---------------- SETTINGS (updated) ---------------- */
+/* ============================================================
+   NEW: ANALYTICS DASHBOARD (FIXED)
+   ============================================================ */
+window.clearDashFilters = function() {
+  $('#filterStartDate').value = '';
+  $('#filterEndDate').value = '';
+  $('#filterTopic').value = '';
+  $('#filterCategory').value = '';
+  $('#filterMode').value = '';
+  renderAnalytics();
+}
+
+async function loadAnalyticsDropdowns() {
+  const filterCat = $('#filterCategory');
+  if (!filterCat) return;
+  
+  // Save current selection
+  const curVal = filterCat.value;
+  
+  filterCat.innerHTML = '<option value="">All Categories</option><option value="Branch">Branch Staff</option><option value="TBC">TBC Participant</option>';
+  
+  try {
+    const units = await fetchDropdownOptions('unit');
+    if (units.length > 0) {
+      filterCat.innerHTML += '<optgroup label="Other Units">' + units.map(u => `<option value="${escapeHtml(u.value)}">${escapeHtml(u.value)}</option>`).join('') + '</optgroup>';
+    }
+    
+    const regions = await fetchDropdownOptions('region');
+    if (regions.length > 0) {
+      filterCat.innerHTML += '<optgroup label="Regions">' + regions.map(r => `<option value="${escapeHtml(r.value)}">${escapeHtml(r.value)}</option>`).join('') + '</optgroup>';
+    }
+  } catch(e) { console.error('Failed to load dropdowns for analytics', e); }
+  
+  filterCat.value = curVal;
+}
+
+window.renderAnalytics = async function() {
+  const totalEl = $('#dashTotalSubs');
+  totalEl.textContent = '...';
+  
+  try {
+    // 1. Fetch all data
+    const { data: subs, error } = await supabaseClient.from('submissions').select('*');
+    if (error) throw error;
+    
+    const allSubs = subs || [];
+
+    // 2. Load Score Bands (with fallback safety)
+    let bands = await fetchAppSetting('score_bands', DEFAULT_SCORE_BANDS);
+    if (!Array.isArray(bands) || bands.length === 0) bands = DEFAULT_SCORE_BANDS;
+
+    // 3. Apply Filters Safely
+    let startMs = 0;
+    const startDateVal = $('#filterStartDate').value;
+    if (startDateVal) {
+      const parsed = new Date(startDateVal).getTime();
+      if (!isNaN(parsed)) startMs = parsed;
+    }
+    
+    let endMs = Infinity;
+    const endDateVal = $('#filterEndDate').value;
+    if (endDateVal) {
+      const parsed = new Date(endDateVal).getTime();
+      if (!isNaN(parsed)) endMs = parsed + 86400000; // End of day
+    }
+
+    const filterTopic = $('#filterTopic').value;
+    const filterMode = $('#filterMode').value;
+    const filterCategory = $('#filterCategory').value;
+
+    const filtered = allSubs.filter(s => {
+      // Date Match
+      const sDate = new Date(s.submitted_at).getTime();
+      if (isNaN(sDate)) return false; // Safeguard against bad data
+      if (sDate < startMs || sDate > endMs) return false;
+
+      // Topic Match
+      if (filterTopic && s.topic_id !== filterTopic) return false;
+      
+      // Mode Match
+      if (filterMode && s.mode !== filterMode) return false;
+
+      // Category Match
+      if (filterCategory) {
+        if (filterCategory === 'Branch') {
+          if (s.branch === 'TBC' || s.region === 'N/A') return false;
+        } else if (filterCategory === 'TBC') {
+          if (s.branch !== 'TBC') return false;
+        } else {
+          // Specific Region or Unit
+          if (s.branch !== filterCategory && s.region !== filterCategory) return false;
+        }
+      }
+
+      return true;
+    });
+
+    // 4. KPIs
+    const total = filtered.length;
+    let sumScore = 0, passCount = 0, maxScore = 0;
+    
+    filtered.forEach(s => {
+      const score = Number(s.score) || 0;
+      sumScore += score;
+      if (score >= 50) passCount++;
+      if (score > maxScore) maxScore = score;
+    });
+    
+    const avgScore = total > 0 ? Math.round(sumScore / total) : 0;
+    const passRate = total > 0 ? Math.round((passCount / total) * 100) : 0;
+
+    $('#dashTotalSubs').textContent = total;
+    $('#dashAvgScore').textContent = avgScore + '%';
+    $('#dashPassRate').textContent = passRate + '%';
+    $('#dashTopScore').textContent = maxScore + '%';
+
+    // 5. Chart: Score Bands
+    const bandCounts = {};
+    bands.forEach(b => bandCounts[b.name] = 0);
+    
+    // Sort bands descending by min to easily bucket
+    const sortedBands = bands.slice().sort((a,b) => Number(b.min) - Number(a.min));
+
+    filtered.forEach(s => {
+      const score = Number(s.score) || 0;
+      for (let i = 0; i < sortedBands.length; i++) {
+        if (score >= Number(sortedBands[i].min)) {
+          bandCounts[sortedBands[i].name]++;
+          break;
+        }
+      }
+    });
+
+    const maxBandCount = Math.max(...Object.values(bandCounts), 1);
+    
+    const chartHtml = sortedBands.map(b => {
+      const val = bandCounts[b.name];
+      const heightPct = Math.max((val / maxBandCount) * 100, 2);
+      return `
+        <div class="bar-group">
+          <div class="bar" style="height: ${heightPct}%; background: ${b.color || '#fff'};">
+            <div class="bar-value">${val}</div>
+          </div>
+          <div class="bar-label">${escapeHtml(b.name)}<br><span style="font-size:9px; opacity:0.7;">≥${b.min}%</span></div>
+        </div>
+      `;
+    }).join('');
+    
+    $('#scoreBandChart').innerHTML = chartHtml;
+
+    // 6. Category Breakdown
+    const catMap = {};
+    filtered.forEach(s => {
+      const cat = s.region === 'N/A' ? s.branch : (s.branch === 'TBC' ? 'TBC' : 'Branch');
+      if (!catMap[cat]) catMap[cat] = 0;
+      catMap[cat]++;
+    });
+    
+    const catColors = { 'Branch': 'var(--gold)', 'TBC': '#4FC3F7', 'Other Units': '#C0C0C0' };
+    const groupedCats = { 'Branch': 0, 'TBC': 0, 'Other Units': 0 };
+    Object.keys(catMap).forEach(k => {
+      if (k === 'TBC') groupedCats['TBC'] += catMap[k];
+      else if (k === 'Branch') groupedCats['Branch'] += catMap[k];
+      else groupedCats['Other Units'] += catMap[k];
+    });
+
+    $('#categoryBreakdown').innerHTML = Object.keys(groupedCats).map(k => {
+      const pct = total > 0 ? Math.round((groupedCats[k] / total) * 100) : 0;
+      return `
+        <div>
+          <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px;">
+            <span style="color:#fff;">${k}</span>
+            <span style="color:var(--muted);">${groupedCats[k]} (${pct}%)</span>
+          </div>
+          <div style="height:8px; background:#222; border-radius:4px; overflow:hidden;">
+            <div style="height:100%; width:${pct}%; background:${catColors[k] || '#fff'};"></div>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    // 7. Pre vs Post Comparison
+    const pfMap = {};
+    filtered.forEach(s => {
+      if (!s.pf_number) return;
+      if (!pfMap[s.pf_number]) pfMap[s.pf_number] = { name: s.full_name, pre: null, post: null };
+      if (s.mode === 'pre') pfMap[s.pf_number].pre = Number(s.score);
+      if (s.mode === 'post') pfMap[s.pf_number].post = Number(s.score);
+    });
+
+    const ppRows = Object.keys(pfMap).map(pf => {
+      const p = pfMap[pf];
+      if (p.pre === null || p.post === null) return ''; 
+      const diff = p.post - p.pre;
+      const diffCol = diff > 0 ? 'var(--success)' : diff < 0 ? 'var(--danger)' : 'var(--muted)';
+      const diffStr = diff > 0 ? `+${diff}` : diff;
+      return `<tr><td style="padding:8px;">${pf}</td><td>${p.pre}%</td><td>${p.post}%</td><td style="color:${diffCol}; font-weight:700;">${diffStr}</td></tr>`;
+    }).join('');
+
+    if (!ppRows) {
+      $('#prePostTable').innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--muted); padding:16px;">No Pre/Post pairs found for these filters.</td></tr>';
+    } else {
+      $('#prePostTable').innerHTML = ppRows;
+    }
+
+  } catch (err) {
+    console.error('Analytics Error:', err);
+    alert('Error loading analytics. Please check the browser console for details.');
+    totalEl.textContent = '0';
+  }
+}
+
+/* ============================================================
+   NEW: Dynamic Score Bands Editor
+   ============================================================ */
 let currentBandsDraft = [];
 
 function renderBandsEditor() {

@@ -408,6 +408,29 @@ tbody tr:hover { background: #111; }
   padding:14px 18px; margin-bottom:16px; font-size:13px; color:var(--muted);
 }
 .cert-progress strong { color:var(--gold); }
+
+/* ============================================================
+   NEW — Analytics Dashboard UI
+   ============================================================ */
+.dash-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
+.dash-card { background: #000; border: 1px solid var(--line); border-radius: 16px; padding: 20px; }
+.dash-val { font-size: 32px; font-weight: 800; color: var(--gold); margin-bottom: 4px; }
+.dash-lbl { font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); }
+
+.filter-bar { display: flex; gap: 12px; flex-wrap: wrap; background: #111; padding: 16px; border-radius: 16px; margin-bottom: 24px; border: 1px solid var(--line); align-items: center; }
+.filter-bar input, .filter-bar select { background: #000; border: 1px solid var(--line); color: #fff; padding: 10px 14px; border-radius: 8px; font-size: 13px; }
+.filter-bar input:focus, .filter-bar select:focus { outline: none; border-color: var(--gold); }
+.filter-bar input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(1); cursor: pointer; }
+
+/* CSS Bar Chart */
+.chart-container { background: #000; border: 1px solid var(--line); border-radius: 16px; padding: 24px; margin-bottom: 24px; }
+.chart-title { font-size: 16px; font-weight: 700; margin-bottom: 20px; color: #fff; }
+.bar-chart { display: flex; align-items: flex-end; gap: 12px; height: 200px; padding-bottom: 10px; border-bottom: 1px solid var(--line); }
+.bar-group { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px; height: 100%; justify-content: flex-end; }
+.bar { width: 100%; max-width: 60px; background: var(--gold); border-radius: 4px 4px 0 0; transition: height 0.5s ease; position: relative; min-height: 2px; }
+.bar:hover { filter: brightness(1.2); }
+.bar-label { font-size: 11px; color: var(--muted); text-align: center; line-height: 1.2; white-space: nowrap; }
+.bar-value { font-size: 12px; font-weight: 800; color: #fff; position: absolute; top: -20px; left: 50%; transform: translateX(-50%); }
 </style>
 </head>
 <body>
@@ -862,6 +885,7 @@ tbody tr:hover { background: #111; }
           <div class="admin-tabs" role="tablist">
             <button type="button" data-tab="questions">Questions</button>
             <button type="button" data-tab="submissions">Submissions</button>
+            <button type="button" data-tab="analytics">📊 Analytics</button> <!-- NEW TAB -->
             <button type="button" data-tab="live" class="active">Host Live</button>
             <button type="button" data-tab="dropdowns">Dropdowns</button>
             <button type="button" data-tab="settings">Settings</button>
@@ -874,7 +898,7 @@ tbody tr:hover { background: #111; }
           <!-- Topic Selector Row -->
           <div class="admin-panel" style="display:flex; gap:16px; align-items:flex-end; flex-wrap:wrap; margin-bottom:24px;">
             <div class="field" style="margin:0; flex:1; min-width:200px;">
-              <label for="adminTopicSelect">Topic</label>
+              <label for="adminTopicSelect">Topic (Used for Question Bank & Messages)</label>
               <select id="adminTopicSelect"></select>
             </div>
             <div style="display:flex; gap:8px; align-items:center;">
@@ -893,6 +917,82 @@ tbody tr:hover { background: #111; }
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
                     Delete
                   </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- NEW: ANALYTICS DASHBOARD -->
+          <div id="tabAnalytics" hidden class="admin-panel">
+            <div class="filter-bar">
+              <div>
+                <label style="font-size:10px; color:var(--muted); display:block; margin-bottom:4px;">START DATE</label>
+                <input type="date" id="filterStartDate" onchange="renderAnalytics()">
+              </div>
+              <div>
+                <label style="font-size:10px; color:var(--muted); display:block; margin-bottom:4px;">END DATE</label>
+                <input type="date" id="filterEndDate" onchange="renderAnalytics()">
+              </div>
+              <div>
+                <label style="font-size:10px; color:var(--muted); display:block; margin-bottom:4px;">TOPIC</label>
+                <select id="filterTopic" onchange="renderAnalytics()"><option value="">All Topics</option></select>
+              </div>
+              <div>
+                <label style="font-size:10px; color:var(--muted); display:block; margin-bottom:4px;">CATEGORY</label>
+                <select id="filterCategory" onchange="renderAnalytics()">
+                  <option value="">All Categories</option>
+                  <option value="Branch">Branch Staff</option>
+                  <option value="TBC">TBC Participant</option>
+                  <option value="Other">Other Units</option>
+                </select>
+              </div>
+              <div style="margin-left:auto; align-self:flex-end;">
+                <button class="btn btn-ghost btn-sm" onclick="clearDashFilters()">Reset</button>
+              </div>
+            </div>
+
+            <div class="dash-grid">
+              <div class="dash-card">
+                <div class="dash-val" id="dashTotalSubs">0</div>
+                <div class="dash-lbl">Total Submissions</div>
+              </div>
+              <div class="dash-card">
+                <div class="dash-val" id="dashAvgScore">0%</div>
+                <div class="dash-lbl">Average Score</div>
+              </div>
+              <div class="dash-card">
+                <div class="dash-val" id="dashPassRate">0%</div>
+                <div class="dash-lbl">Pass Rate (≥50%)</div>
+              </div>
+              <div class="dash-card">
+                <div class="dash-val" id="dashTopScore">0%</div>
+                <div class="dash-lbl">Highest Score</div>
+              </div>
+            </div>
+
+            <div class="chart-container">
+              <div class="chart-title">Score Band Distribution (Groups)</div>
+              <div class="bar-chart" id="scoreBandChart">
+                <!-- Rendered via JS -->
+              </div>
+            </div>
+
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:24px;">
+              <div class="chart-container">
+                <div class="chart-title">Participant Categories</div>
+                <div id="categoryBreakdown" style="display:flex; flex-direction:column; gap:12px;">
+                  <!-- Rendered via JS -->
+                </div>
+              </div>
+              <div class="chart-container">
+                <div class="chart-title">Pre vs Post Improvement (Grouped by PF)</div>
+                <div style="max-height:200px; overflow-y:auto; font-size:13px;">
+                  <table style="width:100%; min-width:0;">
+                    <thead style="position:sticky; top:0; background:#000;">
+                      <tr><th>PF</th><th>Pre</th><th>Post</th><th>Diff</th></tr>
+                    </thead>
+                    <tbody id="prePostTable"></tbody>
+                  </table>
                 </div>
               </div>
             </div>
@@ -956,6 +1056,16 @@ tbody tr:hover { background: #111; }
                 <h3 style="font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--text-soft); margin-bottom:14px;">Certificate Criteria</h3>
                 <div class="field"><label for="setCertMinTopics">Minimum topics completed</label><input id="setCertMinTopics" type="number" min="1" max="50" value="3" /></div>
                 <div class="field"><label for="setCertMinScore">Minimum score per topic (%)</label><input id="setCertMinScore" type="number" min="0" max="100" value="80" /></div>
+              </div>
+
+              <!-- NEW: Parameterized Score Groups for Analytics -->
+              <div style="margin-top:24px; padding-top:24px; border-top:1px solid var(--line);">
+                <h3 style="font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--text-soft); margin-bottom:14px;">Analytics Score Bands</h3>
+                <div class="field"><label for="setBandAplus">Group A+ (Min %)</label><input id="setBandAplus" type="number" min="1" max="100" value="96" /></div>
+                <div class="field"><label for="setBandA">Group A (Min %)</label><input id="setBandA" type="number" min="1" max="100" value="86" /></div>
+                <div class="field"><label for="setBandB">Group B (Min %)</label><input id="setBandB" type="number" min="1" max="100" value="76" /></div>
+                <div class="field"><label for="setBandC">Group C (Min %)</label><input id="setBandC" type="number" min="1" max="100" value="51" /></div>
+                <p style="font-size:12px; color:var(--muted); margin-top:4px;">Scores below Group C will be Group D.</p>
               </div>
 
               <button class="btn btn-primary btn-sm" type="submit" style="margin-top:12px;">Save Settings</button>
@@ -1352,9 +1462,10 @@ const LEVELS = [
 const getLevel = (score) => LEVELS.find(l => score >= l.min) || null;
 
 /* ============================================================
-   NEW: Settings / Thank-you / Cert helpers
+   NEW: Settings / Thank-you / Cert / Analytics helpers
    ============================================================ */
 const DEFAULT_CERT_CRITERIA = { min_topics: 3, min_score: 80 };
+const DEFAULT_SCORE_BANDS = { aplus: 96, a: 86, b: 76, c: 51 };
 const DEFAULT_THANK_YOU = [
   "Keep exploring — every expert was once a beginner. Review the material and try again.",
   "Good effort! You're building the foundation. Focus on the basics and try again.",
@@ -1439,7 +1550,7 @@ function unlockApp() {
   $('#app').hidden = false;
   showScreen('scrLanding');
   loadAndApplyAvatars();
-  loadLandingStats(); // <-- NEW: Call dynamic stats loader
+  loadLandingStats();
 }
 function initGate() {
   const urlParams = new URLSearchParams(window.location.search);
@@ -1473,14 +1584,12 @@ function initGate() {
    NEW: Load Dynamic Landing Stats
    ============================================================ */
 async function loadLandingStats() {
-  // 1. Load assessment settings (sync from DB, fallback to local)
   const localSettings = loadSettings();
   const dbSettings = await fetchAppSetting('assessment_settings', localSettings);
   
   if ($('#statTime')) $('#statTime').textContent = `${dbSettings.durationMinutes} Minutes`;
   if ($('#statQuestions')) $('#statQuestions').textContent = `${dbSettings.questionsPerAssessment} Questions`;
 
-  // 2. Load Certificate Criteria
   const crit = await fetchAppSetting('cert_criteria', DEFAULT_CERT_CRITERIA);
   if ($('#statCertCriteria') && crit) {
     $('#statCertCriteria').textContent = `COMPLETE ${crit.min_topics} TOPICS · ${crit.min_score}% MIN SCORE`;
@@ -1514,13 +1623,11 @@ async function loadAndApplyAvatars() {
       const img = document.createElement('img');
       img.src = avatars['5'];
       img.alt = 'Level 5 Grandmaster Hero Avatar';
-      // Match the dimensions of the original hero SVG
       img.style.width = '340px';
       img.style.maxWidth = '100%';
       img.style.height = 'auto';
       img.style.borderRadius = '50%';
       img.style.objectFit = 'cover';
-      // Use high-quality image rendering
       img.style.imageRendering = '-webkit-optimize-contrast'; 
       heroSvg.replaceWith(img);
     }
@@ -1656,7 +1763,6 @@ on('#regForm', 'submit', async (e) => {
 });
 
 async function startAssessment() {
-  // Fetch global settings from DB, fallback to local
   const localSettings = loadSettings(); 
   const settings = await fetchAppSetting('assessment_settings', localSettings);
 
@@ -1728,7 +1834,6 @@ async function submitAssessment(auto) {
       levelName: level ? level.name : null 
     };
 
-    // NEW: Load thank-you message + certificate eligibility
     const messages = await fetchTopicMessages(state.topicId);
     state.lastSubmission.thankYou = messages[getScoreBand(data.score)];
     state.lastSubmission.cert = await checkCertEligibility(state.participant.pfNumber);
@@ -2014,6 +2119,7 @@ let adminSessionSub = null;
 let adminCurrentQuestions = [];
 let adminLobbyPoll = null; let adminLeaderboardPoll = null;
 let allSubmissions = [];
+let allAdminTopicsMap = {}; // For analytics
 
 on('#btnAdminOpen', 'click', async () => {
   showScreen('scrAdmin');
@@ -2035,8 +2141,18 @@ on('#adminLoginForm', 'submit', async (e) => {
 
 async function loadAdminTopics() {
   currentAdminTopics = await fetchAdminTopics(); const select = $('#adminTopicSelect');
+  allAdminTopicsMap = {};
+  currentAdminTopics.forEach(t => { allAdminTopicsMap[t.id] = t.name; });
+
   if (currentAdminTopics.length === 0) { select.innerHTML = '<option value="">No topics found.</option>'; currentAdminTopicId = null; $('#btnToggleTopicStatus').disabled = true; return; }
   select.innerHTML = currentAdminTopics.map(t => `<option value="${t.id}">${escapeHtml(t.name)} ${t.is_active ? '(Active)' : '(Draft)'}</option>`).join('');
+  
+  // Populate analytics filter
+  const filterTopic = $('#filterTopic');
+  if (filterTopic) {
+    filterTopic.innerHTML = '<option value="">All Topics</option>' + currentAdminTopics.map(t => `<option value="${t.id}">${escapeHtml(t.name)}</option>`).join('');
+  }
+
   if (!currentAdminTopicId) currentAdminTopicId = currentAdminTopics[0].id; select.value = currentAdminTopicId;
   updateTopicToggleBtn(); loadQuestionsForSelection();
 }
@@ -2168,10 +2284,14 @@ on('#btnDeleteTopic', 'click', async () => {
 $$('.admin-tabs [data-tab]').forEach(btn => { btn.addEventListener('click', () => openAdminTab(btn.dataset.tab)); });
 function openAdminTab(tab) {
   $$('.admin-tabs [data-tab]').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
-  ['Questions', 'Submissions', 'Live', 'Dropdowns', 'Settings', 'Team', 'Avatars', 'Messages'].forEach(t => { $(`#tab${t}`).hidden = tab !== t.toLowerCase(); });
-  if (tab === 'questions') loadAdminQuestions(); if (tab === 'submissions') renderSubmissions();
-  if (tab === 'dropdowns') loadDropdownManager(); if (tab === 'settings') fillSettingsForm();
-  if (tab === 'live') loadQuestionsForSelection(); if (tab === 'team') loadTeamAccess();
+  ['Questions', 'Submissions', 'Analytics', 'Live', 'Dropdowns', 'Settings', 'Team', 'Avatars', 'Messages'].forEach(t => { $(`#tab${t}`).hidden = tab !== t.toLowerCase(); });
+  if (tab === 'questions') loadAdminQuestions(); 
+  if (tab === 'submissions') renderSubmissions();
+  if (tab === 'analytics') renderAnalytics();
+  if (tab === 'dropdowns') loadDropdownManager(); 
+  if (tab === 'settings') fillSettingsForm();
+  if (tab === 'live') loadQuestionsForSelection(); 
+  if (tab === 'team') loadTeamAccess();
   if (tab === 'avatars') loadAvatarManager();
   if (tab === 'messages') loadMessagesManager();
 }
@@ -2763,6 +2883,11 @@ async function renderSubmissions() {
 window.filterSubmissions = function() {
     const searchTime = $('#searchTime').value.toLowerCase(); const searchName = $('#searchName').value.toLowerCase();
     const searchEmail = $('#searchEmail').value.toLowerCase(); const searchPF = $('#searchPF').value.toLowerCase(); const searchBranch = $('#searchBranch').value.toLowerCase();
+    
+    // Ensure we have topic names loaded
+    const topicsMap = {};
+    if (currentAdminTopics) currentAdminTopics.forEach(t => topicsMap[t.id] = t.name);
+
     const filtered = allSubmissions.filter(s => {
         const dateStr = new Date(s.submitted_at).toLocaleString().toLowerCase();
         return (!searchTime || dateStr.includes(searchTime)) && (!searchName || (s.full_name||'').toLowerCase().includes(searchName)) && (!searchEmail || (s.email||'').toLowerCase().includes(searchEmail)) && (!searchPF || (s.pf_number||'').toLowerCase().includes(searchPF)) && (!searchBranch || (s.branch||'').toLowerCase().includes(searchBranch));
@@ -2770,22 +2895,28 @@ window.filterSubmissions = function() {
     const wrap = $('#adminSubs');
     if (filtered.length === 0) { wrap.innerHTML = '<p style="color:var(--muted); text-align:center;">No records found.</p>'; return; }
     const topicName = (currentAdminTopics.find(t => t.id === currentAdminTopicId) || {}).name || 'M2E Assessment';
-    const rows = filtered.map(s => `
+    
+    const rows = filtered.map(s => {
+        // FIX: Pull the topic name directly from the row data using the map
+        const rowTopicName = topicsMap[s.topic_id] || 'Unknown Topic';
+        return `
         <tr>
             <td>${escapeHtml(new Date(s.submitted_at).toLocaleString())}</td>
+            <td style="font-weight:700;">${escapeHtml(rowTopicName)}</td>
             <td>${escapeHtml(s.full_name)}</td>
             <td>${escapeHtml(s.email)}</td>
             <td>${escapeHtml(s.pf_number)}</td>
             <td>${escapeHtml(s.region)}</td>
             <td>${escapeHtml(s.branch)}</td>
             <td><span class="chip" style="background:${s.mode === 'pre' ? '#333' : 'var(--gold)'}; color:${s.mode === 'pre' ? '#fff' : '#000'}; border:none;">${s.mode.toUpperCase()}</span></td>
-            <td>${s.score}%</td>
+            <td style="font-weight:700; color:var(--gold);">${s.score}%</td>
             <td>
                 <button class="btn-mini" data-view="${escapeHtml(s.id)}">View</button>
-                <button class="btn-mini" data-cert data-cert-name="${escapeHtml(s.full_name)}" data-cert-score="${s.score}" data-cert-topic="${escapeHtml(topicName)}">Cert</button>
+                <button class="btn-mini" data-cert data-cert-name="${escapeHtml(s.full_name)}" data-cert-score="${s.score}" data-cert-topic="${escapeHtml(rowTopicName)}">Cert</button>
             </td>
-        </tr>`).join('');
-    wrap.innerHTML = `<div class="table-wrap"><table><thead><tr><th>Time</th><th>Name</th><th>Email</th><th>PF</th><th>Reg</th><th>Branch</th><th>Type</th><th>Score</th><th>Action</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+        </tr>`;
+    }).join('');
+    wrap.innerHTML = `<div class="table-wrap"><table><thead><tr><th>Time</th><th>Topic</th><th>Name</th><th>Email</th><th>PF</th><th>Reg</th><th>Branch</th><th>Type</th><th>Score</th><th>Action</th></tr></thead><tbody>${rows}</tbody></table></div>`;
 };
 
 on('#adminSubs', 'click', async (e) => {
@@ -2821,8 +2952,11 @@ on('#btnExportCsv', 'click', async () => {
   const { data, error } = await supabaseClient.from('submissions').select('*').order('submitted_at', { ascending: false }); 
   btn.textContent = 'Export CSV';
   if (error || !data || data.length === 0) { alert('No records.'); return; }
-  const head = ['Submitted', 'Name', 'Email', 'PF', 'Region', 'Branch/Unit', 'Type', 'Score', 'Correct', 'Total', 'Level'];
-  const rows = data.map(s => [new Date(s.submitted_at).toLocaleString(), s.full_name, s.email, s.pf_number, s.region, s.branch, s.mode.toUpperCase(), s.score, s.correct_count, s.total_questions, s.score >= 50 ? getLevel(s.score).name : '-']);
+  const topicsMap = {};
+  if (currentAdminTopics) currentAdminTopics.forEach(t => topicsMap[t.id] = t.name);
+  
+  const head = ['Submitted', 'Topic', 'Name', 'Email', 'PF', 'Region', 'Branch/Unit', 'Type', 'Score', 'Correct', 'Total', 'Level'];
+  const rows = data.map(s => [new Date(s.submitted_at).toLocaleString(), topicsMap[s.topic_id] || 'N/A', s.full_name, s.email, s.pf_number, s.region, s.branch, s.mode.toUpperCase(), s.score, s.correct_count, s.total_questions, s.score >= 50 ? getLevel(s.score).name : '-']);
   const csv = [head, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\r\n'); 
   download(`m2e-submissions-${new Date().toISOString().slice(0, 10)}.csv`, csv);
 });
@@ -2833,32 +2967,177 @@ on('#btnClearSubs', 'click', async () => {
   btn.textContent = 'Clear All Records'; renderSubmissions(); 
 });
 
-async function loadDropdownManager() {
-  const { data: r } = await supabaseClient.from('dropdown_options').select('*').eq('category', 'region');
-  const { data: u } = await supabaseClient.from('dropdown_options').select('*').eq('category', 'unit');
-  $('#regionList').innerHTML = (r||[]).map(x => `<div class="chip" style="display:flex; gap:8px; align-items:center;">${escapeHtml(x.value)} <button data-dropdown-del="${x.id}" style="background:none; border:none; color:var(--danger); cursor:pointer; font-size:16px;">&times;</button></div>`).join('');
-  $('#unitList').innerHTML = (u||[]).map(x => `<div class="chip" style="display:flex; gap:8px; align-items:center;">${escapeHtml(x.value)} <button data-dropdown-del="${x.id}" style="background:none; border:none; color:var(--danger); cursor:pointer; font-size:16px;">&times;</button></div>`).join('');
+/* ============================================================
+   NEW: ANALYTICS DASHBOARD
+   ============================================================ */
+window.clearDashFilters = function() {
+  $('#filterStartDate').value = '';
+  $('#filterEndDate').value = '';
+  $('#filterTopic').value = '';
+  $('#filterCategory').value = '';
+  renderAnalytics();
 }
 
-on('#regionList', 'click', async (e) => { const btn = e.target.closest('[data-dropdown-del]'); if (!btn) return; await supabaseClient.from('dropdown_options').delete().eq('id', btn.dataset.dropdownDel); loadDropdownManager(); });
-on('#unitList', 'click', async (e) => { const btn = e.target.closest('[data-dropdown-del]'); if (!btn) return; await supabaseClient.from('dropdown_options').delete().eq('id', btn.dataset.dropdownDel); loadDropdownManager(); });
-on('#btnAddRegion', 'click', async () => { const v = $('#newRegionInput').value.trim(); if(!v) return; $('#newRegionInput').value=''; await supabaseClient.from('dropdown_options').insert([{category:'region', value:v}]); loadDropdownManager(); });
-on('#btnAddUnit', 'click', async () => { const v = $('#newUnitInput').value.trim(); if(!v) return; $('#newUnitInput').value=''; await supabaseClient.from('dropdown_options').insert([{category:'unit', value:v}]); loadDropdownManager(); });
+window.renderAnalytics = async function() {
+  const wrap = $('#tabAnalytics');
+  const totalEl = $('#dashTotalSubs');
+  totalEl.textContent = '...';
+  
+  // 1. Fetch all data
+  const { data: subs, error } = await supabaseClient.from('submissions').select('*');
+  if (error || !subs) {
+    alert('Error loading analytics data: ' + error.message);
+    return;
+  }
+
+  // 2. Load Score Bands
+  const bands = await fetchAppSetting('score_bands', DEFAULT_SCORE_BANDS);
+
+  // 3. Apply Filters
+  const startDate = $('#filterStartDate').value ? new Date($('#filterStartDate').value).getTime() : 0;
+  const endDate = $('#filterEndDate').value ? new Date($('#filterEndDate').value).getTime() + 86400000 : Infinity; // End of day
+  const filterTopic = $('#filterTopic').value;
+  const filterCategory = $('#filterCategory').value;
+
+  const filtered = subs.filter(s => {
+    const dateMs = new Date(s.submitted_at).getTime();
+    const catMatch = !filterCategory || 
+      (filterCategory === 'Branch' && s.branch !== 'TBC' && s.region !== 'N/A') ||
+      (filterCategory === 'TBC' && s.branch === 'TBC') ||
+      (filterCategory === 'Other' && s.region === 'N/A');
+    
+    return dateMs >= startDate && dateMs <= endDate &&
+           (!filterTopic || s.topic_id === filterTopic) &&
+           catMatch;
+  });
+
+  // 4. KPIs
+  const total = filtered.length;
+  let sumScore = 0, passCount = 0, maxScore = 0;
+  filtered.forEach(s => {
+    sumScore += s.score;
+    if (s.score >= 50) passCount++;
+    if (s.score > maxScore) maxScore = s.score;
+  });
+  const avgScore = total > 0 ? Math.round(sumScore / total) : 0;
+  const passRate = total > 0 ? Math.round((passCount / total) * 100) : 0;
+
+  $('#dashTotalSubs').textContent = total;
+  $('#dashAvgScore').textContent = avgScore + '%';
+  $('#dashPassRate').textContent = passRate + '%';
+  $('#dashTopScore').textContent = maxScore + '%';
+
+  // 5. Chart: Score Bands
+  const bandCounts = { Aplus: 0, A: 0, B: 0, C: 0, D: 0 };
+  filtered.forEach(s => {
+    if (s.score >= bands.aplus) bandCounts.Aplus++;
+    else if (s.score >= bands.a) bandCounts.A++;
+    else if (s.score >= bands.b) bandCounts.B++;
+    else if (s.score >= bands.c) bandCounts.C++;
+    else bandCounts.D++;
+  });
+
+  const maxBandCount = Math.max(bandCounts.Aplus, bandCounts.A, bandCounts.B, bandCounts.C, bandCounts.D, 1);
+  
+  const chartHtml = [
+    { label: 'A+', val: bandCounts.Aplus, min: bands.aplus },
+    { label: 'A', val: bandCounts.A, min: bands.a },
+    { label: 'B', val: bandCounts.B, min: bands.b },
+    { label: 'C', val: bandCounts.C, min: bands.c },
+    { label: 'D', val: bandCounts.D, min: 0 }
+  ].map(b => {
+    const heightPct = Math.max((b.val / maxBandCount) * 100, 2);
+    const color = b.label === 'A+' ? 'var(--gold)' : b.label === 'A' ? '#FFE27A' : b.label === 'B' ? '#A1A1AA' : b.label === 'C' ? '#CD7F32' : 'var(--danger)';
+    return `
+      <div class="bar-group">
+        <div class="bar" style="height: ${heightPct}%; background: ${color};">
+          <div class="bar-value">${b.val}</div>
+        </div>
+        <div class="bar-label">${b.label}<br><span style="font-size:9px; opacity:0.7;">${b.label==='D' ? '<'+bands.c : '≥'+b.min}%</span></div>
+      </div>
+    `;
+  }).join('');
+  
+  $('#scoreBandChart').innerHTML = chartHtml;
+
+  // 6. Category Breakdown (by branch/unit)
+  const catMap = {};
+  filtered.forEach(s => {
+    const cat = s.region === 'N/A' ? s.branch : (s.branch === 'TBC' ? 'TBC' : 'Branch');
+    if (!catMap[cat]) catMap[cat] = 0;
+    catMap[cat]++;
+  });
+  
+  const catColors = { 'Branch': 'var(--gold)', 'TBC': '#4FC3F7', 'Other Units': '#C0C0C0' };
+  // Quick normalization for "Other" units which use branch field for unit name
+  const groupedCats = { 'Branch': 0, 'TBC': 0, 'Other Units': 0 };
+  Object.keys(catMap).forEach(k => {
+    if (k === 'TBC') groupedCats['TBC'] += catMap[k];
+    else if (k === 'Branch') groupedCats['Branch'] += catMap[k];
+    else groupedCats['Other Units'] += catMap[k];
+  });
+
+  $('#categoryBreakdown').innerHTML = Object.keys(groupedCats).map(k => {
+    const pct = total > 0 ? Math.round((groupedCats[k] / total) * 100) : 0;
+    return `
+      <div>
+        <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px;">
+          <span style="color:#fff;">${k}</span>
+          <span style="color:var(--muted);">${groupedCats[k]} (${pct}%)</span>
+        </div>
+        <div style="height:8px; background:#222; border-radius:4px; overflow:hidden;">
+          <div style="height:100%; width:${pct}%; background:${catColors[k] || '#fff'};"></div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  // 7. Pre vs Post Comparison (Grouped by PF)
+  const pfMap = {};
+  filtered.forEach(s => {
+    if (!s.pf_number) return;
+    if (!pfMap[s.pf_number]) pfMap[s.pf_number] = { name: s.full_name, pre: null, post: null };
+    if (s.mode === 'pre') pfMap[s.pf_number].pre = s.score;
+    if (s.mode === 'post') pfMap[s.pf_number].post = s.score;
+  });
+
+  const ppRows = Object.keys(pfMap).map(pf => {
+    const p = pfMap[pf];
+    if (p.pre === null || p.post === null) return ''; // Only show those with both
+    const diff = p.post - p.pre;
+    const diffCol = diff > 0 ? 'var(--success)' : diff < 0 ? 'var(--danger)' : 'var(--muted)';
+    const diffStr = diff > 0 ? `+${diff}` : diff;
+    return `<tr><td style="padding:8px;">${pf}</td><td>${p.pre}%</td><td>${p.post}%</td><td style="color:${diffCol}; font-weight:700;">${diffStr}</td></tr>`;
+  }).join('');
+
+  if (!ppRows) {
+    $('#prePostTable').innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--muted); padding:16px;">No Pre/Post pairs found for these filters.</td></tr>';
+  } else {
+    $('#prePostTable').innerHTML = ppRows;
+  }
+}
 
 /* ---------------- SETTINGS (updated) ---------------- */
 async function fillSettingsForm() {
   const s = loadSettings();
   $('#setDuration').value = s.durationMinutes;
   $('#setCount').value = s.questionsPerAssessment;
+  
   const crit = await fetchAppSetting('cert_criteria', DEFAULT_CERT_CRITERIA);
   $('#setCertMinTopics').value = crit.min_topics;
   $('#setCertMinScore').value = crit.min_score;
+  
+  const bands = await fetchAppSetting('score_bands', DEFAULT_SCORE_BANDS);
+  $('#setBandAplus').value = bands.aplus;
+  $('#setBandA').value = bands.a;
+  $('#setBandB').value = bands.b;
+  $('#setBandC').value = bands.c;
 }
 
 on('#settingsForm', 'submit', async (e) => {
   e.preventDefault();
   
-  // Save Assessment Settings locally AND globally
+  // 1. Save Assessment Settings
   const newSettings = {
     durationMinutes: Number($('#setDuration').value),
     questionsPerAssessment: Number($('#setCount').value)
@@ -2866,19 +3145,24 @@ on('#settingsForm', 'submit', async (e) => {
   saveSettings(newSettings);
   await saveAppSetting('assessment_settings', newSettings);
   
-  // Save Certificate Criteria globally
+  // 2. Save Certificate Criteria
   const crit = {
     min_topics: Math.max(1, Number($('#setCertMinTopics').value) || 1),
     min_score: Math.max(0, Math.min(100, Number($('#setCertMinScore').value) || 0))
   };
-  const result = await saveAppSetting('cert_criteria', crit);
+  await saveAppSetting('cert_criteria', crit);
+
+  // 3. Save Score Bands
+  const bands = {
+    aplus: Math.min(100, Number($('#setBandAplus').value) || 96),
+    a: Math.min(100, Number($('#setBandA').value) || 86),
+    b: Math.min(100, Number($('#setBandB').value) || 76),
+    c: Math.min(100, Number($('#setBandC').value) || 51)
+  };
+  await saveAppSetting('score_bands', bands);
   
-  if (result.error) {
-    alert('Error saving criteria: ' + result.error);
-  } else {
-    alert('Settings saved. Landing page stats updated.');
-    loadLandingStats(); // <-- Refresh the boxes immediately
-  }
+  alert('Settings saved.');
+  loadLandingStats();
 });
 
 (function init() { initGate(); })();

@@ -117,7 +117,7 @@ img { max-width: 100%; display: block; }
 .hero .lead { max-width: 520px; font-size: 17px; line-height: 1.6; color: var(--muted); }
 .hero-actions { display: flex; flex-wrap: wrap; gap: 16px; padding-top: 10px; }
 .hero-art { flex: 1 1 400px; display: flex; flex-direction: column; align-items: center; gap: 16px; background: radial-gradient(circle at 50% 45%, rgba(255,199,0,0.15), transparent 60%); }
-.hero-art svg { width: 340px; max-width: 100%; height: auto; }
+.hero-art svg, .hero-art img { width: 340px; max-width: 100%; height: auto; }
 .hero-chip { padding: 8px 16px; border-radius: 999px; background: #17130A; border: 1px solid rgba(255,199,0,0.45); color: var(--gold); font-size: 12px; font-weight: 800; letter-spacing: 0.1em; }
 
 /* Stats */
@@ -1474,6 +1474,8 @@ function initGate() {
 async function loadAndApplyAvatars() {
   const avatars = await fetchAppSetting('avatars', null);
   if (!avatars) return;
+
+  // 1. Update deck cards
   $$('#deck .card-lvl').forEach((card, idx) => {
     const lvl = idx + 1;
     const url = avatars[String(lvl)];
@@ -1484,6 +1486,24 @@ async function loadAndApplyAvatars() {
     div.innerHTML = `<img src="${url}" alt="Level ${lvl} avatar"
       style="width:${size}px;height:${size}px;border-radius:50%;object-fit:cover;" />`;
   });
+
+  // 2. Update the big Hero avatar (which represents Level 5)
+  const heroArt = $('.hero-art');
+  if (heroArt && avatars['5']) {
+    const heroSvg = heroArt.querySelector('svg');
+    if (heroSvg) {
+      const img = document.createElement('img');
+      img.src = avatars['5'];
+      img.alt = 'Level 5 Grandmaster Hero Avatar';
+      // Match the dimensions of the original hero SVG
+      img.style.width = '340px';
+      img.style.maxWidth = '100%';
+      img.style.height = 'auto';
+      img.style.borderRadius = '50%';
+      img.style.objectFit = 'cover';
+      heroSvg.replaceWith(img);
+    }
+  }
 }
 
 /* ============================================================

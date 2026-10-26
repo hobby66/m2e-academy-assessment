@@ -1370,11 +1370,17 @@ async function fetchAppSetting(key, fallback) {
     return data && data.value ? data.value : fallback;
   } catch (e) { return fallback; }
 }
+
 async function saveAppSetting(key, value) {
   const { error } = await supabaseClient.from('app_settings')
     .upsert({ key, value, updated_at: new Date().toISOString() }, { onConflict: 'key' });
-  return !error;
+  if (error) {
+    console.error('[M2E] saveAppSetting Error:', error);
+    return { error: error.message };
+  }
+  return { success: true };
 }
+
 async function fetchTopicMessages(topicId) {
   const { data } = await supabaseClient.from('topics').select('thank_you_messages').eq('id', topicId).maybeSingle();
   const arr = (data && data.thank_you_messages) || [];
@@ -2228,8 +2234,14 @@ async function loadAvatarManager() {
         const dataUrl = ev.target.result;
         const current = (await fetchAppSetting('avatars', {})) || {};
         current[String(lvl)] = dataUrl;
-        const ok = await saveAppSetting('avatars', current);
-        if (!ok) return alert('Failed to save avatar.');
+        
+        const result = await saveAppSetting('avatars', current);
+        
+        if (result.error) {
+          alert('Failed to save avatar: ' + result.error + '\n\nPlease make sure you ran the SQL migration for app_settings.');
+          return;
+        }
+        
         await loadAvatarManager();
         await loadAndApplyAvatars();
       };
@@ -2251,7 +2263,8 @@ async function loadAvatarManager() {
 
 on('#btnResetAvatars', 'click', async () => {
   if (!confirm('Remove all custom avatars and restore default SVGs?')) return;
-  await saveAppSetting('avatars', {});
+  const result = await saveAppSetting('avatars', {});
+  if (result.error) return alert('Error: ' + result.error);
   location.reload();
 });
 
@@ -2784,8 +2797,13 @@ on('#settingsForm', 'submit', async (e) => {
     min_topics: Math.max(1, Number($('#setCertMinTopics').value) || 1),
     min_score: Math.max(0, Math.min(100, Number($('#setCertMinScore').value) || 0))
   };
-  const ok = await saveAppSetting('cert_criteria', crit);
-  alert(ok ? 'Settings saved.' : 'Local settings saved; certificate criteria could not be saved.');
+  const result = await saveAppSetting('cert_criteria', crit);
+  
+  if (result.error) {
+    alert('Error saving criteria: ' + result.error);
+  } else {
+    alert('Settings saved.');
+  }
 });
 
 (function init() { initGate(); })();
